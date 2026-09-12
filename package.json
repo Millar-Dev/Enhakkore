@@ -1,0 +1,38 @@
+{
+  "name": "enhakkore",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ENHAKKORE — Travel & Impact. A travel marketplace and social-impact platform.",
+  "workspaces": [
+    "apps/api",
+    "apps/web",
+    "packages/shared"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c magenta,cyan \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run dev --workspace @enhakkore/api",
+    "dev:web": "npm run dev --workspace @enhakkore/web",
+    "build": "npm run build --workspace @enhakkore/shared && npm run build --workspace @enhakkore/api && npm run build --workspace @enhakkore/web",
+    "db:generate": "npm run db:generate --workspace @enhakkore/api",
+    "db:push": "npm run db:push --workspace @enhakkore/api",
+    "db:seed": "npm run db:seed --workspace @enhakkore/api",
+    "db:reset": "npm run db:reset --workspace @enhakkore/api",
+    "setup": "npm install && npm run db:push && npm run db:seed",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "allowScripts": {
+    "prisma@6.19.3": true,
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "esbuild@0.28.2": true,
+    "sharp@0.33.5": true
+  }
+}
