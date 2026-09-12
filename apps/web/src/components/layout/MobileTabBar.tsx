@@ -22,14 +22,26 @@ const TABS = [
   { href: '/account', label: 'Profile', icon: Icon.user, exact: true },
 ];
 
-const HIDDEN_PREFIXES = ['/book', '/organizer', '/admin', '/account/groups/'];
+// Screens with their own pinned bottom action, or their own navigation.
+// `/trips/` with the trailing slash matches trip detail (where the booking bar
+// lives) without matching `/trips` itself.
+const HIDDEN_PREFIXES = ['/book', '/organizer', '/admin', '/account/groups/', '/trips/'];
 
-export function MobileTabBar() {
+/** Whether the tab bar shows on this route for this account type. */
+function useTabBarVisible(): boolean {
   const pathname = usePathname();
   const { user } = useSession();
 
-  if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return null;
-  if (user && user.role !== 'TRAVELER') return null;
+  if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return false;
+  if (user && user.role !== 'TRAVELER') return false;
+  return true;
+}
+
+export function MobileTabBar() {
+  const pathname = usePathname();
+  const visible = useTabBarVisible();
+
+  if (!visible) return null;
 
   return (
     <nav
@@ -61,7 +73,12 @@ export function MobileTabBar() {
   );
 }
 
-/** Matching spacer so page content is never hidden behind the bar. */
+/**
+ * Matching spacer so page content is never hidden behind the bar — and no dead
+ * space is left on the screens where the bar does not render.
+ */
 export function MobileTabBarSpacer() {
+  const visible = useTabBarVisible();
+  if (!visible) return null;
   return <div className="h-16 md:hidden" aria-hidden="true" />;
 }

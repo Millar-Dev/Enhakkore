@@ -6,6 +6,7 @@ import { requireAuth } from '../middleware/auth';
 import { createBooking, releaseBooking } from '../services/bookings';
 import { paymentGateway } from '../services/payments';
 import { toBooking } from '../serializers';
+import { TRIP_SUMMARY_INCLUDE } from '../lib/includes';
 
 export const bookingsRouter = Router();
 
@@ -13,7 +14,7 @@ bookingsRouter.use(requireAuth);
 
 const BOOKING_INCLUDE = {
   trip: {
-    include: { destination: true, organizer: true, departures: { orderBy: { startDate: 'asc' as const } } },
+    include: TRIP_SUMMARY_INCLUDE,
   },
   departure: { include: { conversation: { select: { id: true } } } },
   travellerList: true,

@@ -7,6 +7,7 @@ import { paymentGateway } from '../services/payments';
 import { paymentReference } from '../lib/ids';
 import { optionalAuth } from '../middleware/auth';
 import { toImpactProjectDetail, toImpactProjectSummary } from '../serializers';
+import { TRIP_SUMMARY_INCLUDE } from '../lib/includes';
 
 export const impactRouter = Router();
 
@@ -105,7 +106,7 @@ impactRouter.get(
         updates: { where: { published: true }, orderBy: { publishedAt: 'desc' } },
         trips: {
           where: { status: 'PUBLISHED' },
-          include: { destination: true, organizer: true, departures: { orderBy: { startDate: 'asc' } } },
+          include: TRIP_SUMMARY_INCLUDE,
           take: 6,
         },
         donations: {

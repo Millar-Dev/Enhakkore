@@ -9,12 +9,13 @@ import { requireAuth, requireOrganizer } from '../middleware/auth';
 import { notify } from '../services/notifications';
 import { organizerStats } from '../services/stats';
 import { toBooking, toOrganizerDetail, toTripDetail, toTripSummary } from '../serializers';
+import { ORGANIZER_WITH_COUNT } from '../lib/includes';
 
 export const organizersRouter = Router();
 
 const TRIP_INCLUDE = {
   destination: true,
-  organizer: true,
+  organizer: ORGANIZER_WITH_COUNT,
   departures: { orderBy: { startDate: 'asc' as const } },
 };
 

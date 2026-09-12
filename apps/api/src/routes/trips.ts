@@ -32,7 +32,9 @@ const listQuery = z.object({
 
 const TRIP_INCLUDE = {
   destination: true,
-  organizer: true,
+  // The published-trip count is shown on the organizer block of every card and
+  // on the trip page, so it has to come along with the organizer.
+  organizer: { include: { _count: { select: { trips: { where: { status: 'PUBLISHED' } } } } } },
   departures: { orderBy: { startDate: 'asc' } },
 } satisfies Prisma.TripInclude;
 

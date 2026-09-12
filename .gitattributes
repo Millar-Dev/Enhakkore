@@ -1,0 +1,17 @@
+# Normalise line endings in the repository; check out native on each platform.
+* text=auto
+
+# Keep these LF regardless of platform.
+*.sh text eol=lf
+*.prisma text eol=lf
+
+# Never touch binaries.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary

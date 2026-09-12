@@ -7,6 +7,7 @@ import { requireAuth } from '../middleware/auth';
 import { travellerStats } from '../services/stats';
 import { refreshRatings } from '../services/stats';
 import { toDonation, toNotification, toPublicUser, toReview, toTripSummary } from '../serializers';
+import { TRIP_SUMMARY_INCLUDE } from '../lib/includes';
 
 export const meRouter = Router();
 
@@ -71,7 +72,7 @@ meRouter.get(
       where: { userId: req.auth!.id },
       include: {
         trip: {
-          include: { destination: true, organizer: true, departures: { orderBy: { startDate: 'asc' } } },
+          include: TRIP_SUMMARY_INCLUDE,
         },
       },
       orderBy: { createdAt: 'desc' },

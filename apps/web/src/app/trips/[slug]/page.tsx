@@ -350,9 +350,13 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
                 <Card className="mt-5 p-6 md:p-8">
                   <div className="flex flex-wrap items-center justify-between gap-6">
                     <div>
+                      {/* Counts every departure of this trip, not just the next
+                          one — so it is labelled as such rather than left to
+                          read as the size of one group. */}
                       <h3 className="text-h3">
-                        {totalJoined} {totalJoined === 1 ? 'traveller has' : 'travellers have'} joined this
-                        trip
+                        {totalJoined} {totalJoined === 1 ? 'traveller has' : 'travellers have'} joined
+                        across {trip.departures.length}{' '}
+                        {trip.departures.length === 1 ? 'departure' : 'departures'}
                       </h3>
                       <p className="mt-2 max-w-md text-[0.9375rem] leading-relaxed text-ink-muted">
                         Book a seat and you join this departure&rsquo;s private group straight away — ask

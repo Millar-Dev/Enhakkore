@@ -10,6 +10,7 @@ import { notify } from '../services/notifications';
 import { platformStats } from '../services/stats';
 import { releaseBooking } from '../services/bookings';
 import { paymentGateway } from '../services/payments';
+import { ORGANIZER_WITH_COUNT } from '../lib/includes';
 import {
   toBooking,
   toCustomTripRequest,
@@ -29,7 +30,7 @@ adminRouter.use(requireAuth, requireAdmin);
 
 const TRIP_INCLUDE = {
   destination: true,
-  organizer: true,
+  organizer: ORGANIZER_WITH_COUNT,
   departures: { orderBy: { startDate: 'asc' as const } },
 };
 
