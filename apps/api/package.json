@@ -6,14 +6,16 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run datasource && prisma generate && tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push --skip-generate && prisma generate",
+    "db:generate": "npm run datasource && prisma generate",
+    "db:push": "npm run datasource && prisma db push --skip-generate && prisma generate",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "prisma db push --force-reset --skip-generate && prisma generate && tsx prisma/seed.ts"
+    "db:reset": "npm run datasource && prisma db push --force-reset --skip-generate && prisma generate && tsx prisma/seed.ts",
+    "datasource": "node scripts/sync-datasource.js",
+    "db:deploy": "npm run datasource && prisma db push --skip-generate && prisma generate"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
