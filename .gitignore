@@ -11,10 +11,12 @@ out/
 *.tsbuildinfo
 
 # env
+# Everything .env* is ignored except the committed examples, so a real
+# connection string or secret cannot be added by accident.
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.example
+!.env.*.example
 
 # database (local dev SQLite)
 *.db

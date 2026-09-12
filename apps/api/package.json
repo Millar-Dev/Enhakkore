@@ -15,7 +15,11 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "npm run datasource && prisma db push --force-reset --skip-generate && prisma generate && tsx prisma/seed.ts",
     "datasource": "node scripts/sync-datasource.js",
-    "db:deploy": "npm run datasource && prisma db push --skip-generate && prisma generate"
+    "db:deploy": "npm run datasource && prisma db push --skip-generate && prisma generate",
+    "remote:push": "node scripts/remote.js push",
+    "remote:seed": "node scripts/remote.js seed",
+    "remote:studio": "node scripts/remote.js studio",
+    "remote:reset": "node scripts/remote.js reset"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

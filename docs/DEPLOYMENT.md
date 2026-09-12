@@ -38,33 +38,50 @@ Roughly 30 minutes, no card required at any point.
 
 ## Step 2 · Create the tables and load the demo content
 
-From your own machine — you do not need shell access on any host.
+**You do not write any SQL, and you do not touch Neon's editor.** Neon gives you
+an empty database; Prisma creates all 23 tables from `apps/api/prisma/schema.prisma`.
+
+### 2a · Put the connection string in a file
+
+Create `apps/api/.env.production` with one line — your string from Step 1:
 
 ```bash
-cd D:/Enhakkore
+DATABASE_URL="postgresql://…your neon string…"
 ```
 
-Run the push with the Neon URL in front of the command, so it applies to Neon
-rather than your local SQLite file. **Substitute your own connection string:**
+There is an `.env.production.example` next to it to copy. The real file is
+gitignored, so it cannot be committed.
+
+> Why a file rather than typing it on the command line: `DATABASE_URL="…" npm run …`
+> is Bash syntax. In PowerShell or cmd it fails in a confusing way.
+
+### 2b · Create the tables
+
+From the repository root:
 
 ```bash
-DATABASE_URL="postgresql://…your neon string…" npm run db:push --workspace @enhakkore/api
+npm run remote:push
 ```
 
-Then load the demonstration content, so the deployed site has something to show:
+### 2c · Load the demonstration content
 
 ```bash
-DATABASE_URL="postgresql://…your neon string…" npm run db:seed --workspace @enhakkore/api
+npm run remote:seed
 ```
 
-You should see the table of counts — 18 users, 11 trips, 6 projects.
+You should see the counts — 18 users, 11 trips, 6 projects.
+
+Both commands print which database they are targeting, with the password
+redacted, so you can confirm before anything happens. They switch the schema to
+Postgres, do the work, and restore your local SQLite setup afterwards — even if
+they fail. `npm run dev` keeps working exactly as before.
+
+To look at what landed, `npm run remote:studio` opens a browser table view.
 
 > **On seeding a deployed database.** This is a demonstration deployment, so
 > seeding is the right call: an empty site shows nobody anything, and every
 > figure it creates is labelled as demo content in the interface. When you take
 > real bookings, start from an empty database and never run the seed against it.
-
-Your local `.env` is untouched by this — `npm run dev` still uses SQLite.
 
 ## Step 3 · API (Render)
 

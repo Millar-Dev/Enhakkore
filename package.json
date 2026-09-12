@@ -22,7 +22,10 @@
     "lint": "npm run lint --workspaces --if-present",
     "build:shared": "npm run build --workspace @enhakkore/shared",
     "build:web": "npm run build --workspace @enhakkore/shared && npm run build --workspace @enhakkore/web",
-    "build:api": "npm run build --workspace @enhakkore/shared && npm run build --workspace @enhakkore/api"
+    "build:api": "npm run build --workspace @enhakkore/shared && npm run build --workspace @enhakkore/api",
+    "remote:push": "npm run remote:push --workspace @enhakkore/api",
+    "remote:seed": "npm run remote:seed --workspace @enhakkore/api",
+    "remote:studio": "npm run remote:studio --workspace @enhakkore/api"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
