@@ -256,6 +256,23 @@ Client-side role checks exist for UX only. The API decides independently.
 | `npm run build` | Build all three packages |
 | `npm run typecheck` | TypeScript across the workspace |
 | `npm run setup` | install + db:push + db:seed |
+| `npm run build:web` | Build the shared package, then the web app (what hosting runs) |
+| `npm run build:api` | Build the shared package, then the API |
+
+---
+
+## Deploying
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+The short version: the web app and the API deploy separately, and the web app
+cannot work without the API — deploy the API and a PostgreSQL database first,
+then set `NEXT_PUBLIC_API_URL` before building the front end.
+
+On Vercel, set the project **Root Directory to the repository root**, not
+`apps/web`. Pointing it at `apps/web` installs only that package, so the
+`@enhakkore/shared` workspace is never linked and the build fails with
+`Module not found: Can't resolve '@enhakkore/shared'`.
 
 ---
 
