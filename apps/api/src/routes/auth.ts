@@ -2,12 +2,20 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
-import { DEFAULT_COMMISSION_RATE } from '@enhakkore/shared';
+import { DEFAULT_COMMISSION_RATE, type Role } from '@enhakkore/shared';
 import { ApiError, route } from '../lib/http';
 import { uniqueSlug } from '../lib/ids';
 import { prisma } from '../lib/prisma';
 import { requireAuth, signToken } from '../middleware/auth';
 import { toOrganizerSummary, toPublicUser } from '../serializers';
+import { env } from '../env';
+import {
+  RESET_TTL_MINUTES,
+  checkPasswordReset,
+  completePasswordReset,
+  issuePasswordReset,
+  recordPasswordChange,
+} from '../services/passwordReset';
 
 export const authRouter = Router();
 
@@ -140,6 +148,10 @@ const passwordSchema = z.object({
   newPassword: z.string().min(8, 'Use at least 8 characters.').max(200),
 });
 
+/**
+ * Change password while signed in. Every other session is signed out, so the
+ * caller gets a fresh token back to stay signed in on this device.
+ */
 authRouter.post(
   '/password',
   requireAuth,
@@ -152,11 +164,100 @@ authRouter.post(
       throw ApiError.badRequest('Your current password is not correct.');
     }
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { passwordHash: await bcrypt.hash(input.newPassword, 12) },
+    const updated = await recordPasswordChange(user.id, input.newPassword);
+    res.json({ ok: true, token: signToken(updated.id, updated.role as Role) });
+  }),
+);
+
+/* -------------------------------------------------------------------------- */
+/* Forgot password                                                              */
+/* -------------------------------------------------------------------------- */
+
+// Separate budgets per route: requesting a link can send an email, so it is the
+// tightest; checking and using a link get more room so a mistyped password does
+// not lock someone out. Limits are relaxed only in local development.
+function resetBudget(productionLimit: number) {
+  return rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: env.isProduction ? productionLimit : productionLimit * 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: { code: 'rate_limited', message: 'Too many requests. Try again in a few minutes.' } },
+  });
+}
+
+const forgotLimiter = resetBudget(5);
+const resetLimiter = resetBudget(15);
+
+const forgotSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Enter a valid email address.'),
+});
+
+/**
+ * Always answers the same way, whether or not the address has an account, and
+ * does the work without awaiting it — so neither the message nor the response
+ * time tells a stranger who is registered.
+ */
+authRouter.post(
+  '/forgot-password',
+  forgotLimiter,
+  route(async (req, res) => {
+    const { email } = forgotSchema.parse(req.body);
+
+    void issuePasswordReset(email).catch((error) =>
+      console.error('[auth] password reset issue failed:', error instanceof Error ? error.message : error),
+    );
+
+    res.json({
+      ok: true,
+      message: `If an account exists for ${email}, we've sent a link to reset the password. It expires in ${RESET_TTL_MINUTES} minutes.`,
+    });
+  }),
+);
+
+const tokenSchema = z.object({ token: z.string().min(10).max(200) });
+
+authRouter.post(
+  '/reset-password/check',
+  resetLimiter,
+  route(async (req, res) => {
+    const { token } = tokenSchema.parse(req.body);
+    res.json(await checkPasswordReset(token));
+  }),
+);
+
+const resetSchema = z.object({
+  token: z.string().min(10).max(200),
+  password: z.string().min(8, 'Use at least 8 characters.').max(200),
+});
+
+const RESET_FAILURE: Record<'invalid' | 'used' | 'expired', string> = {
+  invalid: 'This reset link is not valid. Request a new one.',
+  used: 'This reset link has already been used. Request a new one if you still need it.',
+  expired: 'This reset link has expired. Request a new one — they last 30 minutes.',
+};
+
+/** Sets the new password and signs the user straight in on this device. */
+authRouter.post(
+  '/reset-password',
+  resetLimiter,
+  route(async (req, res) => {
+    const input = resetSchema.parse(req.body);
+    const result = await completePasswordReset(input.token, input.password);
+
+    if (!result.ok) {
+      throw ApiError.unprocessable(RESET_FAILURE[result.reason], `reset_${result.reason}`);
+    }
+
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id: result.userId },
+      include: { organizer: true },
     });
 
-    res.json({ ok: true });
+    res.json({
+      token: signToken(user.id, user.role as Role),
+      user: toPublicUser(user),
+      organizer: user.organizer ? toOrganizerSummary(user.organizer) : null,
+    });
   }),
 );

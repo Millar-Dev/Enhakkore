@@ -162,6 +162,42 @@ something beginning `{"status":"ok"`.
 
 ---
 
+## Part F · Email (password reset and notices)
+
+The platform sends two emails today: the **reset link** when someone clicks
+"Forgot password?", and a **"your password was changed"** notice afterwards.
+
+**Until you do anything, no email is sent.** Password reset still works end to
+end in development, where the link is printed to the API log. On Render the log
+names the recipient and subject only, never the link, because a reset link in
+hosting logs would let anyone who can read them take over the account.
+
+### Turning email on
+
+1. Create a free account at <https://resend.com> (100 emails a day, 3,000 a
+   month).
+2. Create an **API key** with sending access.
+3. Render → your service → **Environment** → add `RESEND_API_KEY` with the key
+   → **Save and deploy**.
+
+At this point, emails reach **only the address you signed up to Resend with**.
+That is Resend's rule for its shared test sender, and it is enough to try the
+flow on your own account.
+
+### Emailing real users: needs your own domain
+
+1. Buy a domain (e.g. `enhakkore.com`).
+2. In Resend → **Domains** → add it, then add the DNS records Resend shows you at
+   your domain provider. Wait for the domain to show as verified.
+3. On Render, add `EMAIL_FROM` → `Enhakkore <hello@enhakkore.com>` (any address
+   at your verified domain) → **Save and deploy**.
+
+Email links point at `APP_URL`, which defaults to your first `CORS_ORIGIN` (your
+Vercel address). When the website moves to its own domain, update
+`CORS_ORIGIN`, or set `APP_URL` explicitly.
+
+---
+
 ## If something goes wrong
 
 | What you see | Cause | Fix |
@@ -178,6 +214,8 @@ something beginning `{"status":"ok"`.
 | Pages load but sign-in fails on a long address like `enhakkore-abc123-….vercel.app` | That is a one-off deployment address. Render only accepts your main address (`CORS_ORIGIN`) | Use your main address, the one under **Domains** (e.g. `enhakkore-one.vercel.app`) |
 | Browser console says **CORS** | `CORS_ORIGIN` does not match your Vercel address | Render → **Environment** → fix `CORS_ORIGIN` → **Save, rebuild, and deploy** |
 | First page load takes ~1 minute | Render free tier waking up | Normal. Open the site a minute before a demo, or use Render's paid Starter plan |
+| Reset email never arrives | No `RESEND_API_KEY` yet, or the address isn't your own Resend account and no domain is verified | Part F. Render's log says `[email] not sent` or `Resend rejected the message` with the reason |
+| Everyone was signed out | `JWT_SECRET` changed, or that account's password was changed | Expected. Sign in again |
 
 ---
 

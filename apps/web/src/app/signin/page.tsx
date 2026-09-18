@@ -102,6 +102,15 @@ function SignInForm() {
           placeholder="••••••••"
         />
 
+        <div className="-mt-1 flex justify-end">
+          <Link
+            href={email ? `/forgot-password?email=${encodeURIComponent(email)}` : '/forgot-password'}
+            className="text-[0.8125rem] font-semibold text-acacia-700 hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
+
         <Button type="submit" size="lg" full disabled={busy}>
           {busy ? 'Signing in…' : 'Sign in'}
         </Button>

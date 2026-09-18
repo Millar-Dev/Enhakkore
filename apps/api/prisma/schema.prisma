@@ -39,11 +39,15 @@ model User {
   bio          String?
   /// Marks records created by the demo seed so the UI can label them honestly.
   isDemo       Boolean @default(false)
+  /// Set whenever the password changes. Session tokens issued before this
+  /// moment are rejected, so a reset signs the account out everywhere.
+  passwordChangedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   organizer            Organizer?
+  passwordResetTokens  PasswordResetToken[]
   bookings             Booking[]
   donations            Donation[]
   reviews              Review[]
@@ -57,6 +61,24 @@ model User {
 
   @@index([role])
   @@index([status])
+}
+
+/// A pending "forgot password" link.
+///
+/// Only a SHA-256 hash of the link's secret is stored, never the secret itself,
+/// so someone who can read the database still cannot use a pending reset.
+/// Links are single-use and short-lived; issuing a new one retires the old.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ---------------------------------------------------------------------------

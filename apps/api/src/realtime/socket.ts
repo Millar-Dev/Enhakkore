@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import type { MessageDto } from '@enhakkore/shared';
 import { env } from '../env';
 import { prisma } from '../lib/prisma';
+import { isTokenStale } from '../middleware/auth';
 
 let io: SocketServer | null = null;
 
@@ -26,12 +27,15 @@ export function attachRealtime(server: HttpServer) {
     if (!token) return next(new Error('unauthorized'));
 
     try {
-      const payload = jwt.verify(token, env.jwtSecret) as { sub: string };
+      const payload = jwt.verify(token, env.jwtSecret) as { sub: string; iat?: number };
       const user = await prisma.user.findUnique({
         where: { id: payload.sub },
-        select: { id: true, status: true, role: true },
+        select: { id: true, status: true, role: true, passwordChangedAt: true },
       });
       if (!user || user.status !== 'ACTIVE') return next(new Error('unauthorized'));
+      // Same rule as the REST API: a session from before the last password
+      // change cannot open a realtime connection either.
+      if (isTokenStale(payload.iat, user.passwordChangedAt)) return next(new Error('unauthorized'));
       socket.data.userId = user.id;
       next();
     } catch {

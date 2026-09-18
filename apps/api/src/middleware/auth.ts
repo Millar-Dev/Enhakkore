@@ -26,12 +26,29 @@ declare global {
 interface TokenPayload {
   sub: string;
   role: Role;
+  /** Issued-at, in whole seconds. Added by jsonwebtoken on sign. */
+  iat?: number;
 }
 
 export function signToken(userId: string, role: Role): string {
   return jwt.sign({ sub: userId, role } satisfies TokenPayload, env.jwtSecret, {
     expiresIn: env.jwtExpiresIn,
   } as jwt.SignOptions);
+}
+
+/**
+ * True when a session token predates the account's last password change.
+ *
+ * Tokens are stateless, so without this a password change would leave every
+ * existing session valid until it expired — useless when the reason for the
+ * change is that someone else got in. `iat` is whole seconds, so the change
+ * time is floored to match: a token issued in the same second as the change
+ * (the new session handed back by a reset) stays valid.
+ */
+export function isTokenStale(iat: number | undefined, passwordChangedAt: Date | null): boolean {
+  if (!passwordChangedAt) return false;
+  if (typeof iat !== 'number') return true;
+  return iat < Math.floor(passwordChangedAt.getTime() / 1000);
 }
 
 async function resolveUser(token: string): Promise<AuthUser | null> {
@@ -53,11 +70,13 @@ async function resolveUser(token: string): Promise<AuthUser | null> {
       name: true,
       role: true,
       status: true,
+      passwordChangedAt: true,
       organizer: { select: { id: true } },
     },
   });
 
   if (!user) return null;
+  if (isTokenStale(payload.iat, user.passwordChangedAt)) return null;
 
   return {
     id: user.id,

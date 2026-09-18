@@ -22,6 +22,8 @@ interface SessionState {
   signOut(): void;
   refresh(): Promise<void>;
   updateUser(user: PublicUser): void;
+  /** Adopt a session the API has already issued, e.g. after a password reset. */
+  applyAuth(result: AuthResponse): void;
 }
 
 export interface RegisterInput {
@@ -84,6 +86,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     return result.user;
   }, []);
 
+  const applyAuth = useCallback((result: AuthResponse) => {
+    setToken(result.token);
+    setUser(result.user);
+    setOrganizer(result.organizer);
+    setStatus('authenticated');
+  }, []);
+
   const signOut = useCallback(() => {
     setToken(null);
     setUser(null);
@@ -92,8 +101,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<SessionState>(
-    () => ({ user, organizer, status, signIn, register, signOut, refresh, updateUser: setUser }),
-    [user, organizer, status, signIn, register, signOut, refresh],
+    () => ({ user, organizer, status, signIn, register, signOut, refresh, updateUser: setUser, applyAuth }),
+    [user, organizer, status, signIn, register, signOut, refresh, applyAuth],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
