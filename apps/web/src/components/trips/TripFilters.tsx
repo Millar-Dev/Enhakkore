@@ -220,8 +220,13 @@ export function TripFilters({ total }: { total: number }) {
     </div>
   );
 
+  // One wrapper, one grid cell. The page lays this out as the left column of a
+  // two-column grid; returning several siblings would give the grid several
+  // items and push the results into the narrow filter column. On phones the
+  // wrapper is `display: contents`, so the sticky filter bar keeps the whole
+  // page as its scroll range instead of being trapped in a short wrapper.
   return (
-    <>
+    <div className="contents lg:block">
       {/* Desktop sidebar */}
       <aside className="hidden lg:block">
         <div className="sticky top-28">
@@ -255,15 +260,6 @@ export function TripFilters({ total }: { total: number }) {
         <SortSelect value={params.get('sort') ?? 'recommended'} onChange={(value) => update({ sort: value })} />
       </div>
 
-      {/* Desktop sort sits with the result count */}
-      <div className="hidden lg:block">
-        <SortSelect
-          value={params.get('sort') ?? 'recommended'}
-          onChange={(value) => update({ sort: value })}
-          className="w-56"
-        />
-      </div>
-
       {/* Mobile sheet */}
       {sheetOpen && (
         <div className="fixed inset-0 z-50 flex flex-col bg-white lg:hidden">
@@ -289,7 +285,30 @@ export function TripFilters({ total }: { total: number }) {
           </div>
         </div>
       )}
-    </>
+    </div>
+  );
+}
+
+/**
+ * Desktop sort control. Rendered by the page beside the result count, inside
+ * the results column, rather than by TripFilters, which owns the left column.
+ */
+export function TripSort({ className }: { className?: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+
+  return (
+    <SortSelect
+      value={params.get('sort') ?? 'recommended'}
+      onChange={(value) => {
+        const next = new URLSearchParams(params.toString());
+        next.set('sort', value);
+        next.delete('page');
+        router.push(`${pathname}?${next.toString()}`, { scroll: false });
+      }}
+      className={className}
+    />
   );
 }
 

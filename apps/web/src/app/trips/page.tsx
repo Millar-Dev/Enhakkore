@@ -3,7 +3,7 @@ import Link from 'next/link';
 import type { Paginated, TripSummary } from '@enhakkore/shared';
 import { PublicShell } from '@/components/layout/PublicShell';
 import { TripCard } from '@/components/trips/TripCard';
-import { TripFilters } from '@/components/trips/TripFilters';
+import { TripFilters, TripSort } from '@/components/trips/TripFilters';
 import { SearchBar } from '@/components/trips/SearchBar';
 import { Alert, ButtonLink, EmptyState, Icon, cx } from '@/components/ui';
 import { apiGet, query } from '@/lib/api';
@@ -89,6 +89,8 @@ export default async function ExplorePage({
                   </p>
                 )}
               </div>
+              {/* Phones get sort in the sticky filter bar instead. */}
+              <TripSort className="hidden w-56 flex-none lg:block" />
             </div>
 
             {results === null ? (
