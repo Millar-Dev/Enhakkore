@@ -295,6 +295,24 @@
     }
   }
 
+  /* Hero entrance. `both` holds the invisible first frame during each line's
+     delay, so nothing flashes in before its turn. Transform and opacity only:
+     both are composited, so the stagger costs no layout work. */
+  .animate-hero {
+    animation: hero-in 0.9s var(--ease-out-soft) both;
+  }
+
+  @keyframes hero-in {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
   .animate-fade {
     animation: fade 0.35s var(--ease-out-soft) both;
   }

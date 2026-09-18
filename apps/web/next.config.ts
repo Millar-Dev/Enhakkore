@@ -32,6 +32,17 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Media files are named by content (a new video gets a new filename), so the
+  // browser can keep them for a year: returning visitors never re-download the
+  // hero video.
+  async headers() {
+    return [
+      {
+        source: '/media/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

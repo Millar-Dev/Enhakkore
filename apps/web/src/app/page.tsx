@@ -5,6 +5,7 @@ import { PublicShell } from '@/components/layout/PublicShell';
 import { DepartureCard, TripCard } from '@/components/trips/TripCard';
 import { SearchBar } from '@/components/trips/SearchBar';
 import { ProjectCard } from '@/components/impact/ProjectCard';
+import { HeroMedia, type HeroVideoSource } from '@/components/home/HeroMedia';
 import {
   Badge,
   ButtonLink,
@@ -34,6 +35,29 @@ interface PlatformCounters {
 
 const HERO_IMAGE =
   'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=2400&h=1600&q=85';
+
+/**
+ * Hero background video, smallest file first. Served from /public so it is on
+ * the same CDN as the site and cached for a year (see next.config.ts headers).
+ * Empty means the photo alone, which is also what every visitor sees until the
+ * page has finished loading.
+ *
+ * "Wildlife photography at Nairobi National Park" by In Old News LLC, Pexels
+ * (pexels.com/video/15896377), used under the Pexels License. Three of
+ * Pexels' own renditions, unmodified: 0.5 / 1.1 / 2.0 MB. To change the clip,
+ * add files with a new version suffix — the year-long cache means reusing a
+ * filename would leave returning visitors on the old video.
+ */
+const HERO_VIDEOS: HeroVideoSource[] = [
+  { src: '/media/hero/safari-tourist-360-v1.mp4', maxViewport: 767 },
+  { src: '/media/hero/safari-tourist-540-v1.mp4', maxViewport: 1279 },
+  { src: '/media/hero/safari-tourist-720-v1.mp4', maxViewport: Infinity },
+];
+
+/** Staggered entrance for the hero lines: 180ms apart, the first after 150ms. */
+function heroDelay(step: number): React.CSSProperties {
+  return { animationDelay: `${150 + step * 180}ms` };
+}
 
 const CATEGORIES = [
   { label: 'Safari', href: '/trips?type=SAFARI' },
@@ -115,43 +139,55 @@ export default async function HomePage() {
       {/* 1. A place worth going                                              */}
       {/* ------------------------------------------------------------------ */}
       <section className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-end overflow-hidden pb-10 pt-32 md:min-h-[42rem] md:pb-16">
-        <Image
-          src={HERO_IMAGE}
+        <HeroMedia
+          poster={HERO_IMAGE}
           alt="A safari vehicle on open grassland at sunset"
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
+          videos={HERO_VIDEOS}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#080a0b] via-[#080a0b]/55 to-[#080a0b]/35" />
 
+        {/* The words arrive one line at a time, in pure CSS so they animate on
+            first paint without waiting for JavaScript. The whole sequence is
+            done in about 1.5 seconds; reduce-motion users see it all at once. */}
         <div className="shell relative">
           <div className="max-w-3xl">
-            <Badge tone="dark" className="border-white/25 bg-white/15 text-white backdrop-blur-md">
-              <Icon.ripple size={13} />
-              Travel with purpose
-            </Badge>
+            <div className="animate-hero" style={heroDelay(0)}>
+              <Badge tone="dark" className="border-white/25 bg-white/15 text-white backdrop-blur-md">
+                <Icon.ripple size={13} />
+                Travel with purpose
+              </Badge>
+            </div>
 
             <h1 className="mt-6 text-[2.75rem] font-extrabold leading-[1.02] tracking-[-0.035em] text-white text-balance sm:text-[3.5rem] md:text-display">
-              Travel together.
-              <br />
-              Experience more.
-              <br />
-              <span className="text-acacia-300">Give back.</span>
+              <span className="animate-hero block" style={heroDelay(1)}>
+                Travel together.
+              </span>
+              <span className="animate-hero block" style={heroDelay(2)}>
+                Experience more.
+              </span>
+              <span className="animate-hero block text-acacia-300" style={heroDelay(3)}>
+                Give back.
+              </span>
             </h1>
 
-            <p className="mt-6 max-w-xl text-[1.0625rem] leading-relaxed text-white/80 md:text-[1.1875rem]">
+            <p
+              className="animate-hero mt-6 max-w-xl text-[1.0625rem] leading-relaxed text-white/80 md:text-[1.1875rem]"
+              style={heroDelay(4)}
+            >
               Discover unforgettable journeys, connect with fellow travellers, and make a meaningful
               impact along the way.
             </p>
           </div>
 
-          <div className="mt-10 md:mt-12">
+          <div className="animate-hero mt-10 md:mt-12" style={heroDelay(5)}>
             <SearchBar />
           </div>
 
           {/* Quick discovery — the six ways people actually start looking. */}
-          <div className="mt-6 flex gap-2 overflow-x-auto pb-1 no-scrollbar md:mt-7">
+          <div
+            className="animate-hero mt-6 flex gap-2 overflow-x-auto pb-1 no-scrollbar md:mt-7"
+            style={heroDelay(6)}
+          >
             {CATEGORIES.map((category) => (
               <Link
                 key={category.href}
