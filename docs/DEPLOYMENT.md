@@ -173,7 +173,9 @@ something beginning `{"status":"ok"`.
 | Render log mentions `channel_binding` | Connection option not supported | Delete `&channel_binding=require` from `DATABASE_URL` and save |
 | Render: `JWT_SECRET is still the development placeholder` | Variables not added | Part C step 6 |
 | Website loads but shows no trips, or sign-in says "We could not reach Enhakkore" | `API_URL` missing, misspelled, pointing at the wrong address, or not redeployed | Part D, including the redeploy. Check the address matches your Render page exactly |
-| Vercel refuses a `NEXT_PUBLIC_…` name | That name cannot be a **Secret** | Name it `API_URL` instead (Part D) |
+| Vercel refuses a `NEXT_PUBLIC_…` name | That name cannot be a **Secret**, or a variable with that name already exists | Name it `API_URL` instead (Part D) |
+| `API_URL` is set correctly but the site still calls a wrong address | An older build is still live | `API_URL` takes priority over any leftover `NEXT_PUBLIC_API_URL`, but only in builds made after it was added: redeploy. Delete leftover `NEXT_PUBLIC_…` variables so they cannot confuse anyone later |
+| Pages load but sign-in fails on a long address like `enhakkore-abc123-….vercel.app` | That is a one-off deployment address. Render only accepts your main address (`CORS_ORIGIN`) | Use your main address, the one under **Domains** (e.g. `enhakkore-one.vercel.app`) |
 | Browser console says **CORS** | `CORS_ORIGIN` does not match your Vercel address | Render → **Environment** → fix `CORS_ORIGIN` → **Save, rebuild, and deploy** |
 | First page load takes ~1 minute | Render free tier waking up | Normal. Open the site a minute before a demo, or use Render's paid Starter plan |
 

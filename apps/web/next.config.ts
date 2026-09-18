@@ -8,8 +8,12 @@ import type { NextConfig } from 'next';
  * `NEXT_PUBLIC_` variable created with the Secret type. `API_URL` works with
  * either type. Whichever is set gets compiled into the build — the address is
  * public anyway, since every browser has to call it.
+ *
+ * API_URL wins when both exist. It is the name the deploy guide tells people to
+ * set, so a stale NEXT_PUBLIC_API_URL left over from an earlier attempt must not
+ * silently override it — which is exactly what happened on the first deploy.
  */
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL;
+const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
