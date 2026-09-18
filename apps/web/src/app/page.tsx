@@ -33,8 +33,13 @@ interface PlatformCounters {
   isDemoData: boolean;
 }
 
-const HERO_IMAGE =
-  'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=2400&h=1600&q=85';
+/**
+ * The first frame of the hero video, captured from the 720p file. Because the
+ * video starts on this exact frame, the still-to-video fade is invisible.
+ * Re-capture it whenever the clip changes.
+ */
+const HERO_IMAGE = '/media/hero/safari-tourist-poster-v1.jpg';
+const HERO_ALT = 'A traveller in an open safari vehicle photographing a giraffe on the savannah';
 
 /**
  * Hero background video, smallest file first. Served from /public so it is on
@@ -139,11 +144,7 @@ export default async function HomePage() {
       {/* 1. A place worth going                                              */}
       {/* ------------------------------------------------------------------ */}
       <section className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-end overflow-hidden pb-10 pt-32 md:min-h-[42rem] md:pb-16">
-        <HeroMedia
-          poster={HERO_IMAGE}
-          alt="A safari vehicle on open grassland at sunset"
-          videos={HERO_VIDEOS}
-        />
+        <HeroMedia poster={HERO_IMAGE} alt={HERO_ALT} videos={HERO_VIDEOS} />
         <div className="absolute inset-0 bg-gradient-to-t from-[#080a0b] via-[#080a0b]/55 to-[#080a0b]/35" />
 
         {/* The words arrive one line at a time, in pure CSS so they animate on
