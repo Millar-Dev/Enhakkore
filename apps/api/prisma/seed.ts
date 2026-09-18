@@ -66,6 +66,21 @@ async function wipe() {
 /* -------------------------------------------------------------------------- */
 
 async function main() {
+  // `--if-empty` is what deploys use: seed a brand-new database once, then never
+  // touch it again. Without this guard every redeploy would wipe real data.
+  if (process.argv.includes('--if-empty')) {
+    if (process.env.SEED_DEMO_DATA === 'false') {
+      console.log('› SEED_DEMO_DATA=false — not seeding.');
+      return;
+    }
+    const existing = await prisma.user.count();
+    if (existing > 0) {
+      console.log(`› database already has ${existing} users — not seeding.`);
+      return;
+    }
+    console.log('› empty database — loading demonstration content');
+  }
+
   console.log('› clearing existing data');
   await wipe();
 

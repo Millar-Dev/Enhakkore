@@ -258,21 +258,24 @@ Client-side role checks exist for UX only. The API decides independently.
 | `npm run setup` | install + db:push + db:seed |
 | `npm run build:web` | Build the shared package, then the web app (what hosting runs) |
 | `npm run build:api` | Build the shared package, then the API |
+| `npm run deploy:api` | The whole Render build: build, create tables, seed an empty database once |
 
 ---
 
 ## Deploying
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for a click-by-click walkthrough:
+Neon for the database, Render for the API, Vercel for the web app.
 
-The short version: the web app and the API deploy separately, and the web app
-cannot work without the API — deploy the API and a PostgreSQL database first,
-then set `NEXT_PUBLIC_API_URL` before building the front end.
+The short version:
 
-On Vercel, set the project **Root Directory to the repository root**, not
-`apps/web`. Pointing it at `apps/web` installs only that package, so the
-`@enhakkore/shared` workspace is never linked and the build fails with
-`Module not found: Can't resolve '@enhakkore/shared'`.
+- **Vercel:** Root Directory `apps/web`, everything else at its defaults, one
+  variable, `NEXT_PUBLIC_API_URL`, set to the Render address.
+- **Render:** Build Command `npm install --include=dev && npm run deploy:api`.
+  The `--include=dev` matters, because `NODE_ENV=production` would otherwise
+  skip the Prisma and TypeScript build tools.
+- **Neon:** copy the connection string with **Connection pooling** switched off.
+  Nothing else to do there: the Render build creates the tables.
 
 ---
 

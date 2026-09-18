@@ -29,7 +29,7 @@ export const env = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   corsOrigins: (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
     .split(',')
-    .map((origin) => origin.trim())
+    .map((origin) => origin.trim().replace(/\/+$/, ''))
     .filter(Boolean),
   seedDemoData: (process.env.SEED_DEMO_DATA ?? 'true') !== 'false',
   paymentProvider: process.env.PAYMENT_PROVIDER ?? 'mock',

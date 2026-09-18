@@ -1,11 +1,12 @@
 # Render blueprint for the Enhakkore API.
 #
-# The API needs a persistent Node process — it holds Socket.IO connections open
-# for trip group chat and keeps a pooled database connection between requests.
-# That is why it does not go on Vercel alongside the web app.
+# The API needs a persistent Node process — it holds a pooled database
+# connection between requests and is where Socket.IO lives for trip group chat.
+# That is why it runs on Render rather than beside the web app on Vercel.
 #
-# To use: Render Dashboard → New → Blueprint → point at this repository.
-# Then set the three secret values marked `sync: false` in the dashboard.
+# The build does everything the database needs: it creates or updates the tables
+# and, on a brand-new empty database only, loads the demonstration content. No
+# command has to be run by hand.
 
 services:
   - type: web
@@ -13,24 +14,27 @@ services:
     runtime: node
     plan: free
     region: frankfurt # closest of Render's regions to East Africa
-    rootDir: .
-    buildCommand: npm install && npm run build:api && npm run db:deploy --workspace @enhakkore/api
+    # --include=dev matters: NODE_ENV=production would otherwise make npm skip
+    # devDependencies, and Prisma and TypeScript are needed to build.
+    buildCommand: npm install --include=dev && npm run deploy:api
     startCommand: npm run start --workspace @enhakkore/api
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
-      - key: SEED_DEMO_DATA
-        value: "false"
-      - key: PAYMENT_PROVIDER
-        value: mock
       - key: JWT_EXPIRES_IN
         value: 7d
-      # Set these three in the Render dashboard — never commit them.
-      - key: DATABASE_URL
-        sync: false
+      - key: PAYMENT_PROVIDER
+        value: mock
+      # true seeds demonstration content into an EMPTY database once. Set to
+      # false before the platform takes real bookings.
+      - key: SEED_DEMO_DATA
+        value: "true"
       - key: JWT_SECRET
+        generateValue: true
+      # Set these two in the dashboard — never commit them.
+      - key: DATABASE_URL
         sync: false
       - key: CORS_ORIGIN
         sync: false

@@ -7,8 +7,18 @@
  * token — swapping to cookie sessions later is a change in this file alone.
  */
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
-export const REALTIME_URL = process.env.NEXT_PUBLIC_REALTIME_URL ?? 'http://localhost:4000';
+/**
+ * Accepts the API host with or without the `/api` suffix and with or without a
+ * trailing slash — `https://x.onrender.com`, `…/`, `…/api` all work. That is
+ * the most common mistake when pasting this into a hosting dashboard.
+ */
+function normaliseApiUrl(raw: string | undefined): string {
+  const base = (raw ?? 'http://localhost:4000').trim().replace(/\/+$/, '');
+  return base.endsWith('/api') ? base : `${base}/api`;
+}
+
+export const API_URL = normaliseApiUrl(process.env.NEXT_PUBLIC_API_URL);
+export const REALTIME_URL = process.env.NEXT_PUBLIC_REALTIME_URL ?? API_URL.replace(/\/api$/, '');
 
 const TOKEN_KEY = 'enhakkore.token';
 

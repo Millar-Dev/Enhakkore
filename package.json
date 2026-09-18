@@ -25,7 +25,8 @@
     "build:api": "npm run build --workspace @enhakkore/shared && npm run build --workspace @enhakkore/api",
     "remote:push": "npm run remote:push --workspace @enhakkore/api",
     "remote:seed": "npm run remote:seed --workspace @enhakkore/api",
-    "remote:studio": "npm run remote:studio --workspace @enhakkore/api"
+    "remote:studio": "npm run remote:studio --workspace @enhakkore/api",
+    "deploy:api": "npm run build:api && npm run db:deploy --workspace @enhakkore/api"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
