@@ -270,7 +270,8 @@ Neon for the database, Render for the API, Vercel for the web app.
 The short version:
 
 - **Vercel:** Root Directory `apps/web`, everything else at its defaults, one
-  variable, `NEXT_PUBLIC_API_URL`, set to the Render address.
+  variable, `API_URL`, set to the Render address. `NEXT_PUBLIC_API_URL` also works
+  if created as a Config variable; Vercel refuses it as a Secret.
 - **Render:** Build Command `npm install --include=dev && npm run deploy:api`.
   The `--include=dev` matters, because `NODE_ENV=production` would otherwise
   skip the Prisma and TypeScript build tools.

@@ -122,18 +122,32 @@ something beginning `{"status":"ok"`.
 
 ## Part D · Vercel: connect the website to the API (5 minutes)
 
-1. Vercel → your project → **Settings** → **Environment Variables**.
-2. **Name:** `NEXT_PUBLIC_API_URL`
-3. **Value:** your Render address from Part C, for example
-   `https://enhakkore-api.onrender.com`. Adding `/api` is optional; both work.
-4. Leave all environments ticked (**Production**, **Preview**, **Development**).
-   Click **Save**.
-5. **Deployments** → **⋯** on the top deployment → **Redeploy** → **Redeploy**.
+1. Vercel → your project → **Environment Variables** (sidebar).
+2. Click **Add Environment Variable**.
+3. **Name:** `API_URL`
+4. **Value:** your Render address from Part C, e.g. `https://enhakkore.onrender.com`.
+   Copy it from the top of your Render service page. Adding `/api` is optional;
+   both work.
+5. Type: **Config** or **Secret** both work for `API_URL`. **Config** is better:
+   the address is not secret, and you will be able to read it back later.
+6. Environments: tick **Production** and **Preview**. Click **Save**.
+7. **Deployments** → **⋯** on the top deployment → **Redeploy** → **Redeploy**.
 
    > Required. Vercel only uses a variable in deployments made *after* it was
    > saved.
 
-6. Wait until it says **Ready**.
+8. Wait until it says **Ready**.
+
+> **Why `API_URL` and not `NEXT_PUBLIC_API_URL`:** Vercel refuses a
+> `NEXT_PUBLIC_` variable created with the **Secret** type, because anything
+> named `NEXT_PUBLIC_` is sent to every visitor's browser. The website accepts
+> either name. `NEXT_PUBLIC_API_URL` also works if you create it as **Config**.
+> Any other name, such as `NEXT_RENDER_API_URL`, is ignored.
+
+> **The website needs only this one variable.** `DATABASE_URL`, `JWT_SECRET`,
+> `NODE_ENV`, `PORT` and the rest belong on **Render**, not Vercel. If you
+> added them to Vercel, delete them there (**⋯** → **Delete**). They do nothing
+> for the website and only widen who can reach your database password.
 
 ---
 
@@ -158,7 +172,8 @@ something beginning `{"status":"ok"`.
 | Render log: `P1001 Can't reach database server` | Wrong or placeholder connection string | Part A again, then Render → **Environment** → edit `DATABASE_URL` → **Save, rebuild, and deploy** |
 | Render log mentions `channel_binding` | Connection option not supported | Delete `&channel_binding=require` from `DATABASE_URL` and save |
 | Render: `JWT_SECRET is still the development placeholder` | Variables not added | Part C step 6 |
-| Website loads but shows no trips | `NEXT_PUBLIC_API_URL` missing, or not redeployed | Part D, including the redeploy |
+| Website loads but shows no trips, or sign-in says "We could not reach Enhakkore" | `API_URL` missing, misspelled, pointing at the wrong address, or not redeployed | Part D, including the redeploy. Check the address matches your Render page exactly |
+| Vercel refuses a `NEXT_PUBLIC_…` name | That name cannot be a **Secret** | Name it `API_URL` instead (Part D) |
 | Browser console says **CORS** | `CORS_ORIGIN` does not match your Vercel address | Render → **Environment** → fix `CORS_ORIGIN` → **Save, rebuild, and deploy** |
 | First page load takes ~1 minute | Render free tier waking up | Normal. Open the site a minute before a demo, or use Render's paid Starter plan |
 
