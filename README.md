@@ -155,15 +155,24 @@ worth reading.
 
 ## Database
 
-SQLite for zero-setup development. Prisma does not support enums or JSON columns
-on SQLite, so status fields are strings constrained by the unions in
-`@enhakkore/shared`, and structured lists are JSON strings read through
-`apps/api/src/lib/json.ts`.
+**SQLite on your machine, PostgreSQL in production.** The Prisma provider is
+set from `DATABASE_URL` before every build (`apps/api/scripts/sync-datasource.js`),
+so the same code runs on both without edits.
 
-**Moving to PostgreSQL:** change `provider` in `apps/api/prisma/schema.prisma`,
-point `DATABASE_URL` at your instance, and run `npx prisma migrate dev`. Column
-types are already compatible. Optionally convert the JSON-string columns to
-native `Json` and simplify `lib/json.ts` to pass-throughs.
+- **Local:** `db push` applies the schema directly. Fast, and nothing on a
+  laptop is precious.
+- **Production:** migrations in `apps/api/prisma/migrations/`, applied once each
+  by `scripts/migrate-deploy.js`. See "Changing the database structure" in
+  [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+Prisma does not support enums or JSON columns on SQLite, so status fields are
+strings constrained by the unions in `@enhakkore/shared`, and structured lists
+are JSON strings read through `apps/api/src/lib/json.ts`.
+
+**The two databases differ in ways local testing will not show.** PostgreSQL
+compares text case-sensitively where SQLite does not, which is why text search
+goes through `apps/api/src/lib/search.ts`. Test anything text- or date-sensitive
+against the live API before relying on it.
 
 ### Core entities
 
@@ -258,6 +267,7 @@ Client-side role checks exist for UX only. The API decides independently.
 | `npm run setup` | install + db:push + db:seed |
 | `npm run build:web` | Build the shared package, then the web app (what hosting runs) |
 | `npm run build:api` | Build the shared package, then the API |
+| `npm run migration:new -- <name>` | After a schema change: write the migration for the live database, flagging anything that deletes data |
 | `npm run deploy:api` | The whole Render build: build, create tables, seed an empty database once |
 
 ---

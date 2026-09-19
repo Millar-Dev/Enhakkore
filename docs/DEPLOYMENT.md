@@ -221,6 +221,33 @@ Vercel address). When the website moves to its own domain, update
 
 ## Reference
 
+### Changing the database structure (migrations)
+
+The live database is updated by **migrations**: dated SQL files in
+`apps/api/prisma/migrations/`, committed to Git and applied to the live
+database exactly once each, in order. Your local SQLite database is unaffected
+and keeps using `db push`.
+
+When you change `apps/api/prisma/schema.prisma`:
+
+1. Run `npm run migration:new -- short-description`, e.g.
+   `npm run migration:new -- add-trip-difficulty`.
+2. **Read the SQL file it creates.** If the script prints
+   `THIS MIGRATION CAN DELETE OR REWRITE DATA`, stop and check:
+   - **Renamed something?** Prisma writes a rename as "delete + add", which
+     would lose that column's data. Edit the SQL to `ALTER TABLE ... RENAME
+     COLUMN ... TO ...` instead.
+   - **Made a column required?** Existing rows need a value first.
+3. Commit the schema change and the migration together, then push. Render
+   applies it during the next deploy.
+
+If a migration fails on the live site, the deploy stops, and Render keeps the
+previous version running. Nothing half-applies silently.
+
+`GET /api/health` reports `version`, the commit actually serving. After a
+push, if it still shows the old commit, the deploy failed: open Render's
+**Logs** and look for lines starting `[migrate]`.
+
 ### What the Render build does
 
 `npm run deploy:api` does the following:
@@ -229,7 +256,10 @@ Vercel address). When the website moves to its own domain, update
 2. Sets the Prisma provider from `DATABASE_URL`
    (`apps/api/scripts/sync-datasource.js`): Postgres on Render, SQLite locally,
    with no manual edit.
-3. Creates or updates the tables (`prisma db push`).
+3. Applies any new migrations (`apps/api/scripts/migrate-deploy.js`). The
+   first deploy with migrations checks that the existing live database exactly
+   matches `0_init`, then records it as applied rather than re-running it. If
+   an earlier attempt stopped partway, it recovers.
 4. Runs the seed with `--if-empty`. It loads demonstration content only when
    the database has no users, so a redeploy never wipes data. With
    `SEED_DEMO_DATA=false` it never seeds.

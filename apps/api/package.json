@@ -15,12 +15,13 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "npm run datasource && prisma db push --force-reset --skip-generate && prisma generate && tsx prisma/seed.ts",
     "datasource": "node scripts/sync-datasource.js",
-    "db:deploy": "npm run datasource && prisma db push --skip-generate && prisma generate && npm run db:seed:if-empty",
+    "db:deploy": "npm run datasource && prisma generate && node scripts/migrate-deploy.js && npm run db:seed:if-empty",
     "remote:push": "node scripts/remote.js push",
     "remote:seed": "node scripts/remote.js seed",
     "remote:studio": "node scripts/remote.js studio",
     "remote:reset": "node scripts/remote.js reset",
-    "db:seed:if-empty": "tsx prisma/seed.ts --if-empty"
+    "db:seed:if-empty": "tsx prisma/seed.ts --if-empty",
+    "migration:new": "node scripts/migration-new.js"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

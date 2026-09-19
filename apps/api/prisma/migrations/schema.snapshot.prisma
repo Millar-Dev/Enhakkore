@@ -1,0 +1,656 @@
+// ---------------------------------------------------------------------------
+// ENHAKKORE — Travel & Impact
+// Platform data model
+//
+// Provider note: SQLite is used for zero-setup local development. Prisma does
+// not support native enums or Json columns on SQLite, so status fields are
+// String columns constrained by the unions in @enhakkore/shared, and structured
+// lists are stored as JSON strings (read/written through src/lib/json.ts).
+// Switching `provider` to "postgresql" is the only change needed to move to a
+// production database; column types stay compatible.
+// ---------------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  passwordHash String
+  name         String
+  /// TRAVELER | ORGANIZER | ADMIN
+  role         String  @default("TRAVELER")
+  /// ACTIVE | SUSPENDED | PENDING
+  status       String  @default("ACTIVE")
+  avatarUrl    String?
+  phone        String?
+  country      String?
+  city         String?
+  bio          String?
+  /// Marks records created by the demo seed so the UI can label them honestly.
+  isDemo       Boolean @default(false)
+  /// Set whenever the password changes. Session tokens issued before this
+  /// moment are rejected, so a reset signs the account out everywhere.
+  passwordChangedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizer            Organizer?
+  passwordResetTokens  PasswordResetToken[]
+  bookings             Booking[]
+  donations            Donation[]
+  reviews              Review[]
+  messages             Message[]
+  conversationMembers  ConversationMember[]
+  notifications        Notification[]
+  savedTrips           SavedTrip[]
+  customTripRequests   CustomTripRequest[]
+  verificationsHandled OrganizerVerification[] @relation("VerificationReviewer")
+  moderatedTrips       Trip[]                  @relation("TripReviewer")
+
+  @@index([role])
+  @@index([status])
+}
+
+/// A pending "forgot password" link.
+///
+/// Only a SHA-256 hash of the link's secret is stored, never the secret itself,
+/// so someone who can read the database still cannot use a pending reset.
+/// Links are single-use and short-lived; issuing a new one retires the old.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Supply side — tour operators / trip organizers
+// ---------------------------------------------------------------------------
+
+model Organizer {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  companyName String
+  slug        String  @unique
+  tagline     String?
+  bio         String?
+  logoUrl     String?
+  coverUrl    String?
+  websiteUrl  String?
+  country     String?
+  city        String?
+  yearFounded Int?
+  /// JSON string array of spoken languages, e.g. ["English","Swahili"]
+  languages   String  @default("[]")
+
+  /// UNSUBMITTED | PENDING | VERIFIED | REJECTED | SUSPENDED
+  verificationStatus String  @default("UNSUBMITTED")
+  /// Share of each booking retained by the platform (0.10 = 10%).
+  commissionRate     Float   @default(0.10)
+  rating             Float?
+  reviewCount        Int     @default(0)
+  responseTimeHours  Int?
+  isDemo             Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trips        Trip[]
+  verification OrganizerVerification?
+  reviews      Review[]
+  payouts      Payout[]
+
+  @@index([verificationStatus])
+}
+
+/// Documents and details an organizer submits for admin review. Nothing here is
+/// verified automatically — a human admin decides, and no badge is granted until
+/// `status` is VERIFIED.
+model OrganizerVerification {
+  id                 String  @id @default(cuid())
+  organizerId        String  @unique
+  legalName          String
+  registrationNumber String?
+  taxId              String?
+  licenseNumber      String?
+  contactName        String
+  contactEmail       String
+  contactPhone       String
+  addressLine        String?
+  /// JSON array of { label, fileName, uploadedAt }. Files themselves live in
+  /// object storage in production; local dev records metadata only.
+  documents          String  @default("[]")
+  /// Payout destination, stored as a reference only. Full bank/mobile-money
+  /// credentials must live in the payment provider's vault, never here.
+  payoutMethod       String?
+  payoutReference    String?
+
+  /// UNSUBMITTED | PENDING | VERIFIED | REJECTED | SUSPENDED
+  status       String    @default("PENDING")
+  reviewNotes  String?
+  reviewedById String?
+  submittedAt  DateTime  @default(now())
+  reviewedAt   DateTime?
+
+  organizer  Organizer @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  reviewedBy User?     @relation("VerificationReviewer", fields: [reviewedById], references: [id])
+
+  @@index([status])
+}
+
+model Payout {
+  id          String    @id @default(cuid())
+  organizerId String
+  /// Integer amount in the currency's minor unit.
+  amount      Int
+  currency    String    @default("TZS")
+  /// INITIATED | PENDING | SUCCEEDED | FAILED
+  status      String    @default("PENDING")
+  reference   String?
+  periodStart DateTime
+  periodEnd   DateTime
+  createdAt   DateTime  @default(now())
+  settledAt   DateTime?
+
+  organizer Organizer @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+
+  @@index([organizerId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Inventory — destinations, trips, departures
+// ---------------------------------------------------------------------------
+
+model Destination {
+  id        String  @id @default(cuid())
+  name      String
+  slug      String  @unique
+  country   String
+  region    String?
+  continent String  @default("Africa")
+  summary   String?
+  heroImage String?
+  latitude  Float?
+  longitude Float?
+  featured  Boolean @default(false)
+
+  trips Trip[]
+
+  @@index([country])
+  @@index([continent])
+}
+
+model Trip {
+  id            String @id @default(cuid())
+  organizerId   String
+  destinationId String
+  title         String
+  slug          String @unique
+  summary       String
+  description   String
+
+  /// GROUP | PRIVATE | SAFARI | BEACH | ADVENTURE | CULTURAL | INTERNATIONAL
+  type  String @default("GROUP")
+  /// BUDGET | COMFORT | LUXURY
+  style String @default("COMFORT")
+  /// DRAFT | PENDING_REVIEW | APPROVED | PUBLISHED | REJECTED | ARCHIVED
+  status String @default("DRAFT")
+
+  durationDays   Int
+  durationNights Int
+  /// Lowest advertised price, integer minor units of `currency`.
+  basePrice      Int
+  currency       String @default("TZS")
+
+  heroImage  String
+  /// JSON string arrays.
+  gallery    String @default("[]")
+  tags       String @default("[]")
+  includes   String @default("[]")
+  excludes   String @default("[]")
+  requirements String @default("[]")
+
+  difficulty  String?
+  minAge      Int?
+  rating      Float?
+  reviewCount Int     @default(0)
+  featured    Boolean @default(false)
+  isDemo      Boolean @default(false)
+
+  /// Optional impact project this trip channels contributions toward.
+  impactProjectId String?
+
+  reviewedById String?
+  reviewNotes  String?
+  submittedAt  DateTime?
+  publishedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  organizer     Organizer      @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  destination   Destination    @relation(fields: [destinationId], references: [id])
+  impactProject ImpactProject? @relation(fields: [impactProjectId], references: [id])
+  reviewedBy    User?          @relation("TripReviewer", fields: [reviewedById], references: [id])
+
+  itinerary  ItineraryDay[]
+  departures TripDate[]
+  bookings   Booking[]
+  reviews    Review[]
+  savedBy    SavedTrip[]
+
+  @@index([status, type])
+  @@index([organizerId])
+  @@index([destinationId])
+}
+
+model ItineraryDay {
+  id        String  @id @default(cuid())
+  tripId    String
+  dayNumber Int
+  title     String
+  summary   String?
+  /// JSON string arrays.
+  activities String @default("[]")
+  meals      String @default("[]")
+  accommodation String?
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, dayNumber])
+}
+
+/// A dated departure of a trip. Group capacity and seat counts live here, not on
+/// the trip, so one listing can run many times with different sizes and prices.
+model TripDate {
+  id          String   @id @default(cuid())
+  tripId      String
+  startDate   DateTime
+  endDate     DateTime
+  capacity    Int
+  seatsBooked Int      @default(0)
+  /// Per-departure price override; falls back to Trip.basePrice when null.
+  price       Int?
+  /// OPEN | ALMOST_FULL | FULL | CLOSED | DEPARTED
+  status      String   @default("OPEN")
+
+  createdAt DateTime @default(now())
+
+  trip         Trip          @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  bookings     Booking[]
+  conversation Conversation?
+
+  @@index([tripId, startDate])
+  @@index([startDate])
+}
+
+model SavedTrip {
+  id        String   @id @default(cuid())
+  userId    String
+  tripId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tripId])
+}
+
+// ---------------------------------------------------------------------------
+// Demand side — bookings, payments, commission
+// ---------------------------------------------------------------------------
+
+model Booking {
+  id         String @id @default(cuid())
+  /// Human-facing code shown on confirmations, e.g. ENH-4K7Q2M.
+  reference  String @unique
+  tripId     String
+  tripDateId String
+  userId     String
+
+  travellers Int    @default(1)
+  /// PENDING_PAYMENT | CONFIRMED | CANCELLED | REFUNDED | COMPLETED
+  status     String @default("PENDING_PAYMENT")
+
+  /// All amounts are integer minor units of `currency`, captured at booking time
+  /// so later price changes never rewrite history.
+  tripAmount   Int
+  impactAmount Int    @default(0)
+  totalAmount  Int
+  platformFee  Int    @default(0)
+  currency     String @default("TZS")
+
+  impactProjectId String?
+  notes           String?
+  cancelledAt     DateTime?
+  cancelReason    String?
+  completedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip          Trip               @relation(fields: [tripId], references: [id])
+  departure     TripDate           @relation(fields: [tripDateId], references: [id])
+  impactProject ImpactProject?     @relation(fields: [impactProjectId], references: [id])
+  travellerList BookingTraveller[]
+  payments      Payment[]
+  donations     Donation[]
+  commission    PlatformCommission?
+  review        Review?
+
+  @@index([userId, status])
+  @@index([tripId])
+  @@index([status])
+}
+
+/// Named travellers on a booking. Kept separate from User so a member can book
+/// for family or friends who do not have accounts.
+model BookingTraveller {
+  id        String  @id @default(cuid())
+  bookingId String
+  fullName  String
+  email     String?
+  phone     String?
+  /// Free-text dietary/medical notes. Treated as sensitive: never returned to
+  /// anyone but the traveller who booked, the trip's organizer, and admins.
+  notes     String?
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+/// A payment attempt. `provider` records which adapter handled it — in this
+/// build only the in-process mock gateway exists, and rows it creates are
+/// marked `simulated` so nothing can be mistaken for a real settlement.
+model Payment {
+  id          String  @id @default(cuid())
+  bookingId   String
+  /// MOCK | MOBILE_MONEY | CARD | BANK_TRANSFER
+  method      String  @default("MOCK")
+  provider    String  @default("mock")
+  providerRef String?
+  amount      Int
+  currency    String  @default("TZS")
+  /// INITIATED | PENDING | SUCCEEDED | FAILED | REFUNDED
+  status      String  @default("INITIATED")
+  simulated   Boolean @default(true)
+  failureCode String?
+  /// JSON blob of the (redacted) provider response for support/debugging.
+  rawResponse String  @default("{}")
+
+  createdAt   DateTime  @default(now())
+  settledAt   DateTime?
+  refundedAt  DateTime?
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId, status])
+}
+
+/// The platform's cut of a booking, recorded as its own ledger row rather than
+/// derived on the fly, so reporting stays correct when rates change.
+model PlatformCommission {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  amount    Int
+  rate      Float
+  currency  String   @default("TZS")
+  /// PENDING | EARNED | REVERSED
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id          String  @id @default(cuid())
+  tripId      String
+  organizerId String
+  userId      String
+  /// Every review must point at a completed booking — this is what makes them
+  /// trustworthy, and the unique constraint stops duplicate reviews.
+  bookingId   String  @unique
+  rating      Int
+  title       String?
+  body        String
+  photos      String  @default("[]")
+  /// Organizer's public reply.
+  response    String?
+  published   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  trip      Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  organizer Organizer @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking   Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([organizerId])
+}
+
+// ---------------------------------------------------------------------------
+// Trip communities
+// ---------------------------------------------------------------------------
+
+/// Every departure gets exactly one private group. Membership is derived from
+/// confirmed bookings — there is no way to join a conversation without one.
+model Conversation {
+  id         String @id @default(cuid())
+  tripDateId String @unique
+  title      String
+
+  createdAt DateTime @default(now())
+
+  departure TripDate             @relation(fields: [tripDateId], references: [id], onDelete: Cascade)
+  members   ConversationMember[]
+  messages  Message[]
+}
+
+model ConversationMember {
+  id             String    @id @default(cuid())
+  conversationId String
+  userId         String
+  /// ORGANIZER | TRAVELER | ADMIN
+  role           String    @default("TRAVELER")
+  joinedAt       DateTime  @default(now())
+  lastReadAt     DateTime?
+  muted          Boolean   @default(false)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             String  @id @default(cuid())
+  conversationId String
+  userId         String
+  body           String
+  /// TEXT | ANNOUNCEMENT | SYSTEM | IMAGE
+  kind           String  @default("TEXT")
+  /// JSON array of attachment URLs.
+  attachments    String  @default("[]")
+  pinned         Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Impact
+// ---------------------------------------------------------------------------
+
+model ImpactProject {
+  id          String @id @default(cuid())
+  title       String
+  slug        String @unique
+  /// EDUCATION | HEALTHCARE | CLEAN_WATER | COMMUNITY | CONSERVATION
+  category    String
+  /// DRAFT | ACTIVE | FUNDED | COMPLETED | PAUSED
+  status      String @default("DRAFT")
+  summary     String
+  description String
+
+  location  String
+  country   String @default("Tanzania")
+  latitude  Float?
+  longitude Float?
+
+  /// Integer minor units of `currency`.
+  goal             Int
+  raised           Int     @default(0)
+  currency         String  @default("TZS")
+  contributorCount Int     @default(0)
+  /// Number of people the project is planned to reach. A stated plan, not a
+  /// claim of results.
+  beneficiaries    Int?
+
+  heroImage String
+  gallery   String @default("[]")
+  /// JSON array of { label, percent, note } describing how contributions are
+  /// earmarked. Planned allocation — not an audited financial statement.
+  allocation String @default("[]")
+
+  /// Implementing partner. Left null until a real partnership is documented.
+  partnerName String?
+  partnerNote String?
+  featured    Boolean @default(false)
+  isDemo      Boolean @default(false)
+
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  donations Donation[]
+  updates   ImpactUpdate[]
+  trips     Trip[]
+  bookings  Booking[]
+
+  @@index([category, status])
+}
+
+model Donation {
+  id        String  @id @default(cuid())
+  projectId String
+  /// Null for guest contributions.
+  userId    String?
+  /// Set when the contribution was added during trip checkout.
+  bookingId String?
+  amount    Int
+  currency  String  @default("TZS")
+  /// INITIATED | PENDING | SUCCEEDED | FAILED | REFUNDED
+  status    String  @default("SUCCEEDED")
+  anonymous Boolean @default(false)
+  message   String?
+  donorName String?
+
+  createdAt DateTime @default(now())
+
+  project ImpactProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  booking Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, status])
+  @@index([userId])
+}
+
+/// Progress reports on a project. The transparency promise lives here: goal,
+/// raised, and a dated trail of what actually happened.
+model ImpactUpdate {
+  id        String   @id @default(cuid())
+  projectId String
+  title     String
+  body      String
+  images    String   @default("[]")
+  /// Flags a completed milestone rather than a routine note.
+  milestone Boolean  @default(false)
+  published Boolean  @default(true)
+  publishedAt DateTime @default(now())
+
+  project ImpactProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, publishedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Demand capture & messaging
+// ---------------------------------------------------------------------------
+
+model CustomTripRequest {
+  id            String    @id @default(cuid())
+  userId        String?
+  contactName   String
+  contactEmail  String
+  contactPhone  String?
+  destination   String
+  startDate     DateTime?
+  endDate       DateTime?
+  travellers    Int       @default(2)
+  budget        Int?
+  currency      String    @default("TZS")
+  /// BUDGET | COMFORT | LUXURY
+  style         String    @default("COMFORT")
+  accommodation String?
+  /// JSON string array of requested activities.
+  activities    String    @default("[]")
+  notes         String?
+  /// NEW | MATCHING | QUOTED | CONVERTED | CLOSED
+  status        String    @default("NEW")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+}
+
+model Notification {
+  id     String  @id @default(cuid())
+  userId String
+  type   String
+  title  String
+  body   String
+  link   String?
+  read   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+/// Key/value store for platform-wide settings an admin can change without a
+/// deploy (commission default, demo-data banner, feature flags).
+model PlatformSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

@@ -24,6 +24,10 @@ apiRouter.get(
     res.json({
       status: 'ok',
       time: new Date().toISOString(),
+      // Which commit is actually serving. Render sets RENDER_GIT_COMMIT on every
+      // deploy; a failed build keeps the previous commit running, and this is
+      // how to tell from outside.
+      version: process.env.RENDER_GIT_COMMIT?.slice(0, 7) ?? 'local',
       // Stated plainly so no client has to guess whether money can actually move.
       payments: { provider: gateway.name, live: gateway.isLive },
       demoData: await hasDemoData(),
