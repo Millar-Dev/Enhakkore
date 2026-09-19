@@ -4,6 +4,7 @@ import { TRAVEL_STYLES, TRIP_TYPES } from '@enhakkore/shared';
 import type { Prisma } from '@prisma/client';
 import { ApiError, pageParams, paginated, route } from '../lib/http';
 import { prisma } from '../lib/prisma';
+import { textContains } from '../lib/search';
 import { toTripDetail, toTripSummary } from '../serializers';
 
 export const tripsRouter = Router();
@@ -51,18 +52,18 @@ tripsRouter.get(
     if (query.q) {
       and.push({
         OR: [
-          { title: { contains: query.q } },
-          { summary: { contains: query.q } },
-          { destination: { name: { contains: query.q } } },
-          { destination: { country: { contains: query.q } } },
-          { organizer: { companyName: { contains: query.q } } },
+          { title: textContains(query.q) },
+          { summary: textContains(query.q) },
+          { destination: { name: textContains(query.q) } },
+          { destination: { country: textContains(query.q) } },
+          { organizer: { companyName: textContains(query.q) } },
         ],
       });
     }
     if (query.destination) {
-      and.push({ destination: { OR: [{ slug: query.destination }, { name: { contains: query.destination } }] } });
+      and.push({ destination: { OR: [{ slug: query.destination }, { name: textContains(query.destination) }] } });
     }
-    if (query.country) and.push({ destination: { country: { contains: query.country } } });
+    if (query.country) and.push({ destination: { country: textContains(query.country) } });
     if (query.organizer) and.push({ organizer: { slug: query.organizer } });
 
     const types = splitList(query.type).filter((t) => TRIP_TYPES.includes(t as never));

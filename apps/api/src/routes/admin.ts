@@ -5,6 +5,7 @@ import { ApiError, pageParams, paginated, route } from '../lib/http';
 import { uniqueSlug } from '../lib/ids';
 import { stringify } from '../lib/json';
 import { prisma } from '../lib/prisma';
+import { textContains } from '../lib/search';
 import { requireAdmin, requireAuth } from '../middleware/auth';
 import { notify } from '../services/notifications';
 import { platformStats } from '../services/stats';
@@ -72,7 +73,7 @@ adminRouter.get(
     }
     if (typeof req.query.q === 'string' && req.query.q.trim()) {
       const q = req.query.q.trim();
-      where.OR = [{ name: { contains: q } }, { email: { contains: q } }];
+      where.OR = [{ name: textContains(q) }, { email: textContains(q) }];
     }
 
     const [rows, total] = await Promise.all([
@@ -144,7 +145,7 @@ adminRouter.get(
       where.verificationStatus = req.query.status.toUpperCase();
     }
     if (typeof req.query.q === 'string' && req.query.q.trim()) {
-      where.companyName = { contains: req.query.q.trim() };
+      where.companyName = textContains(req.query.q.trim());
     }
 
     const [rows, total] = await Promise.all([
@@ -284,7 +285,7 @@ adminRouter.get(
       where.status = req.query.status.toUpperCase();
     }
     if (typeof req.query.q === 'string' && req.query.q.trim()) {
-      where.title = { contains: req.query.q.trim() };
+      where.title = textContains(req.query.q.trim());
     }
 
     const [rows, total] = await Promise.all([
@@ -374,7 +375,7 @@ adminRouter.get(
       where.status = req.query.status.toUpperCase();
     }
     if (typeof req.query.q === 'string' && req.query.q.trim()) {
-      where.reference = { contains: req.query.q.trim().toUpperCase() };
+      where.reference = textContains(req.query.q.trim().toUpperCase());
     }
 
     const [rows, total] = await Promise.all([

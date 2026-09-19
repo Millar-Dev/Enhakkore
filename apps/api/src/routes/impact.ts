@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { IMPACT_CATEGORIES, money } from '@enhakkore/shared';
 import { ApiError, pageParams, paginated, route } from '../lib/http';
 import { prisma } from '../lib/prisma';
+import { textContains } from '../lib/search';
 import { paymentGateway } from '../services/payments';
 import { paymentReference } from '../lib/ids';
 import { optionalAuth } from '../middleware/auth';
@@ -41,9 +42,9 @@ impactRouter.get(
     if (query.featured) where.featured = true;
     if (query.q) {
       where.OR = [
-        { title: { contains: query.q } },
-        { summary: { contains: query.q } },
-        { location: { contains: query.q } },
+        { title: textContains(query.q) },
+        { summary: textContains(query.q) },
+        { location: textContains(query.q) },
       ];
     }
 

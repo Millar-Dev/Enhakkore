@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { route } from '../lib/http';
 import { prisma } from '../lib/prisma';
+import { textContains } from '../lib/search';
 import { toDestination } from '../serializers';
 
 export const destinationsRouter = Router();
@@ -31,7 +32,7 @@ destinationsRouter.get(
     if (q.length < 2) return res.json({ items: [] });
 
     const rows = await prisma.destination.findMany({
-      where: { OR: [{ name: { contains: q } }, { country: { contains: q } }, { region: { contains: q } }] },
+      where: { OR: [{ name: textContains(q) }, { country: textContains(q) }, { region: textContains(q) }] },
       include: { _count: { select: { trips: { where: { status: 'PUBLISHED' } } } } },
       take: 8,
     });
