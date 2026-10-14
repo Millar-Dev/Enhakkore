@@ -1,0 +1,85 @@
+# Runs the test suite on every push and every pull request.
+#
+# The tests run twice: once on SQLite (what the local machine uses) and once on
+# a real PostgreSQL server (what the live site uses). Both matter — a bug that
+# only shows up on PostgreSQL once reached the live site unnoticed, because
+# SQLite compares text case-insensitively and PostgreSQL does not.
+#
+# The PostgreSQL leg rebuilds the database by applying the real migrations, so
+# it also proves the migrations still produce a working database.
+
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # A newer push to the same branch makes an in-flight run pointless.
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests (${{ matrix.database }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      # Run both databases even if one fails, so the report shows which.
+      fail-fast: false
+      matrix:
+        database: [sqlite, postgresql]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      # The database the PostgreSQL leg erases and rebuilds. Started here rather
+      # than as a job service so the SQLite leg does not pay for it.
+      - name: Start PostgreSQL
+        if: matrix.database == 'postgresql'
+        run: |
+          docker run -d --name postgres \
+            -e POSTGRES_PASSWORD=postgres \
+            -e POSTGRES_DB=enhakkore_test \
+            -p 5432:5432 \
+            --health-cmd "pg_isready -U postgres" \
+            --health-interval 2s \
+            --health-timeout 5s \
+            --health-retries 20 \
+            postgres:16-alpine
+          until [ "$(docker inspect -f '{{.State.Health.Status}}' postgres)" = healthy ]; do
+            sleep 1
+          done
+
+      - name: Install
+        run: npm ci
+
+      # @enhakkore/shared is consumed as a built package; this normally happens
+      # through its prepare script, but an install that skips lifecycle scripts
+      # would leave dist missing and every import would fail to resolve.
+      - name: Build the shared package
+        run: npm run build:shared
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Shared tests
+        run: npm run test --workspace @enhakkore/shared
+
+      - name: API tests
+        run: npm run test --workspace @enhakkore/api
+        env:
+          TEST_DATABASE_URL: ${{ matrix.database == 'postgresql' && 'postgresql://postgres:postgres@localhost:5432/enhakkore_test?schema=public' || '' }}
+
+      - name: Web build
+        run: npm run build --workspace @enhakkore/web
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          API_URL: http://localhost:4000/api

@@ -21,7 +21,8 @@
     "remote:studio": "node scripts/remote.js studio",
     "remote:reset": "node scripts/remote.js reset",
     "db:seed:if-empty": "tsx prisma/seed.ts --if-empty",
-    "migration:new": "node scripts/migration-new.js"
+    "migration:new": "node scripts/migration-new.js",
+    "test": "node scripts/test.js"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

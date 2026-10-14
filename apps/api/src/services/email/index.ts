@@ -30,7 +30,17 @@ export interface EmailResult {
   error?: string;
 }
 
+/**
+ * Messages "sent" while NODE_ENV=test, so automated tests can read them (the
+ * reset link, for instance) without parsing logs. Empty in every other mode.
+ */
+export const testOutbox: OutgoingEmail[] = [];
+
 async function sendViaConsole(message: OutgoingEmail): Promise<EmailResult> {
+  if (env.nodeEnv === 'test') {
+    testOutbox.push(message);
+    return { delivered: false, provider: 'console' };
+  }
   if (env.isProduction) {
     console.warn(
       `[email] not sent — no email provider configured. to=${message.to} subject="${message.subject}"`,

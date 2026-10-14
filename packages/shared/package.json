@@ -11,13 +11,16 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "//prepare": "npm runs this automatically after any install, so `dist` exists before anything imports it. Without it a fresh clone — and any CI or hosting build — fails to resolve @enhakkore/shared.",
-    "prepare": "tsc -p tsconfig.json"
+    "prepare": "tsc -p tsconfig.json",
+    "test": "node --import tsx --test \"tests/**/*.test.ts\""
   },
   "devDependencies": {
     "typescript": "^5.7.3"

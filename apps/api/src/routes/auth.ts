@@ -23,7 +23,9 @@ export const authRouter = Router();
 // tighter budget than the rest of the API.
 const credentialLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 20,
+  // Strict in production; roomy elsewhere so local work and automated tests,
+  // which sign in many times a minute, are not locked out.
+  limit: env.isProduction ? 20 : 400,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: { code: 'rate_limited', message: 'Too many attempts. Try again in a few minutes.' } },
