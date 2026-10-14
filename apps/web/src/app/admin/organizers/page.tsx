@@ -31,7 +31,7 @@ interface AdminOrganizer extends OrganizerDetail {
     contactPhone: string;
     status: string;
     submittedAt: string;
-    documents: string;
+    documents: { id: string; label: string; fileName: string; bytes: number; uploadedAt: string }[];
   } | null;
 }
 
@@ -68,6 +68,25 @@ function OrganizerQueue() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  /**
+   * Opens one submitted document. The tab is opened first and pointed at the
+   * link afterwards: a browser blocks a tab opened once a request has already
+   * been awaited.
+   */
+  async function openDocument(organizerId: string, documentId: string) {
+    const tab = window.open('', '_blank', 'noopener');
+    try {
+      const { url } = await api.get<{ url: string }>(
+        `/admin/organizers/${organizerId}/documents/${documentId}`,
+      );
+      if (tab) tab.location.href = url;
+      else window.location.href = url;
+    } catch {
+      tab?.close();
+      setError('That document could not be opened.');
+    }
+  }
 
   async function decide(organizer: AdminOrganizer, decision: 'VERIFIED' | 'REJECTED' | 'SUSPENDED') {
     const note = notes[organizer.id]?.trim();
@@ -148,7 +167,7 @@ function OrganizerQueue() {
       ) : (
         <div className="space-y-5">
           {organizers.map((organizer) => {
-            const documents = safeParse(organizer.verification?.documents);
+            const documents = organizer.verification?.documents ?? [];
             return (
               <Card key={organizer.id} className="p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
@@ -220,12 +239,22 @@ function OrganizerQueue() {
                       Documents submitted
                     </p>
                     <ul className="mt-2 flex flex-wrap gap-2">
-                      {documents.map((document, index) => (
-                        <li key={index}>
-                          <Badge tone="neutral">{document.label}</Badge>
+                      {documents.map((document) => (
+                        <li key={document.id}>
+                          <button
+                            type="button"
+                            onClick={() => openDocument(organizer.id, document.id)}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-line-strong px-3 py-1 text-[0.8125rem] font-medium transition-colors hover:border-ink hover:bg-sand focus:outline-none focus:ring-4 focus:ring-acacia-600/10"
+                          >
+                            {document.label}
+                            <span className="text-ink-faint">· open</span>
+                          </button>
                         </li>
                       ))}
                     </ul>
+                    <p className="mt-2 text-[0.75rem] text-ink-faint">
+                      Each link works for ten minutes and is not shareable afterwards.
+                    </p>
                   </div>
                 )}
 
@@ -297,16 +326,6 @@ function Field({ label, value }: { label: string; value: string }) {
       <p className="mt-1 text-[0.875rem] font-medium">{value}</p>
     </div>
   );
-}
-
-function safeParse(value: string | undefined): { label: string }[] {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
 }
 
 export default function AdminOrganizersPage() {

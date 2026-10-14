@@ -3,21 +3,80 @@ import { z } from 'zod';
 import type { Prisma } from '@prisma/client';
 import { ApiError, pageParams, paginated, route } from '../lib/http';
 import { uniqueSlug } from '../lib/ids';
-import { stringify } from '../lib/json';
+import { parseObjects, stringify } from '../lib/json';
 import { prisma } from '../lib/prisma';
 import { requireAuth, requireOrganizer } from '../middleware/auth';
 import { notify } from '../services/notifications';
 import { organizerStats } from '../services/stats';
+import { assetBelongsTo, baseUrlOf, fileStorage } from '../services/storage';
 import { toBooking, toOrganizerDetail, toTripDetail, toTripSummary } from '../serializers';
 import { ORGANIZER_WITH_COUNT } from '../lib/includes';
 
 export const organizersRouter = Router();
+
+/**
+ * A verification document as stored. The file itself is never public: only its
+ * label and name are listed, and the bytes come one request at a time through
+ * the download route below.
+ */
+export interface StoredDocument {
+  id: string;
+  label: string;
+  fileName: string;
+  assetId: string;
+  format: string;
+  bytes: number;
+  uploadedAt: string;
+}
+
+/** The listing shown to the operator and to an admin — never the file itself. */
+export function documentsOf(value: string | null | undefined) {
+  return parseObjects<StoredDocument>(value).map((doc) => ({
+    id: doc.id,
+    label: doc.label,
+    fileName: doc.fileName,
+    bytes: doc.bytes,
+    uploadedAt: doc.uploadedAt,
+  }));
+}
+
+/**
+ * Hands over a link to one verification document.
+ *
+ * Shared by the operator's own route and the admin route, because the rule is
+ * the same in both: resolve the document, then issue a link that stops working
+ * within minutes. The file has no public address of its own.
+ *
+ * A link rather than the file itself, because opening it is a plain browser
+ * navigation, which cannot carry the session header this API expects.
+ */
+export async function sendDocument(
+  documentsJson: string,
+  documentId: string,
+  req: import('express').Request,
+  res: import('express').Response,
+) {
+  const doc = parseObjects<StoredDocument>(documentsJson).find((item) => item.id === documentId);
+  if (!doc) throw ApiError.notFound('That document is not on file.');
+
+  const url = await fileStorage().privateUrl(doc.assetId, doc.format, baseUrlOf(req));
+  res.setHeader('Cache-Control', 'no-store, private');
+  res.json({ url, fileName: doc.fileName, expiresInMinutes: 10 });
+}
 
 const TRIP_INCLUDE = {
   destination: true,
   organizer: ORGANIZER_WITH_COUNT,
   departures: { orderBy: { startDate: 'asc' as const } },
 };
+
+const workspace = Router();
+workspace.use(requireAuth, requireOrganizer);
+
+// Mounted ahead of the public profile route below: `/:slug` matches any single
+// segment, so it would otherwise swallow `/me` and look for an operator whose
+// web address is "me".
+organizersRouter.use('/me', workspace);
 
 /* -------------------------------------------------------------------------- */
 /* Public organizer profiles                                                   */
@@ -46,9 +105,6 @@ organizersRouter.get(
 /* Organizer workspace — everything below requires an organizer account         */
 /* -------------------------------------------------------------------------- */
 
-const workspace = Router();
-workspace.use(requireAuth, requireOrganizer);
-organizersRouter.use('/me', workspace);
 
 workspace.get(
   '/',
@@ -66,6 +122,7 @@ workspace.get(
             submittedAt: organizer.verification.submittedAt,
             reviewedAt: organizer.verification.reviewedAt,
             reviewNotes: organizer.verification.reviewNotes,
+            documents: documentsOf(organizer.verification.documents),
           }
         : null,
     });
@@ -127,7 +184,18 @@ const verificationSchema = z.object({
   contactPhone: z.string().trim().min(6, 'Enter a reachable phone number.').max(40),
   addressLine: z.string().trim().max(240).optional(),
   documents: z
-    .array(z.object({ label: z.string().trim().max(80), fileName: z.string().trim().max(200) }))
+    .array(
+      z.object({
+        label: z.string().trim().max(80),
+        fileName: z.string().trim().max(200),
+        /** Proof the file really was uploaded; see services/storage. */
+        assetId: z.string().trim().min(8).max(200),
+        version: z.string().trim().max(40),
+        signature: z.string().trim().max(200),
+        format: z.string().trim().max(10).optional(),
+        bytes: z.number().int().nonnegative().optional(),
+      }),
+    )
     .max(10)
     .default([]),
   payoutMethod: z.enum(['MOBILE_MONEY', 'BANK']).optional(),
@@ -152,6 +220,27 @@ workspace.post(
       throw ApiError.conflict('This account is already verified.', 'already_verified');
     }
 
+    // Every document is checked with the storage provider before its id is
+    // written down: the browser proves the file exists and is the one this
+    // account was given permission to upload, rather than being believed.
+    const storage = fileStorage();
+    const documents = [];
+    for (const doc of input.documents) {
+      if (!assetBelongsTo(doc.assetId, req.auth!.id, 'VERIFICATION_DOCUMENT')) {
+        throw ApiError.forbidden('That file belongs to another account.');
+      }
+      const stored = await storage.verify('VERIFICATION_DOCUMENT', doc, baseUrlOf(req));
+      documents.push({
+        id: doc.assetId.split('/').pop()!,
+        label: doc.label,
+        fileName: doc.fileName,
+        assetId: stored.assetId,
+        format: stored.format,
+        bytes: stored.bytes,
+        uploadedAt: new Date().toISOString(),
+      });
+    }
+
     const payload = {
       legalName: input.legalName,
       registrationNumber: input.registrationNumber ?? null,
@@ -161,9 +250,7 @@ workspace.post(
       contactEmail: input.contactEmail,
       contactPhone: input.contactPhone,
       addressLine: input.addressLine ?? null,
-      documents: stringify(
-        input.documents.map((doc) => ({ ...doc, uploadedAt: new Date().toISOString() })),
-      ),
+      documents: stringify(documents),
       payoutMethod: input.payoutMethod ?? null,
       payoutReference: input.payoutReference ?? null,
       status: 'PENDING',
@@ -181,6 +268,22 @@ workspace.post(
     await prisma.organizer.update({ where: { id: organizerId }, data: { verificationStatus: 'PENDING' } });
 
     res.status(201).json({ status: 'PENDING' });
+  }),
+);
+
+/**
+ * The operator's own copy of a document they submitted. Someone else's
+ * document is not "forbidden" here but absent: an operator has no way to learn
+ * that another operator's document exists.
+ */
+workspace.get(
+  '/verification/documents/:documentId/download',
+  route(async (req, res) => {
+    const verification = await prisma.organizerVerification.findUnique({
+      where: { organizerId: req.auth!.organizerId! },
+    });
+    if (!verification) throw ApiError.notFound('That document is not on file.');
+    await sendDocument(verification.documents, req.params.documentId!, req, res);
   }),
 );
 

@@ -279,7 +279,7 @@ Client-side role checks exist for UX only. The API decides independently.
 npm test
 ```
 
-Fifty-nine tests over the parts where a mistake costs money, leaks someone's
+Seventy-three tests over the parts where a mistake costs money, leaks someone's
 details, or lets the wrong person in:
 
 | File | Covers |
@@ -289,6 +289,7 @@ details, or lets the wrong person in:
 | `apps/api/tests/permissions.test.ts` | Who may see and do what — travellers, operators, admins, suspended accounts, and private trip groups |
 | `apps/api/tests/password-reset.test.ts` | Every reset rule: single use, expiry, the identical reply for unknown addresses, other devices signed out |
 | `apps/api/tests/marketplace.test.ts` | What a visitor sees before signing in, and that a contribution only counts once its payment succeeds |
+| `apps/api/tests/uploads.test.ts` | That the browser cannot choose where a file lands or claim one it did not upload, and that a verification document opens only for its owner and an admin |
 
 The suite wipes and rebuilds a throwaway database before each run, so it can
 never touch development or live data. By default that is SQLite
@@ -306,6 +307,33 @@ GitHub runs the suite on both databases for every push and pull request
 ([.github/workflows/test.yml](.github/workflows/test.yml)). The second database
 is the point: the case-sensitive search bug passed locally and failed live
 because SQLite and PostgreSQL disagree about comparing text.
+
+---
+
+## Uploads
+
+Operators upload trip photos and their verification documents; travellers
+upload a profile photo. One seam, two adapters, the same shape as payments and
+email:
+
+| | Without credentials | With `CLOUDINARY_*` set |
+|---|---|---|
+| Where files go | `apps/api/uploads/` on this machine | Cloudinary |
+| Suitable for | development | hosting — a hosted disk is wiped on every deploy |
+| Photos | served as uploaded | resized and converted per visitor |
+
+The browser never decides anything. It asks the API for permission, and the
+reply names the exact id the file must be stored under — an id containing the
+account's own id, so one account cannot write into another's folder. Afterwards
+the provider's own signature is checked before any id is written down, so a
+browser cannot invent an upload or claim someone else's.
+
+**Verification documents are private.** They are stored with no working public
+address. The only way to open one is through the site, as the operator who
+uploaded it or as an administrator reviewing it, and that produces a link which
+stops working after ten minutes.
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) Part G to connect Cloudinary.
 
 ---
 
@@ -338,7 +366,7 @@ The short version:
 4. Replace demo imagery with licensed photography.
 5. Push notification delivery — `services/notifications.ts` is the single
    fan-out point. Email is already wired (see `services/email`).
-6. Connect file upload for organizer documents and trip images.
+6. Connect an image service so uploads survive a deploy — see Uploads above.
 7. Set a real `JWT_SECRET`; the API refuses to boot in production with the
    placeholder.
 8. Run a real verification check on the first operators.

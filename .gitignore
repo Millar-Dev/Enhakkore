@@ -46,3 +46,6 @@ Thumbs.db
 coverage/
 .turbo/
 .cache/
+
+# Uploaded files held on local disk while no image service is configured.
+apps/api/uploads/

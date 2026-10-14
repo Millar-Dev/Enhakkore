@@ -7,6 +7,7 @@ import { TRAVEL_STYLES, TRAVEL_STYLE_LABELS, TRIP_TYPES, TRIP_TYPE_LABELS } from
 import { DashboardShell, ORGANIZER_NAV } from '@/components/layout/DashboardShell';
 import { Alert, Button, Card, Divider, Icon, cx } from '@/components/ui';
 import { Input, Select, Textarea } from '@/components/ui/form';
+import { ImageUpload } from '@/components/uploads/ImageUpload';
 import { ApiError, api } from '@/lib/api';
 import { useSession } from '@/lib/session';
 
@@ -352,22 +353,21 @@ export default function CreateTripPage() {
 
             <Divider />
 
-            <Input
-              label="Cover image URL"
+            <ImageUpload
+              label="Cover photo"
               required
-              value={basics.heroImage}
-              onChange={(event) => setBasics({ ...basics, heroImage: event.target.value })}
+              value={basics.heroImage ? [basics.heroImage] : []}
+              onChange={(urls) => setBasics({ ...basics, heroImage: urls[0] ?? '' })}
               error={fields.heroImage}
-              placeholder="https://…"
-              hint="Direct file upload is not connected in this build — paste a hosted image URL for now."
+              hint="The one photo travellers see first, in search results and at the top of the listing. Landscape works best."
             />
 
-            <Input
-              label="Gallery image URLs"
-              value={basics.gallery}
-              onChange={(event) => setBasics({ ...basics, gallery: event.target.value })}
-              placeholder="https://…, https://…"
-              hint="Comma separated. Up to 12."
+            <ImageUpload
+              label="Gallery"
+              max={12}
+              value={basics.gallery ? basics.gallery.split(',').map((url) => url.trim()).filter(Boolean) : []}
+              onChange={(urls) => setBasics({ ...basics, gallery: urls.join(',') })}
+              hint="Up to 12 more photos of the trip. Shown on the listing page."
             />
 
             <div className="grid gap-5 sm:grid-cols-3">

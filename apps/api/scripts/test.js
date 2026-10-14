@@ -41,6 +41,14 @@ function run(label, command, args, { input } = {}) {
     console.log('FAILED\n');
     console.log(result.stdout);
     console.error(result.stderr);
+    // Windows will not let one process replace a file another holds open, and
+    // `npm run dev` keeps the database engine open for as long as it runs.
+    if (/EPERM|EBUSY/.test(`${result.stdout}${result.stderr}`)) {
+      console.error(
+        '\n  The database engine is in use by another process.\n' +
+          '  Stop the development server (Ctrl+C where `npm run dev` is running), then try again.\n',
+      );
+    }
     process.exit(result.status ?? 1);
   }
   console.log('ok');

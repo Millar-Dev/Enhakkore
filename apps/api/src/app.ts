@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
@@ -42,6 +43,16 @@ export function createApp() {
   // Resolves the viewer once, for every route. Routes that require a session
   // add requireAuth on top; the rest can simply read req.auth when present.
   app.use(optionalAuth);
+
+  // Files held on local disk while no Cloudinary account is configured. Only
+  // the public half is served this way; verification documents live in a
+  // separate directory that is never mounted, and are released one request at a
+  // time by a route that checks who is asking.
+  if (env.storage.provider === 'local') {
+    const publicDir = `${env.storage.localDir}/public`;
+    fs.mkdirSync(publicDir, { recursive: true });
+    app.use('/uploads', express.static(publicDir, { maxAge: '1y', index: false, dotfiles: 'deny' }));
+  }
 
   app.use('/api', apiRouter);
 

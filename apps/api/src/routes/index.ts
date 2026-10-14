@@ -13,6 +13,7 @@ import { meRouter } from './me';
 import { organizersRouter } from './organizers';
 import { requestsRouter } from './requests';
 import { tripsRouter } from './trips';
+import { uploadsRouter } from './uploads';
 
 export const apiRouter = Router();
 
@@ -60,5 +61,6 @@ apiRouter.use('/bookings', bookingsRouter);
 apiRouter.use('/impact', impactRouter);
 apiRouter.use('/conversations', conversationsRouter);
 apiRouter.use('/requests', requestsRouter);
+apiRouter.use('/uploads', uploadsRouter);
 apiRouter.use('/me', meRouter);
 apiRouter.use('/admin', adminRouter);

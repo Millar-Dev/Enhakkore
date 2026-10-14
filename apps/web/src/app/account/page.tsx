@@ -16,6 +16,7 @@ import {
   StatTile,
 } from '@/components/ui';
 import { Input, Textarea } from '@/components/ui/form';
+import { ImageUpload } from '@/components/uploads/ImageUpload';
 import { ApiError, api } from '@/lib/api';
 import { dateRange, formatDate, price } from '@/lib/format';
 import { useSession } from '@/lib/session';
@@ -33,7 +34,7 @@ export default function ProfilePage() {
   const [upcoming, setUpcoming] = useState<BookingDto[]>([]);
 
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: '', city: '', country: '', bio: '', phone: '' });
+  const [form, setForm] = useState({ name: '', city: '', country: '', bio: '', phone: '', avatarUrl: '' });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +47,7 @@ export default function ProfilePage() {
       country: user.country ?? '',
       bio: user.bio ?? '',
       phone: '',
+      avatarUrl: user.avatarUrl ?? '',
     });
   }, [user]);
 
@@ -81,6 +83,7 @@ export default function ProfilePage() {
         country: form.country,
         bio: form.bio,
         phone: form.phone || undefined,
+        avatarUrl: form.avatarUrl,
       });
       if (updated) updateUser(updated);
       setMessage('Your profile is updated.');
@@ -133,6 +136,13 @@ export default function ProfilePage() {
             {editing && (
               <form onSubmit={save} className="mt-8 space-y-4">
                 {error && <Alert tone="danger">{error}</Alert>}
+                <ImageUpload
+                  label="Profile photo"
+                  kind="AVATAR"
+                  value={form.avatarUrl ? [form.avatarUrl] : []}
+                  onChange={(urls) => setForm({ ...form, avatarUrl: urls[0] ?? '' })}
+                  hint="Shown to fellow travellers in your trip groups. Optional."
+                />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Input
                     label="Name"

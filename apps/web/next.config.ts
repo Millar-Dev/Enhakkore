@@ -24,9 +24,17 @@ const nextConfig: NextConfig = {
   // The shared domain package is TypeScript source in the workspace.
   transpilePackages: ['@enhakkore/shared'],
   images: {
-    // Demonstration photography only. Replace with your own CDN host before
-    // launch — see apps/api/prisma/images.ts.
-    remotePatterns: [{ protocol: 'https', hostname: 'images.unsplash.com' }],
+    remotePatterns: [
+      // Demonstration photography. Replace with your own before launch — see
+      // apps/api/prisma/images.ts.
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      // Photos uploaded by operators and travellers.
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      // The same uploads while developing, when they are served by the API
+      // itself because no image service is configured.
+      { protocol: 'http', hostname: 'localhost', port: '4000' },
+      { protocol: 'http', hostname: '127.0.0.1', port: '4000' },
+    ],
     formats: ['image/avif', 'image/webp'],
   },
   eslint: {

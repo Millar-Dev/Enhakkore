@@ -5,6 +5,7 @@ import { VERIFICATION_STATUS_LABELS } from '@enhakkore/shared';
 import { DashboardShell, ORGANIZER_NAV } from '@/components/layout/DashboardShell';
 import { Alert, Badge, Button, Card, Divider, Icon, cx } from '@/components/ui';
 import { Input, Select } from '@/components/ui/form';
+import { DocumentUpload, type AttachedDocument } from '@/components/uploads/DocumentUpload';
 import { ApiError, api } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import { useSession } from '@/lib/session';
@@ -41,7 +42,7 @@ export default function VerificationPage() {
     payoutMethod: 'MOBILE_MONEY',
     payoutReference: '',
   });
-  const [documents, setDocuments] = useState<string[]>([]);
+  const [documents, setDocuments] = useState<AttachedDocument[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -59,12 +60,6 @@ export default function VerificationPage() {
   const verified = status === 'VERIFIED';
   const pending = status === 'PENDING';
 
-  function toggleDocument(label: string) {
-    setDocuments((current) =>
-      current.includes(label) ? current.filter((item) => item !== label) : [...current, label],
-    );
-  }
-
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -73,7 +68,15 @@ export default function VerificationPage() {
     try {
       await api.post('/organizers/me/verification', {
         ...form,
-        documents: documents.map((label) => ({ label, fileName: 'submitted-offline.pdf' })),
+        documents: documents.map((doc) => ({
+          label: doc.label,
+          fileName: doc.fileName,
+          assetId: doc.assetId,
+          version: doc.version,
+          signature: doc.signature,
+          format: doc.format,
+          bytes: doc.bytes,
+        })),
       });
       await refresh();
       setDone(true);
@@ -271,40 +274,13 @@ export default function VerificationPage() {
 
               <h3 className="text-[0.9375rem] font-bold tracking-tight">Documents</h3>
               <p className="mt-2 text-[0.875rem] leading-relaxed text-ink-muted">
-                File upload is not connected in this build. Tick what you can provide and email the files to{' '}
-                <a href="mailto:verify@enhakkore.com" className="font-semibold text-acacia-700 underline">
-                  verify@enhakkore.com
-                </a>{' '}
-                — this form records which documents you are submitting.
+                Attach what you can provide. Nothing here is checked automatically — an administrator opens
+                each document and decides.
               </p>
 
-              <ul className="mt-5 space-y-2.5">
-                {DOCUMENTS.map((document) => (
-                  <li key={document.label}>
-                    <label
-                      className={cx(
-                        'flex cursor-pointer items-center gap-3 rounded-[--radius-field] border px-4 py-3 transition-colors',
-                        documents.includes(document.label)
-                          ? 'border-acacia-600 bg-acacia-50'
-                          : 'border-line-strong hover:border-ink',
-                      )}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={documents.includes(document.label)}
-                        onChange={() => toggleDocument(document.label)}
-                        className="h-4 w-4 accent-acacia-700"
-                      />
-                      <span className="flex-1 text-[0.875rem] font-medium">{document.label}</span>
-                      {document.required && (
-                        <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-clay-600">
-                          Required
-                        </span>
-                      )}
-                    </label>
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-5">
+                <DocumentUpload types={DOCUMENTS} value={documents} onChange={setDocuments} disabled={busy} />
+              </div>
 
               <Divider className="my-7" />
 

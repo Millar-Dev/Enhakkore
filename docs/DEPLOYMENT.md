@@ -198,6 +198,66 @@ Vercel address). When the website moves to its own domain, update
 
 ---
 
+## Part G · Uploads (trip photos and verification documents)
+
+Operators upload cover photos and gallery photos for their trips, travellers
+upload a profile photo, and operators attach their business documents when they
+apply for verification.
+
+**Until you do anything, uploaded files are written to the API's own disk.**
+That works while developing on your computer. On Render it does **not**: the
+disk is replaced on every deploy, so anything uploaded disappears with the next
+release. The API log says so plainly at startup when no image service is set.
+
+### Creating the account (5 minutes)
+
+1. Go to <https://cloudinary.com> and click **Sign up for free**. No card is
+   asked for.
+2. Choose **Programmable Media** when it asks what you are building.
+3. You land on the dashboard. At the top is **Product Environment Credentials**
+   with three values: **Cloud name**, **API Key** and **API Secret**. Click the
+   eye icon to reveal the secret.
+4. Keep that tab open — the next step needs all three.
+
+### Connecting it (5 minutes)
+
+1. Render → your API service → **Environment**.
+2. Add three variables, pasting each value exactly:
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET`
+3. **Save and deploy**, and wait for the deploy to finish.
+
+That is all. The site switches over on its own — there is no setting to change
+in the code, and nothing to configure in Cloudinary itself.
+
+### Checking it worked
+
+1. Sign in as an operator and start creating a trip.
+2. At **Cover photo**, choose a photo. A progress bar runs, then the photo
+   appears.
+3. In Cloudinary → **Media Library**, there is now a folder `enhakkore/trips`
+   containing it.
+
+### What is private and what is not
+
+- **Trip photos and profile photos** are public. They are meant to be seen, and
+  are delivered resized and in a modern format so a phone photo does not reach
+  visitors at its original weight.
+- **Verification documents** are private. They are stored so that they have no
+  working public address at all. The only way to open one is through the site,
+  as the operator who uploaded it or as an administrator reviewing it, and the
+  link that produces stops working after ten minutes.
+
+### Cost
+
+The free plan gives 25 credits a month, where one credit is 1GB of storage, 1GB
+of traffic, or 1,000 image transformations. For a site with a few hundred trip
+photos this is not close to the limit. Cloudinary does not cut service off at
+the line — it contacts you about upgrading.
+
+---
+
 ## If something goes wrong
 
 | What you see | Cause | Fix |

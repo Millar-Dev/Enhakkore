@@ -8,6 +8,7 @@ import { prisma } from '../lib/prisma';
 import { textContains } from '../lib/search';
 import { requireAdmin, requireAuth } from '../middleware/auth';
 import { notify } from '../services/notifications';
+import { documentsOf, sendDocument } from './organizers';
 import { platformStats } from '../services/stats';
 import { releaseBooking } from '../services/bookings';
 import { paymentGateway } from '../services/payments';
@@ -178,7 +179,7 @@ adminRouter.get(
                 contactPhone: organizer.verification.contactPhone,
                 status: organizer.verification.status,
                 submittedAt: organizer.verification.submittedAt,
-                documents: organizer.verification.documents,
+                documents: documentsOf(organizer.verification.documents),
               }
             : null,
         })),
@@ -186,6 +187,18 @@ adminRouter.get(
         page,
       ),
     );
+  }),
+);
+
+/** An admin reviewing a submission can open the documents behind it. */
+adminRouter.get(
+  '/organizers/:organizerId/documents/:documentId',
+  route(async (req, res) => {
+    const verification = await prisma.organizerVerification.findUnique({
+      where: { organizerId: req.params.organizerId! },
+    });
+    if (!verification) throw ApiError.notFound('That document is not on file.');
+    await sendDocument(verification.documents, req.params.documentId!, req, res);
   }),
 );
 
