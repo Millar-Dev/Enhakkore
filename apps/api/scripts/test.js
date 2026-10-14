@@ -47,11 +47,19 @@ function run(label, command, args, { input } = {}) {
   return result;
 }
 
-/** Provider the currently generated Prisma client was built for. */
+/**
+ * Provider the currently generated Prisma client was built for.
+ *
+ * Read from the generated client itself, which records it as `activeProvider`
+ * and is rewritten by every `prisma generate`. The schema copy sitting beside
+ * it is NOT rewritten reliably — trusting that one let a stale file claim
+ * SQLite while the real client spoke PostgreSQL, and the run then failed in
+ * the seed with a confusing datasource error.
+ */
 function generatedProvider() {
   try {
-    const generated = require.resolve('.prisma/client/schema.prisma', { paths: [API_DIR] });
-    return fs.readFileSync(generated, 'utf8').match(/datasource\s+db\s*\{[^}]*?provider\s*=\s*"([^"]+)"/)?.[1] ?? null;
+    const generated = require.resolve('.prisma/client', { paths: [API_DIR] });
+    return fs.readFileSync(generated, 'utf8').match(/"activeProvider":\s*"([^"]+)"/)?.[1] ?? null;
   } catch {
     return null;
   }
