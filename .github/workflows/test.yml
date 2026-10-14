@@ -1,11 +1,11 @@
-# Runs the test suite on every push and every pull request.
+# Runs the checks and the test suite on every push and every pull request.
 #
-# The tests run twice: once on SQLite (what the local machine uses) and once on
-# a real PostgreSQL server (what the live site uses). Both matter — a bug that
-# only shows up on PostgreSQL once reached the live site unnoticed, because
-# SQLite compares text case-insensitively and PostgreSQL does not.
+# The tests run twice: once on SQLite (what a development machine uses) and
+# once on a real PostgreSQL server (what the live site uses). Both matter — a
+# bug that only appears on PostgreSQL once reached the live site unnoticed,
+# because SQLite compares text case-insensitively and PostgreSQL does not.
 #
-# The PostgreSQL leg rebuilds the database by applying the real migrations, so
+# The PostgreSQL run rebuilds the database by applying the real migrations, so
 # it also proves the migrations still produce a working database.
 
 name: Tests
@@ -22,15 +22,62 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  checks:
+    name: Typecheck and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # @enhakkore/shared is consumed as a built package. This normally happens
+      # through its prepare script; doing it explicitly means an install that
+      # skips lifecycle scripts cannot leave dist/ missing.
+      - name: Build the shared package
+        run: npm run build:shared
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Proves the site still compiles. No API or database is needed: every
+      # page that depends on live data is rendered on demand, not at build time.
+      - name: Build the website
+        run: npm run build --workspace @enhakkore/web
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          API_URL: http://localhost:4000/api
+
   test:
     name: Tests (${{ matrix.database }})
     runs-on: ubuntu-latest
 
     strategy:
-      # Run both databases even if one fails, so the report shows which.
+      # Run both databases even when one fails, so the report shows which.
       fail-fast: false
       matrix:
         database: [sqlite, postgresql]
+
+    # The database the PostgreSQL run erases and rebuilds. Started for both
+    # runs — the SQLite one simply ignores it, which costs a few seconds and
+    # keeps this file free of conditional service wiring.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: enhakkore_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - uses: actions/checkout@v5
@@ -40,35 +87,10 @@ jobs:
           node-version: 22
           cache: npm
 
-      # The database the PostgreSQL leg erases and rebuilds. Started here rather
-      # than as a job service so the SQLite leg does not pay for it.
-      - name: Start PostgreSQL
-        if: matrix.database == 'postgresql'
-        run: |
-          docker run -d --name postgres \
-            -e POSTGRES_PASSWORD=postgres \
-            -e POSTGRES_DB=enhakkore_test \
-            -p 5432:5432 \
-            --health-cmd "pg_isready -U postgres" \
-            --health-interval 2s \
-            --health-timeout 5s \
-            --health-retries 20 \
-            postgres:16-alpine
-          until [ "$(docker inspect -f '{{.State.Health.Status}}' postgres)" = healthy ]; do
-            sleep 1
-          done
+      - run: npm ci
 
-      - name: Install
-        run: npm ci
-
-      # @enhakkore/shared is consumed as a built package; this normally happens
-      # through its prepare script, but an install that skips lifecycle scripts
-      # would leave dist missing and every import would fail to resolve.
       - name: Build the shared package
         run: npm run build:shared
-
-      - name: Typecheck
-        run: npm run typecheck
 
       - name: Shared tests
         run: npm run test --workspace @enhakkore/shared
@@ -77,9 +99,3 @@ jobs:
         run: npm run test --workspace @enhakkore/api
         env:
           TEST_DATABASE_URL: ${{ matrix.database == 'postgresql' && 'postgresql://postgres:postgres@localhost:5432/enhakkore_test?schema=public' || '' }}
-
-      - name: Web build
-        run: npm run build --workspace @enhakkore/web
-        env:
-          NEXT_TELEMETRY_DISABLED: '1'
-          API_URL: http://localhost:4000/api

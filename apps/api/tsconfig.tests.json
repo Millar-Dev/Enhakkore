@@ -1,0 +1,10 @@
+{
+  "//": "Typechecks the tests as well as the source. Separate from tsconfig.json because that one emits dist/ and so is rooted at src/.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

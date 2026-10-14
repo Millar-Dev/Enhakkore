@@ -264,11 +264,48 @@ Client-side role checks exist for UX only. The API decides independently.
 | `npm run dev` | API and web together |
 | `npm run build` | Build all three packages |
 | `npm run typecheck` | TypeScript across the workspace |
+| `npm test` | The whole test suite, on a throwaway database |
 | `npm run setup` | install + db:push + db:seed |
 | `npm run build:web` | Build the shared package, then the web app (what hosting runs) |
 | `npm run build:api` | Build the shared package, then the API |
 | `npm run migration:new -- <name>` | After a schema change: write the migration for the live database, flagging anything that deletes data |
 | `npm run deploy:api` | The whole Render build: build, create tables, seed an empty database once |
+
+---
+
+## Tests
+
+```bash
+npm test
+```
+
+Fifty-nine tests over the parts where a mistake costs money, leaks someone's
+details, or lets the wrong person in:
+
+| File | Covers |
+|---|---|
+| `packages/shared/tests/money.test.ts` | Every amount is an integer in the currency's smallest unit; these are the conversions and formats where rounding can go wrong |
+| `apps/api/tests/bookings.test.ts` | Seats under simultaneous bookings, refusing to oversell, releasing seats when a payment fails, cancellation and refunds |
+| `apps/api/tests/permissions.test.ts` | Who may see and do what — travellers, operators, admins, suspended accounts, and private trip groups |
+| `apps/api/tests/password-reset.test.ts` | Every reset rule: single use, expiry, the identical reply for unknown addresses, other devices signed out |
+| `apps/api/tests/marketplace.test.ts` | What a visitor sees before signing in, and that a contribution only counts once its payment succeeds |
+
+The suite wipes and rebuilds a throwaway database before each run, so it can
+never touch development or live data. By default that is SQLite
+(`apps/api/prisma/test.db`); point `TEST_DATABASE_URL` at a PostgreSQL database
+to run against the kind of database the live site uses, which rebuilds it by
+applying the real migrations and so also proves the migrations still work:
+
+```bash
+TEST_DATABASE_URL=postgresql://user:password@host:5432/scratch npm test
+```
+
+**Never point `TEST_DATABASE_URL` at a database you care about — it is erased.**
+
+GitHub runs the suite on both databases for every push and pull request
+([.github/workflows/test.yml](.github/workflows/test.yml)). The second database
+is the point: the case-sensitive search bug passed locally and failed live
+because SQLite and PostgreSQL disagree about comparing text.
 
 ---
 
@@ -296,10 +333,11 @@ The short version:
    plainly that they are outstanding).
 2. Connect a payment provider — implement `PaymentGateway`, register it, set
    `PAYMENT_PROVIDER`.
-3. Move to PostgreSQL and take backups.
+3. Backups — the live site already runs on PostgreSQL; check what restore
+   window the plan actually gives you, and whether it is long enough.
 4. Replace demo imagery with licensed photography.
-5. Wire email and push notification delivery — `services/notifications.ts` is
-   the single fan-out point.
+5. Push notification delivery — `services/notifications.ts` is the single
+   fan-out point. Email is already wired (see `services/email`).
 6. Connect file upload for organizer documents and trip images.
 7. Set a real `JWT_SECRET`; the API refuses to boot in production with the
    placeholder.

@@ -8,7 +8,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "npm run datasource && prisma generate && tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json",
     "db:generate": "npm run datasource && prisma generate",
     "db:push": "npm run datasource && prisma db push --skip-generate && prisma generate",
     "db:studio": "prisma studio",
