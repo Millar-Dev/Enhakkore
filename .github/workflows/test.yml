@@ -41,6 +41,12 @@ jobs:
       - name: Build the shared package
         run: npm run build:shared
 
+      # The API's types come from the generated Prisma client, which does not
+      # exist in a fresh checkout. The test jobs generate it themselves; this
+      # one has to ask. No DATABASE_URL is needed — only the types.
+      - name: Generate the database client
+        run: npm run db:generate --workspace @enhakkore/api
+
       - name: Typecheck
         run: npm run typecheck
 

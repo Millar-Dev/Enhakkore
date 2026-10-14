@@ -70,7 +70,8 @@ try {
   if (generatedProvider() !== wanted) run(`generating the ${wanted} client`, 'npx', ['prisma', 'generate']);
 
   if (isPostgres) {
-    run('wiping the database', 'npx', ['prisma', 'db', 'execute', '--stdin'], {
+    // --schema is required: db execute never infers one, even with a datasource.
+    run('wiping the database', 'npx', ['prisma', 'db', 'execute', '--stdin', '--schema', 'prisma/schema.prisma'], {
       input: 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;',
     });
     run('applying every migration from scratch', 'npx', ['prisma', 'migrate', 'deploy']);
