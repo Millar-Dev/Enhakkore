@@ -76,46 +76,50 @@ function generatedProvider() {
 const originalSchema = fs.readFileSync(SCHEMA, 'utf8');
 let exitCode = 1;
 
-try {
-  console.log(`\nPreparing the test database (${isPostgres ? 'PostgreSQL' : 'SQLite'})`);
-  run('matching the schema to the database', 'node', ['scripts/sync-datasource.js']);
-
-  // Regenerating while a local dev server holds the engine file fails on
-  // Windows, so only regenerate when the client is for the other database.
-  const wanted = isPostgres ? 'postgresql' : 'sqlite';
-  if (generatedProvider() !== wanted) run(`generating the ${wanted} client`, 'npx', ['prisma', 'generate']);
-
-  if (isPostgres) {
-    // --schema is required: db execute never infers one, even with a datasource.
-    run('wiping the database', 'npx', ['prisma', 'db', 'execute', '--stdin', '--schema', 'prisma/schema.prisma'], {
-      input: 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;',
-    });
-    run('applying every migration from scratch', 'npx', ['prisma', 'migrate', 'deploy']);
-  } else {
-    // Start from no file at all rather than asking Prisma to wipe one: there is
-    // nothing to destroy, and no destructive command to get wrong. Only a file
-    // this runner owns is removed — never prisma/dev.db.
-    const file = path.resolve(API_DIR, 'prisma', url.replace(/^file:/, ''));
-    if (path.basename(file) !== 'test.db') {
-      console.error(`\n  Refusing to touch ${file} — the SQLite test database must be called test.db.\n`);
-      process.exit(1);
-    }
-    for (const suffix of ['', '-journal', '-wal', '-shm']) fs.rmSync(file + suffix, { force: true });
-    run('creating a fresh database', 'npx', ['prisma', 'db', 'push', '--skip-generate']);
-  }
-  run('loading the demonstration content', 'npx', ['tsx', 'prisma/seed.ts']);
-
-  console.log('\nRunning tests\n');
-  // One file at a time: every file shares the same database.
-  const tests = spawnSync(
-    'node',
-    ['--import', 'tsx', '--test', '--test-concurrency=1', '--test-reporter=spec', '"tests/**/*.test.ts"'],
-    { cwd: API_DIR, env, shell: true, stdio: 'inherit' },
-  );
-  exitCode = tests.status ?? 1;
-} finally {
-  // Leave the schema file exactly as it was (a Postgres run flips its provider).
+// Leave the schema file exactly as it was — a PostgreSQL run flips its
+// provider. Registered on `exit` rather than written as a `finally` block,
+// because a failing step calls process.exit, and process.exit does not run
+// finally blocks: a failed run used to leave the flipped provider behind, and
+// it was committed by accident.
+process.on('exit', () => {
   if (fs.readFileSync(SCHEMA, 'utf8') !== originalSchema) fs.writeFileSync(SCHEMA, originalSchema);
+});
+
+console.log(`\nPreparing the test database (${isPostgres ? 'PostgreSQL' : 'SQLite'})`);
+run('matching the schema to the database', 'node', ['scripts/sync-datasource.js']);
+
+// Regenerating while a local dev server holds the engine file fails on
+// Windows, so only regenerate when the client is for the other database.
+const wanted = isPostgres ? 'postgresql' : 'sqlite';
+if (generatedProvider() !== wanted) run(`generating the ${wanted} client`, 'npx', ['prisma', 'generate']);
+
+if (isPostgres) {
+  // --schema is required: db execute never infers one, even with a datasource.
+  run('wiping the database', 'npx', ['prisma', 'db', 'execute', '--stdin', '--schema', 'prisma/schema.prisma'], {
+    input: 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;',
+  });
+  run('applying every migration from scratch', 'npx', ['prisma', 'migrate', 'deploy']);
+} else {
+  // Start from no file at all rather than asking Prisma to wipe one: there is
+  // nothing to destroy, and no destructive command to get wrong. Only a file
+  // this runner owns is removed — never prisma/dev.db.
+  const file = path.resolve(API_DIR, 'prisma', url.replace(/^file:/, ''));
+  if (path.basename(file) !== 'test.db') {
+    console.error(`\n  Refusing to touch ${file} — the SQLite test database must be called test.db.\n`);
+    process.exit(1);
+  }
+  for (const suffix of ['', '-journal', '-wal', '-shm']) fs.rmSync(file + suffix, { force: true });
+  run('creating a fresh database', 'npx', ['prisma', 'db', 'push', '--skip-generate']);
 }
+run('loading the demonstration content', 'npx', ['tsx', 'prisma/seed.ts']);
+
+console.log('\nRunning tests\n');
+// One file at a time: every file shares the same database.
+const tests = spawnSync(
+  'node',
+  ['--import', 'tsx', '--test', '--test-concurrency=1', '--test-reporter=spec', '"tests/**/*.test.ts"'],
+  { cwd: API_DIR, env, shell: true, stdio: 'inherit' },
+);
+exitCode = tests.status ?? 1;
 
 process.exit(exitCode);
