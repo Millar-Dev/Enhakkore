@@ -7,11 +7,11 @@
  * worth less than one that stays quiet about them. Add them to `figures` below
  * when you have them and the section appears on its own.
  *
- * The photographs are of real children. They were chosen to show the day — the
+ * The photographs are of real children, published with the organiser's
+ * confirmed consent and authorisation. They were chosen to show the day — the
  * journey, the village, the meal, the group — rather than to single any child
- * out, and no child is named anywhere. Publishing them needs the permission of
- * the people responsible for those children; that is yours to confirm, and
- * removing any frame is one line in `gallery`.
+ * out, and no child is named anywhere. Removing any frame is one line in
+ * `gallery`.
  */
 
 export const MKURANGA = {
@@ -43,15 +43,24 @@ export const MKURANGA = {
   },
 
   gallery: [
-    { src: '/impact/mkuranga/travelling.webp', alt: 'The team travelling from Dar es Salaam to Mkuranga' },
+    { src: '/impact/mkuranga/bus.webp', alt: 'Travelling down to Mkuranga together' },
+    { src: '/impact/mkuranga/travelling.webp', alt: 'The team on the road from Dar es Salaam' },
     { src: '/impact/mkuranga/village.webp', alt: 'Arriving at Hoyoyo village, Mkuranga' },
-    { src: '/impact/mkuranga/welcome.webp', alt: 'Children and volunteers gathered together on arrival' },
+    { src: '/impact/mkuranga/welcome.webp', alt: 'Children and volunteers gathered on arrival' },
+    { src: '/impact/mkuranga/arrival-crowd.webp', alt: 'The group gathering at the village' },
     { src: '/impact/mkuranga/meal-served.webp', alt: 'Plates prepared for the shared meal' },
+    { src: '/impact/mkuranga/plates.webp', alt: 'Sharing out the food' },
     { src: '/impact/mkuranga/meal-shared.webp', alt: 'The meal shared together on mats under the trees' },
-    { src: '/impact/mkuranga/gathering.webp', alt: 'Children and volunteers gathered under the trees' },
-    { src: '/impact/mkuranga/together.webp', alt: 'The group together during the afternoon' },
+    { src: '/impact/mkuranga/eating.webp', alt: 'Children eating together on the mats' },
+    { src: '/impact/mkuranga/gathering.webp', alt: 'Children and volunteers under the trees' },
+    { src: '/impact/mkuranga/under-trees.webp', alt: 'The group together under the trees' },
+    { src: '/impact/mkuranga/together.webp', alt: 'The group during the afternoon' },
+    { src: '/impact/mkuranga/afternoon.webp', alt: 'The afternoon at the village' },
+    { src: '/impact/mkuranga/crowd-wide.webp', alt: 'The gathering at Hoyoyo village' },
     { src: '/impact/mkuranga/group.webp', alt: 'The whole group under the trees' },
+    { src: '/impact/mkuranga/group-photo.webp', alt: 'Everyone together for a group photograph' },
     { src: '/impact/mkuranga/farewell.webp', alt: 'Waving at the end of the day' },
+    { src: '/impact/mkuranga/waving.webp', alt: 'Waving as the day ends' },
   ],
 
   /**

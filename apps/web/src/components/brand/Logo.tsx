@@ -55,10 +55,30 @@ interface LogoProps {
   inverted?: boolean;
 }
 
+/**
+ * The wordmark shrinks on small screens. It has to: "ENHAKKORE | WSC" set at
+ * the desktop size is 307px wide, which on a 375px phone pushed the whole
+ * document wider than the screen and let the page be dragged sideways.
+ */
 const SIZES = {
-  sm: { mark: 24, word: 'text-[0.95rem]', descriptor: 'text-[0.5rem]', gap: 'gap-2' },
-  md: { mark: 30, word: 'text-[1.15rem]', descriptor: 'text-[0.55rem]', gap: 'gap-2.5' },
-  lg: { mark: 44, word: 'text-[1.7rem]', descriptor: 'text-[0.7rem]', gap: 'gap-3.5' },
+  sm: {
+    mark: 22,
+    word: 'text-[0.8125rem] tracking-[0.08em] sm:text-[0.95rem] sm:tracking-[0.14em]',
+    descriptor: 'text-[0.5rem]',
+    gap: 'gap-2',
+  },
+  md: {
+    mark: 26,
+    word: 'text-[0.8125rem] tracking-[0.08em] sm:text-[1.15rem] sm:tracking-[0.14em]',
+    descriptor: 'text-[0.55rem]',
+    gap: 'gap-2 sm:gap-2.5',
+  },
+  lg: {
+    mark: 36,
+    word: 'text-[1.125rem] tracking-[0.1em] sm:text-[1.7rem] sm:tracking-[0.14em]',
+    descriptor: 'text-[0.625rem] sm:text-[0.7rem]',
+    gap: 'gap-2.5 sm:gap-3.5',
+  },
 } as const;
 
 export function Logo({
@@ -80,10 +100,10 @@ export function Logo({
 
   return (
     <span className={`inline-flex items-center ${scale.gap} ${className}`}>
-      <EnhakkoreMark size={scale.mark} title="Enhakkore" light={inverted} />
-      <span className="flex flex-col leading-none">
+      <EnhakkoreMark size={scale.mark} title="Enhakkore" light={inverted} className="shrink-0" />
+      <span className="flex min-w-0 flex-col leading-none">
         <span
-          className={`${scale.word} flex items-center font-bold tracking-[0.14em] ${
+          className={`${scale.word} flex items-center whitespace-nowrap font-bold ${
             inverted ? 'text-white' : 'text-ink'
           }`}
         >

@@ -110,7 +110,16 @@
     scroll-behavior: smooth;
   }
 
-  body {
+  /* Nothing may make the page draggable sideways on a phone. `clip` rather than
+   `hidden`, because `hidden` turns the element into a scroll container and
+   silently breaks every `position: sticky` on the site — the booking panels,
+   the mobile price bars and the header all depend on it. Horizontal rails that
+   are meant to scroll set their own overflow and are unaffected. */
+html {
+  overflow-x: clip;
+}
+
+body {
     background: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-sans);

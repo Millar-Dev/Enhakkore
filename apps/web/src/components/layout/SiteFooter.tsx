@@ -2,6 +2,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Logo } from '@/components/brand/Logo';
 import { PARTNER } from '@/components/brand/Partner';
+import { Icon } from '@/components/ui';
+import { CONTACT } from '@/content/contact';
 
 const COLUMNS = [
   {
@@ -35,6 +37,17 @@ const COLUMNS = [
   },
 ];
 
+/** Instagram's glyph, drawn rather than imported. */
+function InstagramGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function SiteFooter() {
   return (
     <footer className="border-t border-line bg-sand/60">
@@ -49,6 +62,65 @@ export function SiteFooter() {
             <p className="mt-6 text-[1.0625rem] font-semibold tracking-tight text-acacia-700">
               Travel together. Experience more. Give back.
             </p>
+
+            {/* Reach us. Phone first — it is how most people here get in touch. */}
+            <div className="mt-8 flex flex-col gap-2.5">
+              {CONTACT.phones
+                .filter((phone) => phone.primary)
+                .map((phone) => (
+                  <a
+                    key={phone.dial}
+                    href={`tel:${phone.dial}`}
+                    className="group inline-flex w-fit items-center gap-2.5 text-[0.9375rem] text-ink transition-colors hover:text-acacia-700"
+                  >
+                    <Icon.chat size={15} className="text-ink-faint" />
+                    <span className="font-mono tracking-[0.02em]">{phone.display}</span>
+                    <span className="text-[0.75rem] text-ink-faint">{phone.label}</span>
+                  </a>
+                ))}
+
+              <a
+                href={`mailto:${CONTACT.email}`}
+                className="inline-flex w-fit items-center gap-2.5 text-[0.9375rem] text-ink transition-colors hover:text-acacia-700"
+              >
+                <Icon.user size={15} className="text-ink-faint" />
+                {CONTACT.email}
+              </a>
+            </div>
+
+            {/* Instagram. Ours, and WSC's named as theirs. */}
+            <div className="mt-7">
+              <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-ink-muted">
+                Follow
+              </p>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {CONTACT.social.map((account) => (
+                  <li key={account.href}>
+                    <a
+                      href={account.href}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-line-strong bg-white px-3.5 py-2 text-[0.8125rem] font-medium text-ink transition-colors hover:border-ink"
+                    >
+                      <InstagramGlyph />
+                      {account.handle}
+                    </a>
+                  </li>
+                ))}
+                <li>
+                  <a
+                    href={CONTACT.partnerSocial.href}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-dashed border-line-strong px-3.5 py-2 text-[0.8125rem] font-medium text-ink-muted transition-colors hover:border-ink hover:text-ink"
+                  >
+                    <InstagramGlyph />
+                    {CONTACT.partnerSocial.handle}
+                    <span className="text-[0.6875rem] text-ink-faint">WSC</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">

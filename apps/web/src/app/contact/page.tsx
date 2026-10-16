@@ -77,6 +77,32 @@ export default function ContactPage() {
             </Reveal>
           )}
 
+          <Reveal delay={130}>
+            <div className="mt-8 flex flex-wrap gap-3">
+              {CONTACT.social.map((account) => (
+                <a
+                  key={account.href}
+                  href={account.href}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-line-strong bg-white px-4 py-2.5 text-[0.875rem] font-semibold text-ink transition-colors hover:border-ink"
+                >
+                  {account.handle}
+                  <span className="text-[0.75rem] font-normal text-ink-muted">{account.label}</span>
+                </a>
+              ))}
+              <a
+                href={CONTACT.partnerSocial.href}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-dashed border-line-strong px-4 py-2.5 text-[0.875rem] font-semibold text-ink-muted transition-colors hover:border-ink hover:text-ink"
+              >
+                {CONTACT.partnerSocial.handle}
+                <span className="text-[0.75rem] font-normal text-ink-faint">our impact partner</span>
+              </a>
+            </div>
+          </Reveal>
+
           <Reveal delay={140}>
             <div className="mt-12 grid gap-6 sm:grid-cols-3">
               {REASONS.map((reason) => (
