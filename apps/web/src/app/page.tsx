@@ -8,6 +8,7 @@ import { ProjectCard } from '@/components/impact/ProjectCard';
 import { HeroMedia, type HeroVideoSource } from '@/components/home/HeroMedia';
 import { FeaturedPackage } from '@/components/packages/FeaturedPackage';
 import { ImpactPartnership } from '@/components/home/ImpactPartnership';
+import { HeroPartnerMark } from '@/components/home/HeroPartnerMark';
 import {
   Badge,
   ButtonLink,
@@ -136,9 +137,10 @@ export default async function HomePage() {
     apiGet<PlatformCounters>('/stats'),
   ]);
 
-  const featuredTrips = featured?.items ?? [];
+  // Demonstration listings stay off the public homepage.
+  const featuredTrips = (featured?.items ?? []).filter((trip) => !trip.organizer.isDemo);
   const upcomingTrips = upcoming?.items ?? [];
-  const impactProjects = projects?.items ?? [];
+  const impactProjects = (projects?.items ?? []).filter((project) => !project.isDemo);
 
   return (
     <PublicShell transparentHeader>
@@ -148,6 +150,9 @@ export default async function HomePage() {
       <section className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-end overflow-hidden pb-10 pt-32 md:min-h-[42rem] md:pb-16">
         <HeroMedia poster={HERO_IMAGE} alt={HERO_ALT} videos={HERO_VIDEOS} />
         <div className="absolute inset-0 bg-gradient-to-t from-[#080a0b] via-[#080a0b]/55 to-[#080a0b]/35" />
+
+        {/* WSC, alone, opposite the headline. */}
+        <HeroPartnerMark />
 
         {/* The words arrive one line at a time, in pure CSS so they animate on
             first paint without waiting for JavaScript. The whole sequence is

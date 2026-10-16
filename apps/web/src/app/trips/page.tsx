@@ -3,6 +3,8 @@ import Link from 'next/link';
 import type { Paginated, TripSummary } from '@enhakkore/shared';
 import { PublicShell } from '@/components/layout/PublicShell';
 import { TripCard } from '@/components/trips/TripCard';
+import { PackageCard } from '@/components/packages/PackageCard';
+import { UPCOMING_TRIPS } from '@/content/packages';
 import { TripFilters, TripSort } from '@/components/trips/TripFilters';
 import { SearchBar } from '@/components/trips/SearchBar';
 import { Alert, ButtonLink, EmptyState, Icon, cx } from '@/components/ui';
@@ -53,8 +55,13 @@ export default async function ExplorePage({
     })}`,
   );
 
-  const trips = results?.items ?? [];
-  const total = results?.total ?? 0;
+  // Demonstration listings are not shown to the public. What remains are real
+  // trips; while there are none on the marketplace, our own departures below
+  // are the page.
+  // A trip carries no demo flag of its own, but a demo trip belongs to a demo
+  // operator, and that is the record the seed marks.
+  const trips = (results?.items ?? []).filter((trip) => !trip.organizer.isDemo);
+  const total = trips.length;
   const totalPages = results?.totalPages ?? 1;
   const searchTerm = first(params.q);
 
@@ -75,6 +82,22 @@ export default async function ExplorePage({
 
       <div className="shell py-8 md:py-10">
         <div className="grid gap-10 lg:grid-cols-[17rem_1fr] lg:gap-14">
+          {/* Run by Enhakkore, not listed by an operator — so they sit above
+              the marketplace rather than inside it. */}
+          {UPCOMING_TRIPS.length > 0 && (
+            <section className="mb-14">
+              <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
+                <h2 className="text-h3">Upcoming Enhakkore trips</h2>
+                <p className="text-[0.875rem] text-ink-muted">Run by us, bookable now</p>
+              </div>
+              <div className="grid gap-x-6 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
+                {UPCOMING_TRIPS.map((trip, index) => (
+                  <PackageCard key={trip.slug} trip={trip} priority={index === 0} />
+                ))}
+              </div>
+            </section>
+          )}
+
           <TripFilters total={total} />
 
           <div>
@@ -100,14 +123,14 @@ export default async function ExplorePage({
               </Alert>
             ) : trips.length === 0 ? (
               <EmptyState
-                icon={<Icon.search size={34} />}
-                title="No trips match your search"
-                description="Try changing your destination, date or budget — or clear the filters to see everything on the platform right now."
+                icon={<Icon.compass size={34} />}
+                title="More trips are on the way"
+                description="Operator listings are not open yet. Our own departures are above, and we add new ones regularly — or tell us where you would like to go and we will plan it."
                 action={
                   <div className="flex flex-wrap justify-center gap-3">
-                    <ButtonLink href="/trips">Clear all filters</ButtonLink>
-                    <ButtonLink href="/private-trips" variant="secondary">
-                      Request a custom trip
+                    <ButtonLink href="/private-trips">Request a custom trip</ButtonLink>
+                    <ButtonLink href="/contact" variant="secondary">
+                      Talk to us
                     </ButtonLink>
                   </div>
                 }

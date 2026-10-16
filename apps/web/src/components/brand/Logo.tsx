@@ -15,6 +15,8 @@ import type { CSSProperties } from 'react';
  */
 
 const MARK = '/partners/enhakkore-mark.webp';
+/** The same mark in cream, for dark surfaces. Not a tint — a second artwork. */
+const MARK_LIGHT = '/partners/enhakkore-mark-light.webp';
 /** Intrinsic proportions of the cropped emblem. */
 const MARK_RATIO = 300 / 155;
 
@@ -23,12 +25,14 @@ interface MarkProps {
   className?: string;
   style?: CSSProperties;
   title?: string;
+  /** Use the cream artwork, for dark backgrounds. */
+  light?: boolean;
 }
 
-export function EnhakkoreMark({ size = 32, className, style, title }: MarkProps) {
+export function EnhakkoreMark({ size = 32, className, style, title, light = false }: MarkProps) {
   return (
     <Image
-      src={MARK}
+      src={light ? MARK_LIGHT : MARK}
       alt={title ?? ''}
       aria-hidden={title ? undefined : true}
       width={Math.round(size * MARK_RATIO)}
@@ -65,28 +69,30 @@ export function Logo({
   inverted = false,
 }: LogoProps) {
   const scale = SIZES[size];
-  // Over photography the navy mark would disappear, so it gets its own tile
-  // rather than being recoloured into something that is no longer the logo.
-  const tile = inverted ? 'rounded-[0.5rem] bg-white/95 p-1.5' : '';
 
   if (variant === 'mark') {
     return (
-      <span className={`inline-flex ${tile} ${className}`}>
-        <EnhakkoreMark size={scale.mark} title="Enhakkore" />
+      <span className={`inline-flex ${className}`}>
+        <EnhakkoreMark size={scale.mark} title="Enhakkore" light={inverted} />
       </span>
     );
   }
 
   return (
     <span className={`inline-flex items-center ${scale.gap} ${className}`}>
-      <span className={`inline-flex ${tile}`}>
-        <EnhakkoreMark size={scale.mark} title="Enhakkore" />
-      </span>
+      <EnhakkoreMark size={scale.mark} title="Enhakkore" light={inverted} />
       <span className="flex flex-col leading-none">
         <span
-          className={`${scale.word} font-bold tracking-[0.14em] ${inverted ? 'text-white' : 'text-ink'}`}
+          className={`${scale.word} flex items-center font-bold tracking-[0.14em] ${
+            inverted ? 'text-white' : 'text-ink'
+          }`}
         >
           ENHAKKORE
+          <span
+            aria-hidden
+            className={`mx-[0.45em] inline-block h-[1em] w-px ${inverted ? 'bg-white/35' : 'bg-line-strong'}`}
+          />
+          <span className={inverted ? 'text-white/80' : 'text-ink-muted'}>WSC</span>
         </span>
         {withDescriptor && (
           <span

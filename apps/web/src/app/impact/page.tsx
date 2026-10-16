@@ -73,7 +73,9 @@ export default async function ImpactPage({
     apiGet<ImpactSummary>('/impact/summary'),
   ]);
 
-  const items = projects?.items ?? [];
+  // Demonstration projects are not shown. Our own completed outreach is
+  // featured above; this grid fills as real projects are added.
+  const items = (projects?.items ?? []).filter((project) => !project.isDemo);
 
   return (
     <PublicShell transparentHeader>
@@ -103,8 +105,10 @@ export default async function ImpactPage({
         </div>
       </section>
 
-      {/* Giving — who has given and how much, before any other number. */}
-      {summary && (
+      {/* Giving — who has given and how much, before any other number. Hidden
+          while the only figures available come from the demonstration seed:
+          a labelled fake total is still a fake total. */}
+      {summary && !summary.isDemoData && (
         <section className="bg-sand">
           <div className="shell py-10 md:py-12">
             <GivingCounter
