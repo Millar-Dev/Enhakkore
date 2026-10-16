@@ -160,7 +160,7 @@ export default function ArushaPackagePage() {
       <section className="section">
         <div className="shell grid gap-10 lg:grid-cols-2 lg:gap-14">
           <Reveal>
-            <h2 className="text-h3">What the price covers</h2>
+            <h2 className="text-h3">What&rsquo;s included</h2>
             <ul className="mt-6 space-y-4">
               {ARUSHA.included.map((item) => (
                 <li key={item.title} className="flex gap-3.5">
@@ -170,11 +170,6 @@ export default function ArushaPackagePage() {
                   <div>
                     <p className="text-[0.9375rem] font-semibold">{item.title}</p>
                     <p className="mt-1 text-[0.875rem] leading-relaxed text-ink-muted">{item.detail}</p>
-                    {'budget' in item && item.budget && (
-                      <p className="mt-1.5 text-[0.8125rem] font-medium text-warning">
-                        {item.budget} — a planned figure, not a final quote
-                      </p>
-                    )}
                   </div>
                 </li>
               ))}

@@ -102,56 +102,24 @@ export const ARUSHA = {
     },
   ],
 
-  /**
-   * Only what the brief confirmed. The two budgeted figures are shown as
-   * budgeted, because that is what they are.
-   */
+  /** What a place on the trip covers. */
   included: [
-    {
-      title: 'Return road transport',
-      detail: 'Dar es Salaam to Arusha and back, with the group.',
-      budget: 'Budgeted at TZS 95,000 per person',
-      provisional: true,
-    },
-    {
-      title: 'Meals as per the itinerary',
-      detail: 'The meals planned across the three days.',
-      budget: 'Budgeted at TZS 48,000 per person',
-      provisional: true,
-    },
-    {
-      title: 'The itinerary above',
-      detail: 'The route, the stops and the group activities across all three days.',
-    },
-    {
-      title: 'Trip briefing',
-      detail: 'On arrival in Arusha, before the weekend begins.',
-    },
+    { title: 'Accommodation', detail: 'Two nights in Arusha.' },
+    { title: 'Transport', detail: 'Return road transport from Dar es Salaam, and travel between the stops.' },
+    { title: 'Meals', detail: 'Meals across the three days.' },
+    { title: 'Entry fees', detail: 'Entry to the sites on the itinerary.' },
+    { title: 'Guiding fees', detail: 'Guiding throughout the weekend.' },
+    { title: 'Swimming and games', detail: 'Chemka hot springs, and the group games on the last day.' },
   ],
 
   /**
-   * Said plainly, in the trip's own words, rather than buried. Someone handing
-   * over TZS 270,000 is entitled to know which parts are not yet settled.
+   * Said plainly rather than buried. Only what the trip itself flagged as
+   * unsettled belongs here — everything else is in `included` above.
    */
   toConfirm: [
     {
-      title: 'Accommodation',
-      detail:
-        'Two nights in Arusha. The property and room arrangement are still being confirmed, and will be shared with the group before departure.',
-    },
-    {
-      title: 'Entry and activity charges',
-      detail:
-        'Entry fees at the sites on the itinerary are not confirmed as included. Assume some stops carry their own charge until the organiser confirms otherwise.',
-    },
-    {
       title: 'The evening at ACES',
       detail: 'Subject to confirming the venue and access arrangements.',
-    },
-    {
-      title: 'Costs shown as budgeted',
-      detail:
-        'Transport and meals are planned figures from the trip budget, not final quoted prices. They may move before departure.',
     },
   ],
 
