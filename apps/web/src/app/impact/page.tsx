@@ -101,7 +101,7 @@ export default async function ImpactPage({
             then follow what happens next.
           </p>
 
-          <PartnershipLockup size="sm" className="mt-8" />
+          <PartnershipLockup size="sm" tone="light" className="mt-8" />
         </div>
       </section>
 

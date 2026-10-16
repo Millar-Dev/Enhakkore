@@ -21,6 +21,8 @@ export const PARTNER = {
   fullName: 'WSC — We Save Children Charity Group',
   tagline: 'No child deserves to grow up in poverty',
   logo: '/partners/wsc.webp',
+  /** The same mark in cream, for dark surfaces. Not a tint — a second artwork. */
+  logoLight: '/partners/wsc-light.webp',
   /** Set this once WSC have a page to link to. */
   href: null as string | null,
 };
@@ -28,6 +30,8 @@ export const PARTNER = {
 export const BRAND = {
   name: 'Enhakkore Travel & Impact',
   logo: '/partners/enhakkore-wordmark.webp',
+  /** The emblem in cream, for dark surfaces. */
+  logoLight: '/partners/enhakkore-mark-light.webp',
 };
 
 /** Rendered heights, in pixels, for each lockup size. */
@@ -37,11 +41,19 @@ const SIZES = {
   lg: { wsc: 52, brand: 70, gap: 'gap-5', pad: 'px-6 py-4' },
 } as const;
 
-/** The WSC mark alone. */
-export function PartnerLogo({ height = 38, className }: { height?: number; className?: string }) {
+/** The WSC mark alone. `light` selects the cream artwork, for dark surfaces. */
+export function PartnerLogo({
+  height = 38,
+  className,
+  light = false,
+}: {
+  height?: number;
+  className?: string;
+  light?: boolean;
+}) {
   return (
     <Image
-      src={PARTNER.logo}
+      src={light ? PARTNER.logoLight : PARTNER.logo}
       alt={`${PARTNER.fullName} logo`}
       width={Math.round((height * 512) / 289)}
       height={height}
@@ -51,11 +63,19 @@ export function PartnerLogo({ height = 38, className }: { height?: number; class
   );
 }
 
-/** The Enhakkore mark alone. */
-export function BrandLogo({ height = 52, className }: { height?: number; className?: string }) {
+/** The Enhakkore mark alone. `light` selects the cream artwork. */
+export function BrandLogo({
+  height = 52,
+  className,
+  light = false,
+}: {
+  height?: number;
+  className?: string;
+  light?: boolean;
+}) {
   return (
     <Image
-      src={BRAND.logo}
+      src={light ? BRAND.logoLight : BRAND.logo}
       alt={`${BRAND.name} logo`}
       width={Math.round((height * 640) / 500)}
       height={height}
@@ -73,28 +93,32 @@ export function BrandLogo({ height = 52, className }: { height?: number; classNa
 export function PartnershipLockup({
   size = 'md',
   className,
-  surface = 'white',
+  tone = 'dark',
 }: {
   size?: keyof typeof SIZES;
   className?: string;
-  /** `white` for dark backgrounds; `bare` when the page is already white. */
-  surface?: 'white' | 'bare';
+  /**
+   * `light` uses the cream artworks, for dark backgrounds. Neither tone puts
+   * the marks on a card — a logo in a white box looks like a picture someone
+   * pasted on, which is the opposite of what a brand mark should look like.
+   */
+  tone?: 'light' | 'dark';
 }) {
   const s = SIZES[size];
+  const light = tone === 'light';
   return (
-    <div
-      className={cx(
-        'inline-flex items-center',
-        s.gap,
-        surface === 'white' && cx('rounded-[var(--radius-card)] bg-white/95 shadow-sm backdrop-blur-md', s.pad),
-        className,
-      )}
-    >
-      <PartnerLogo height={s.wsc} />
-      <span aria-hidden className="select-none text-[1.125rem] font-light leading-none text-gold-500/80">
+    <div className={cx('inline-flex items-center', s.gap, className)}>
+      <PartnerLogo height={s.wsc} light={light} />
+      <span
+        aria-hidden
+        className={cx(
+          'select-none text-[1.125rem] font-light leading-none',
+          light ? 'text-gold-300/80' : 'text-gold-500/80',
+        )}
+      >
         ×
       </span>
-      <BrandLogo height={s.brand} />
+      <BrandLogo height={s.brand} light={light} />
       <span className="sr-only">
         {PARTNER.fullName} and {BRAND.name}
       </span>
@@ -114,7 +138,7 @@ export function PartnerCard({ className, children }: { className?: string; child
         className,
       )}
     >
-      <PartnershipLockup size="lg" surface="bare" className="shrink-0" />
+      <PartnershipLockup size="lg" className="shrink-0" />
       <div className="min-w-0">
         <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-ink-muted">
           Travel &amp; social impact

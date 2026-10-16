@@ -219,7 +219,7 @@ export function DonatePanel({ project }: { project: ImpactProjectDetail }) {
       {/* Who the contribution is given alongside, shown where the decision is
           actually made rather than only on the page that led here. */}
       <div className="mt-5 border-t border-line pt-5">
-        <PartnershipLockup size="sm" surface="bare" />
+        <PartnershipLockup size="sm" />
         <p className="mt-3 text-[0.75rem] leading-relaxed text-ink-muted">
           Impact work is delivered together with {PARTNER.name} — {PARTNER.tagline.toLowerCase()}.
         </p>

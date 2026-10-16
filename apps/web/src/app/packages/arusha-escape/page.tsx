@@ -52,7 +52,7 @@ export default function ArushaPackagePage() {
 
         <div className="shell relative">
           <Reveal>
-            <PartnershipLockup size="sm" />
+            <PartnershipLockup size="sm" tone="light" />
           </Reveal>
 
           <Reveal delay={80}>
@@ -319,7 +319,7 @@ export default function ArushaPackagePage() {
         <div className="shell max-w-4xl text-center">
           <Reveal>
             <div className="flex justify-center">
-              <PartnershipLockup size="md" />
+              <PartnershipLockup size="md" tone="light" />
             </div>
           </Reveal>
           <Reveal delay={80}>

@@ -78,17 +78,15 @@ export function ImpactPartnership() {
             </dl>
 
             <div className="mt-8 flex flex-wrap items-center gap-6">
-              {/* WSC's mark, on its own white tile, at a size that respects it. */}
-              <span className="inline-flex rounded-[var(--radius-field)] bg-white px-4 py-3">
-                <Image
-                  src={PARTNER.logo}
-                  alt={`${PARTNER.fullName} logo`}
-                  width={124}
-                  height={70}
-                  loading="lazy"
-                  className="h-[46px] w-auto"
-                />
-              </span>
+              {/* WSC's mark in cream, directly on the dark — no tile. */}
+              <Image
+                src={PARTNER.logoLight}
+                alt={`${PARTNER.fullName} logo`}
+                width={140}
+                height={79}
+                loading="lazy"
+                className="h-[52px] w-auto"
+              />
 
               <Link
                 href="/impact"
