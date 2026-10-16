@@ -75,7 +75,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           {project.location}, {project.country}
         </p>
 
-        <div className="media mt-8 aspect-[21/9] rounded-[--radius-card]">
+        <div className="media mt-8 aspect-[21/9] rounded-[var(--radius-card)]">
           <Image
             src={project.heroImage}
             alt=""
@@ -89,7 +89,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         <div className="mt-12 grid gap-12 lg:grid-cols-[1fr_22rem] lg:gap-16">
           <div className="min-w-0">
             {/* The three numbers that matter, stated together */}
-            <div className="grid grid-cols-3 gap-px overflow-hidden rounded-[--radius-card] border border-line bg-line">
+            <div className="grid grid-cols-3 gap-px overflow-hidden rounded-[var(--radius-card)] border border-line bg-line">
               <Figure label="Goal" value={price(project.goal)} />
               <Figure label="Raised" value={price(project.raised)} tone="impact" />
               <Figure label="Progress" value={`${project.progress}%`} />

@@ -97,7 +97,7 @@ export default function AdminBookingsPage() {
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search by reference…"
             aria-label="Search bookings by reference"
-            className="h-11 w-full rounded-[--radius-field] border border-line-strong pl-10 pr-3.5 text-[0.875rem] focus:border-acacia-600 focus:outline-none"
+            className="h-11 w-full rounded-[var(--radius-field)] border border-line-strong pl-10 pr-3.5 text-[0.875rem] focus:border-acacia-600 focus:outline-none"
           />
         </div>
 
@@ -109,7 +109,7 @@ export default function AdminBookingsPage() {
               onClick={() => setStatus(filter.id)}
               aria-pressed={status === filter.id}
               className={cx(
-                'h-11 shrink-0 rounded-[--radius-pill] border px-4 text-[0.8125rem] font-semibold transition-all',
+                'h-11 shrink-0 rounded-[var(--radius-pill)] border px-4 text-[0.8125rem] font-semibold transition-all',
                 status === filter.id
                   ? 'border-ink bg-ink text-white'
                   : 'border-line-strong bg-white text-ink-soft hover:border-ink',

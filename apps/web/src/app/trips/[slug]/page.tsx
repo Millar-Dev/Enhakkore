@@ -112,7 +112,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
         <div className="mt-12 grid gap-12 lg:grid-cols-[1fr_23rem] lg:gap-16">
           <div className="min-w-0">
             {/* Organizer strip */}
-            <div className="flex flex-wrap items-center justify-between gap-4 rounded-[--radius-card] border border-line bg-sand/50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius-card)] border border-line bg-sand/50 p-4">
               <div className="flex items-center gap-3.5">
                 <Avatar name={trip.organizerDetail.companyName} src={trip.organizerDetail.logoUrl} size="md" />
                 <div>
@@ -373,7 +373,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
             {/* Impact */}
             {trip.impactProject && (
               <section className="mt-14">
-                <div className="rounded-[--radius-card] border border-clay-100 bg-clay-50/50 p-6 md:p-8">
+                <div className="rounded-[var(--radius-card)] border border-clay-100 bg-clay-50/50 p-6 md:p-8">
                   <div className="flex items-center gap-2">
                     <Icon.ripple size={18} className="text-clay-600" />
                     <Eyebrow className="text-clay-600">Impact opportunity</Eyebrow>

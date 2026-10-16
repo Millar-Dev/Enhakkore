@@ -141,7 +141,7 @@ function SignInForm() {
               <button
                 type="button"
                 onClick={() => useDemo(account.email)}
-                className="flex w-full items-center justify-between gap-3 rounded-[--radius-field] bg-white px-3.5 py-2.5 text-left transition-colors hover:bg-white/60"
+                className="flex w-full items-center justify-between gap-3 rounded-[var(--radius-field)] bg-white px-3.5 py-2.5 text-left transition-colors hover:bg-white/60"
               >
                 <span className="min-w-0">
                   <span className="block text-[0.8125rem] font-bold text-ink">{account.label}</span>

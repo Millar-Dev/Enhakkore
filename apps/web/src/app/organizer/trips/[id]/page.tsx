@@ -280,7 +280,7 @@ function TripManager() {
               <h2 className="mt-10 text-h3">Itinerary</h2>
               <ol className="mt-5 space-y-4">
                 {trip.itinerary.map((day) => (
-                  <li key={day.id} className="rounded-[--radius-card] border border-line p-5">
+                  <li key={day.id} className="rounded-[var(--radius-card)] border border-line p-5">
                     <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-ink-faint">
                       Day {day.dayNumber}
                     </p>
@@ -520,7 +520,7 @@ function TripManager() {
                       id="announce-departure"
                       value={announceTo}
                       onChange={(event) => setAnnounceTo(event.target.value)}
-                      className="h-12 w-full rounded-[--radius-field] border border-line-strong px-3.5 text-[0.9375rem] focus:border-acacia-600 focus:outline-none"
+                      className="h-12 w-full rounded-[var(--radius-field)] border border-line-strong px-3.5 text-[0.9375rem] focus:border-acacia-600 focus:outline-none"
                     >
                       {upcoming.map((departure) => (
                         <option key={departure.id} value={departure.id}>

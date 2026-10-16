@@ -52,7 +52,7 @@ function ForgotPasswordForm() {
         <h1 className="mt-6 text-h2">Check your email</h1>
         <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink-muted">{sent}</p>
 
-        <div className="mt-8 rounded-[--radius-card] border border-line bg-sand/60 p-5 text-left">
+        <div className="mt-8 rounded-[var(--radius-card)] border border-line bg-sand/60 p-5 text-left">
           <p className="text-[0.8125rem] font-semibold text-ink">Nothing arrived?</p>
           <ul className="mt-2 space-y-1.5 text-[0.8125rem] leading-relaxed text-ink-muted">
             <li>· Check your spam or promotions folder.</li>
@@ -121,7 +121,7 @@ export default function ForgotPasswordPage() {
         <Link href="/" className="mb-10 inline-block">
           <Logo size="md" withDescriptor />
         </Link>
-        <div className="rounded-[--radius-card] border border-line bg-white p-7 md:p-9">
+        <div className="rounded-[var(--radius-card)] border border-line bg-white p-7 md:p-9">
           <Suspense fallback={null}>
             <ForgotPasswordForm />
           </Suspense>

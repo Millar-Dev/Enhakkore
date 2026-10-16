@@ -223,7 +223,7 @@ function RequestForm() {
                 onClick={() => setStyle(option)}
                 aria-pressed={style === option}
                 className={cx(
-                  'rounded-[--radius-card] border p-4 text-left transition-all duration-150',
+                  'rounded-[var(--radius-card)] border p-4 text-left transition-all duration-150',
                   style === option
                     ? 'border-ink bg-ink/[0.03] ring-1 ring-ink'
                     : 'border-line-strong hover:border-ink',
@@ -269,7 +269,7 @@ function RequestForm() {
                   onClick={() => toggleActivity(activity)}
                   aria-pressed={active}
                   className={cx(
-                    'min-h-10 rounded-[--radius-pill] border px-3.5 text-[0.8125rem] font-semibold transition-all',
+                    'min-h-10 rounded-[var(--radius-pill)] border px-3.5 text-[0.8125rem] font-semibold transition-all',
                     active
                       ? 'border-ink bg-ink text-white'
                       : 'border-line-strong bg-white text-ink-soft hover:border-ink hover:text-ink',

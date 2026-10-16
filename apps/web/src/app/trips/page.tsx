@@ -128,7 +128,7 @@ export default async function ExplorePage({
 
             {/* A dead end should still offer a way forward. */}
             {trips.length > 0 && trips.length < 4 && (
-              <div className="mt-14 rounded-[--radius-card] border border-line bg-sand/60 p-7 text-center">
+              <div className="mt-14 rounded-[var(--radius-card)] border border-line bg-sand/60 p-7 text-center">
                 <h2 className="text-h3">Not quite what you had in mind?</h2>
                 <p className="mx-auto mt-2 max-w-md text-[0.9375rem] leading-relaxed text-ink-muted">
                   Tell us where you want to go and how you like to travel. We will pass it to operators who
@@ -177,7 +177,7 @@ function Pagination({
       {current > 1 && (
         <Link
           href={build(current - 1)}
-          className="inline-flex h-11 items-center rounded-[--radius-field] border border-line-strong px-4 text-[0.875rem] font-semibold text-ink transition-colors hover:border-ink"
+          className="inline-flex h-11 items-center rounded-[var(--radius-field)] border border-line-strong px-4 text-[0.875rem] font-semibold text-ink transition-colors hover:border-ink"
         >
           Previous
         </Link>
@@ -194,7 +194,7 @@ function Pagination({
             href={build(page)}
             aria-current={page === current ? 'page' : undefined}
             className={cx(
-              'inline-flex h-11 w-11 items-center justify-center rounded-[--radius-field] text-[0.875rem] font-semibold transition-colors',
+              'inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-field)] text-[0.875rem] font-semibold transition-colors',
               page === current
                 ? 'bg-ink text-white'
                 : 'border border-line-strong text-ink hover:border-ink',
@@ -208,7 +208,7 @@ function Pagination({
       {current < totalPages && (
         <Link
           href={build(current + 1)}
-          className="inline-flex h-11 items-center rounded-[--radius-field] border border-line-strong px-4 text-[0.875rem] font-semibold text-ink transition-colors hover:border-ink"
+          className="inline-flex h-11 items-center rounded-[var(--radius-field)] border border-line-strong px-4 text-[0.875rem] font-semibold text-ink transition-colors hover:border-ink"
         >
           Next
         </Link>

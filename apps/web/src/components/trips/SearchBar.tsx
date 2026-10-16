@@ -72,8 +72,8 @@ export function SearchBar({ variant = 'hero' }: { variant?: 'hero' | 'inline' })
       className={cx(
         'relative w-full',
         hero
-          ? 'rounded-[1.25rem] bg-white/97 p-2 shadow-[--shadow-float] backdrop-blur-xl md:rounded-[--radius-pill] md:p-2.5'
-          : 'rounded-[--radius-card] border border-line bg-white p-2',
+          ? 'rounded-[1.25rem] bg-white/97 p-2 shadow-[var(--shadow-float)] backdrop-blur-xl md:rounded-[var(--radius-pill)] md:p-2.5'
+          : 'rounded-[var(--radius-card)] border border-line bg-white p-2',
       )}
     >
       <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-0">
@@ -93,7 +93,7 @@ export function SearchBar({ variant = 'hero' }: { variant?: 'hero' | 'inline' })
           />
 
           {open && (
-            <ul className="absolute left-0 right-0 top-full z-30 mt-2 max-h-72 overflow-auto rounded-[--radius-card] border border-line bg-white py-2 shadow-[--shadow-raised] md:left-2">
+            <ul className="absolute left-0 right-0 top-full z-30 mt-2 max-h-72 overflow-auto rounded-[var(--radius-card)] border border-line bg-white py-2 shadow-[var(--shadow-raised)] md:left-2">
               {suggestions.map((item) => (
                 <li key={item.id}>
                   <button
@@ -157,7 +157,7 @@ export function SearchBar({ variant = 'hero' }: { variant?: 'hero' | 'inline' })
         </div>
 
         <div className="p-1.5 md:p-0">
-          <Button type="submit" size={hero ? 'lg' : 'md'} full className="md:w-auto md:rounded-[--radius-pill] md:px-8">
+          <Button type="submit" size={hero ? 'lg' : 'md'} full className="md:w-auto md:rounded-[var(--radius-pill)] md:px-8">
             <Icon.search size={17} />
             Search trips
           </Button>

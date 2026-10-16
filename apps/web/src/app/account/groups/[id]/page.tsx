@@ -224,7 +224,7 @@ export default function TripGroupPage() {
       <div className="shell py-6 md:py-8">
         {tab === 'chat' && (
           <div className="grid gap-8 lg:grid-cols-[1fr_18rem]">
-            <div className="flex min-h-[32rem] flex-col rounded-[--radius-card] border border-line bg-white">
+            <div className="flex min-h-[32rem] flex-col rounded-[var(--radius-card)] border border-line bg-white">
               {/* Pinned */}
               {conversation.pinned.length > 0 && (
                 <div className="border-b border-line bg-clay-50/50 p-4">
@@ -316,7 +316,7 @@ export default function TripGroupPage() {
                       placeholder={
                         announcement ? 'Write an announcement for the group…' : 'Write a message…'
                       }
-                      className="max-h-32 min-h-12 flex-1 resize-none rounded-[--radius-field] border border-line-strong px-3.5 py-3 text-[0.9375rem] leading-snug focus:border-acacia-600 focus:outline-none focus:ring-4 focus:ring-acacia-600/10"
+                      className="max-h-32 min-h-12 flex-1 resize-none rounded-[var(--radius-field)] border border-line-strong px-3.5 py-3 text-[0.9375rem] leading-snug focus:border-acacia-600 focus:outline-none focus:ring-4 focus:ring-acacia-600/10"
                     />
                     <Button
                       type="submit"
@@ -450,7 +450,7 @@ export default function TripGroupPage() {
             <h2 className="text-h2">Day by day</h2>
             <ol className="mt-8 space-y-6">
               {trip.itinerary.map((day) => (
-                <li key={day.id} className="rounded-[--radius-card] border border-line bg-white p-6">
+                <li key={day.id} className="rounded-[var(--radius-card)] border border-line bg-white p-6">
                   <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-ink-faint">
                     Day {day.dayNumber}
                   </p>
@@ -513,7 +513,7 @@ function MessageRow({ message, mine }: { message: MessageDto; mine: boolean }) {
 
         <div
           className={cx(
-            'mt-1.5 inline-block rounded-[--radius-card] px-4 py-2.5 text-left text-[0.9375rem] leading-relaxed',
+            'mt-1.5 inline-block rounded-[var(--radius-card)] px-4 py-2.5 text-left text-[0.9375rem] leading-relaxed',
             isAnnouncement
               ? 'border border-clay-100 bg-clay-50 text-ink-soft'
               : mine

@@ -364,7 +364,7 @@ export default function AdminImpactPage() {
               </div>
 
               {updatingId === project.id && (
-                <div className="mt-6 rounded-[--radius-card] border border-line bg-sand/40 p-5">
+                <div className="mt-6 rounded-[var(--radius-card)] border border-line bg-sand/40 p-5">
                   <h3 className="text-[0.9375rem] font-bold tracking-tight">New update</h3>
                   <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-muted">
                     Everyone who has contributed to this project gets a notification. Say what actually

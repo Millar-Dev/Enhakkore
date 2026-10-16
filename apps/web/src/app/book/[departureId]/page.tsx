@@ -243,7 +243,7 @@ export default function CheckoutPage() {
                     onClick={() => setTravellers((count) => Math.max(1, count - 1))}
                     disabled={travellers <= 1}
                     aria-label="Fewer travellers"
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-[--radius-field] border border-line-strong text-[1.25rem] font-semibold transition-colors hover:border-ink disabled:opacity-40"
+                    className="inline-flex h-12 w-12 items-center justify-center rounded-[var(--radius-field)] border border-line-strong text-[1.25rem] font-semibold transition-colors hover:border-ink disabled:opacity-40"
                   >
                     −
                   </button>
@@ -260,7 +260,7 @@ export default function CheckoutPage() {
                     }
                     disabled={travellers >= (quote?.seatsRemaining ?? 1)}
                     aria-label="More travellers"
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-[--radius-field] border border-line-strong text-[1.25rem] font-semibold transition-colors hover:border-ink disabled:opacity-40"
+                    className="inline-flex h-12 w-12 items-center justify-center rounded-[var(--radius-field)] border border-line-strong text-[1.25rem] font-semibold transition-colors hover:border-ink disabled:opacity-40"
                   >
                     +
                   </button>
@@ -369,7 +369,7 @@ export default function CheckoutPage() {
                   <label
                     key={option.value}
                     className={cx(
-                      'flex cursor-pointer items-center gap-4 rounded-[--radius-field] border px-4 py-3.5 transition-all',
+                      'flex cursor-pointer items-center gap-4 rounded-[var(--radius-field)] border px-4 py-3.5 transition-all',
                       method === option.value
                         ? 'border-ink bg-ink/[0.03] ring-1 ring-ink'
                         : 'border-line-strong hover:border-ink',
@@ -499,7 +499,7 @@ export default function CheckoutPage() {
                   </div>
 
                   {impactAmount > 0 && project && (
-                    <p className="mt-3 rounded-[--radius-field] bg-clay-50 px-3.5 py-3 text-[0.8125rem] leading-relaxed text-clay-700">
+                    <p className="mt-3 rounded-[var(--radius-field)] bg-clay-50 px-3.5 py-3 text-[0.8125rem] leading-relaxed text-clay-700">
                       {price({ amount: impactAmount, currency })} goes to{' '}
                       <span className="font-semibold">{project.title}</span>.
                     </p>
@@ -572,7 +572,7 @@ function ProjectPicker({
             onClick={() => onSelect(project)}
             aria-pressed={selected?.id === project.id}
             className={cx(
-              'flex w-full items-center gap-3.5 rounded-[--radius-field] border p-3 text-left transition-all',
+              'flex w-full items-center gap-3.5 rounded-[var(--radius-field)] border p-3 text-left transition-all',
               selected?.id === project.id
                 ? 'border-clay-500 bg-clay-50/60 ring-1 ring-clay-500'
                 : 'border-line-strong hover:border-clay-400',

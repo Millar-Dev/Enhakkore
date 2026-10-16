@@ -56,7 +56,7 @@ export default function MyTripsPage() {
             onClick={() => setScope(item.id)}
             aria-pressed={scope === item.id}
             className={cx(
-              'h-10 rounded-[--radius-pill] border px-4 text-[0.8125rem] font-semibold transition-all',
+              'h-10 rounded-[var(--radius-pill)] border px-4 text-[0.8125rem] font-semibold transition-all',
               scope === item.id
                 ? 'border-ink bg-ink text-white'
                 : 'border-line-strong bg-white text-ink-soft hover:border-ink',
@@ -105,7 +105,7 @@ function BookingRow({ booking }: { booking: BookingDto }) {
   const cancelled = booking.status === 'CANCELLED' || booking.status === 'REFUNDED';
 
   return (
-    <Card className="overflow-hidden transition-shadow hover:shadow-[--shadow-card]">
+    <Card className="overflow-hidden transition-shadow hover:shadow-[var(--shadow-card)]">
       <div className="flex flex-col sm:flex-row">
         <Link
           href={`/trips/${booking.trip.slug}`}

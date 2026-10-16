@@ -20,7 +20,7 @@ export default function ResetPasswordPage() {
         <Link href="/" className="mb-10 inline-block">
           <Logo size="md" withDescriptor />
         </Link>
-        <div className="rounded-[--radius-card] border border-line bg-white p-7 md:p-9">
+        <div className="rounded-[var(--radius-card)] border border-line bg-white p-7 md:p-9">
           <Suspense fallback={null}>
             <ResetPasswordForm />
           </Suspense>

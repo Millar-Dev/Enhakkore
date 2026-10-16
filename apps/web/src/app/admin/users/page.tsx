@@ -91,7 +91,7 @@ export default function AdminUsersPage() {
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search name or email…"
             aria-label="Search users"
-            className="h-11 w-full rounded-[--radius-field] border border-line-strong pl-10 pr-3.5 text-[0.875rem] focus:border-acacia-600 focus:outline-none"
+            className="h-11 w-full rounded-[var(--radius-field)] border border-line-strong pl-10 pr-3.5 text-[0.875rem] focus:border-acacia-600 focus:outline-none"
           />
         </div>
 
@@ -103,7 +103,7 @@ export default function AdminUsersPage() {
               onClick={() => setRole(item.id)}
               aria-pressed={role === item.id}
               className={cx(
-                'h-11 shrink-0 rounded-[--radius-pill] border px-4 text-[0.8125rem] font-semibold transition-all',
+                'h-11 shrink-0 rounded-[var(--radius-pill)] border px-4 text-[0.8125rem] font-semibold transition-all',
                 role === item.id
                   ? 'border-ink bg-ink text-white'
                   : 'border-line-strong bg-white text-ink-soft hover:border-ink',

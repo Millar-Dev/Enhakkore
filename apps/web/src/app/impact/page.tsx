@@ -5,6 +5,7 @@ import type { ImpactProjectSummary, Money, Paginated } from '@enhakkore/shared';
 import { IMPACT_CATEGORIES, IMPACT_CATEGORY_LABELS } from '@enhakkore/shared';
 import { PublicShell } from '@/components/layout/PublicShell';
 import { ProjectCard } from '@/components/impact/ProjectCard';
+import { PartnerCard, PartnerPill } from '@/components/brand/Partner';
 import {
   ButtonLink,
   Card,
@@ -95,6 +96,8 @@ export default async function ImpactPage({
             Support projects with a stated goal, a public total and a dated record of what has been done —
             then follow what happens next.
           </p>
+
+          <PartnerPill className="mt-8" />
         </div>
       </section>
 
@@ -184,6 +187,11 @@ export default async function ImpactPage({
             description="Charity asks for trust. The least a platform can do is make that trust checkable."
           />
 
+          <PartnerCard className="mt-10">
+            Enhakkore&rsquo;s impact work is delivered together with our charity partner. Contributions reach
+            the named project they were given to, and Enhakkore takes no commission on them.
+          </PartnerCard>
+
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {PILLARS.map((pillar, index) => (
               <Card key={pillar.title} className="p-6">
@@ -254,7 +262,7 @@ function CategoryChip({ href, label, active }: { href: string; label: string; ac
     <Link
       href={href}
       className={cx(
-        'inline-flex h-11 shrink-0 items-center rounded-[--radius-pill] border px-4 text-[0.875rem] font-semibold transition-all',
+        'inline-flex h-11 shrink-0 items-center rounded-[var(--radius-pill)] border px-4 text-[0.875rem] font-semibold transition-all',
         active
           ? 'border-clay-500 bg-clay-500 text-white'
           : 'border-line-strong bg-white text-ink-soft hover:border-clay-400 hover:text-ink',

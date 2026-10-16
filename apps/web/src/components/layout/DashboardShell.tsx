@@ -86,7 +86,7 @@ export function DashboardShell({
           <div className="flex items-center gap-2">
             <Link
               href="/account"
-              className="inline-flex items-center gap-2.5 rounded-[--radius-field] px-2 py-1.5 transition-colors hover:bg-sand"
+              className="inline-flex items-center gap-2.5 rounded-[var(--radius-field)] px-2 py-1.5 transition-colors hover:bg-sand"
             >
               <Avatar name={user.name} src={user.avatarUrl} size="sm" />
               <span className="hidden text-[0.8125rem] font-semibold sm:block">{user.name}</span>

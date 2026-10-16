@@ -1,14 +1,18 @@
 {
+  "//": "Two entries rather than one `npm run dev`: the launcher passes PORT to whatever it starts, and a single entry handed the API the website's port, so the API died with EADDRINUSE. Running them separately gives each its own.",
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "dev",
+      "name": "web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev"
-      ],
+      "runtimeArgs": ["run", "dev:web"],
       "port": 3000
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:api"],
+      "port": 4000
     }
   ]
 }

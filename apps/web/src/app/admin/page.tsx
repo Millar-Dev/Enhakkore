@@ -76,7 +76,7 @@ export default function AdminOverview() {
           <Link key={item.href} href={item.href}>
             <Card
               className={cx(
-                'flex h-full items-center justify-between gap-4 p-5 transition-all hover:shadow-[--shadow-card]',
+                'flex h-full items-center justify-between gap-4 p-5 transition-all hover:shadow-[var(--shadow-card)]',
                 item.count > 0 && item.urgent && 'border-clay-100 bg-clay-50/40',
               )}
             >
@@ -182,7 +182,7 @@ export default function AdminOverview() {
           const ItemIcon = item.icon;
           return (
             <Link key={item.href} href={item.href}>
-              <Card className="h-full p-5 transition-all hover:shadow-[--shadow-card]">
+              <Card className="h-full p-5 transition-all hover:shadow-[var(--shadow-card)]">
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-[0.625rem] bg-sand text-ink-soft">
                   <ItemIcon size={19} />
                 </span>

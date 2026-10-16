@@ -21,7 +21,7 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'impact' | 'danger' | '
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 const BUTTON_BASE =
-  'inline-flex items-center justify-center gap-2 font-semibold rounded-[--radius-field] transition-all duration-200 ' +
+  'inline-flex items-center justify-center gap-2 font-semibold rounded-[var(--radius-field)] transition-all duration-200 ' +
   'disabled:opacity-45 disabled:pointer-events-none select-none whitespace-nowrap';
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
@@ -99,7 +99,7 @@ export function Card({
   as?: 'div' | 'article' | 'section' | 'li';
 }) {
   return (
-    <Tag className={cx('rounded-[--radius-card] border border-line bg-white', className)}>{children}</Tag>
+    <Tag className={cx('rounded-[var(--radius-card)] border border-line bg-white', className)}>{children}</Tag>
   );
 }
 
@@ -129,7 +129,7 @@ export function Badge({
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-1.5 rounded-[--radius-pill] border px-2.5 py-1 text-[0.6875rem] font-semibold tracking-wide',
+        'inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border px-2.5 py-1 text-[0.6875rem] font-semibold tracking-wide',
         BADGE_TONES[tone],
         className,
       )}
@@ -149,7 +149,7 @@ export function DemoBadge({ className, label = 'Demo data' }: { className?: stri
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-1.5 rounded-[--radius-pill] border border-dashed border-line-strong bg-white/80 px-2.5 py-1 text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-ink-muted backdrop-blur',
+        'inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-dashed border-line-strong bg-white/80 px-2.5 py-1 text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-ink-muted backdrop-blur',
         className,
       )}
       title="Demonstration content. Not a record of real activity."
@@ -426,7 +426,7 @@ export function StatTile({
 }) {
   const valueTone = tone === 'impact' ? 'text-clay-600' : tone === 'brand' ? 'text-acacia-700' : 'text-ink';
   return (
-    <div className={cx('rounded-[--radius-card] border border-line bg-white p-5 md:p-6', className)}>
+    <div className={cx('rounded-[var(--radius-card)] border border-line bg-white p-5 md:p-6', className)}>
       <p className="text-eyebrow uppercase text-ink-muted">{label}</p>
       <p className={cx('mt-3 text-[1.75rem] font-bold leading-none tracking-tight md:text-[2rem]', valueTone)}>
         {value}
@@ -457,7 +457,7 @@ export function EmptyState({
   return (
     <div
       className={cx(
-        'flex flex-col items-center justify-center rounded-[--radius-card] border border-dashed border-line-strong bg-sand/40 px-6 py-16 text-center',
+        'flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-dashed border-line-strong bg-sand/40 px-6 py-16 text-center',
         className,
       )}
     >
@@ -472,12 +472,12 @@ export function EmptyState({
 /* -------------------------------- Skeleton -------------------------------- */
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cx('animate-pulse rounded-[--radius-field] bg-sand-deep', className)} />;
+  return <div className={cx('animate-pulse rounded-[var(--radius-field)] bg-sand-deep', className)} />;
 }
 
 export function TripCardSkeleton() {
   return (
-    <div className="rounded-[--radius-card] border border-line bg-white p-3">
+    <div className="rounded-[var(--radius-card)] border border-line bg-white p-3">
       <Skeleton className="aspect-[4/3] w-full rounded-[0.75rem]" />
       <div className="space-y-2.5 p-3">
         <Skeleton className="h-3 w-24" />
@@ -512,7 +512,7 @@ export function Alert({
   };
   return (
     <div
-      className={cx('rounded-[--radius-field] border px-4 py-3.5 text-[0.875rem] leading-relaxed', tones[tone], className)}
+      className={cx('rounded-[var(--radius-field)] border px-4 py-3.5 text-[0.875rem] leading-relaxed', tones[tone], className)}
       {...props}
     >
       {title && <p className="mb-1 font-semibold">{title}</p>}

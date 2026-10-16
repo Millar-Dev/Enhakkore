@@ -42,7 +42,7 @@ export function BookingPanel({ trip }: { trip: TripDetail }) {
 
   if (upcoming.length === 0) {
     return (
-      <div className="rounded-[--radius-card] border border-line bg-white p-6">
+      <div className="rounded-[var(--radius-card)] border border-line bg-white p-6">
         <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-muted">From</p>
         <p className="mt-2 text-h2">{price(trip.fromPrice)}</p>
         <p className="mt-1 text-[0.8125rem] text-ink-muted">per traveller</p>
@@ -67,7 +67,7 @@ export function BookingPanel({ trip }: { trip: TripDetail }) {
 
   return (
     <>
-      <div className="rounded-[--radius-card] border border-line bg-white p-5 md:p-6">
+      <div className="rounded-[var(--radius-card)] border border-line bg-white p-5 md:p-6">
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-muted">From</p>
@@ -104,7 +104,7 @@ export function BookingPanel({ trip }: { trip: TripDetail }) {
         </div>
 
         {selected && (
-          <div className="mt-5 rounded-[--radius-field] bg-sand p-4">
+          <div className="mt-5 rounded-[var(--radius-field)] bg-sand p-4">
             <div className="flex items-center justify-between text-[0.875rem]">
               <span className="inline-flex items-center gap-2 font-semibold text-ink">
                 <Icon.users size={15} className="text-ink-muted" />
@@ -200,7 +200,7 @@ function DepartureOption({
       disabled={full}
       aria-pressed={selected}
       className={cx(
-        'flex w-full items-center justify-between gap-3 rounded-[--radius-field] border px-4 py-3 text-left transition-all duration-150',
+        'flex w-full items-center justify-between gap-3 rounded-[var(--radius-field)] border px-4 py-3 text-left transition-all duration-150',
         full
           ? 'cursor-not-allowed border-line bg-sand/60 opacity-60'
           : selected

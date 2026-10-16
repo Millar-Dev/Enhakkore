@@ -138,7 +138,7 @@ export default function OperatorsPage() {
       <section className="section bg-sand">
         <div className="shell">
           <SectionHead eyebrow="Getting started" title="Four steps to your first booking" />
-          <ol className="mt-10 grid gap-px overflow-hidden rounded-[--radius-card] border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+          <ol className="mt-10 grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((step) => (
               <li key={step.number} className="bg-white p-6 md:p-7">
                 <span className="text-[0.6875rem] font-bold tracking-[0.16em] text-acacia-600">

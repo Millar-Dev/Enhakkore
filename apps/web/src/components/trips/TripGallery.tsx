@@ -38,7 +38,7 @@ export function TripGallery({ images, title }: { images: string[]; title: string
         <button
           type="button"
           onClick={() => setLightbox(0)}
-          className="media group relative aspect-[4/3] w-full overflow-hidden rounded-[--radius-card] md:aspect-[3/2]"
+          className="media group relative aspect-[4/3] w-full overflow-hidden rounded-[var(--radius-card)] md:aspect-[3/2]"
           aria-label={`View photographs of ${title}`}
         >
           <Image
@@ -58,7 +58,7 @@ export function TripGallery({ images, title }: { images: string[]; title: string
                 key={image}
                 type="button"
                 onClick={() => setLightbox(index + 1)}
-                className="media group relative aspect-square overflow-hidden rounded-[0.625rem] md:rounded-[--radius-card]"
+                className="media group relative aspect-square overflow-hidden rounded-[0.625rem] md:rounded-[var(--radius-card)]"
                 aria-label={`Photograph ${index + 2}`}
               >
                 <Image src={image} alt="" fill sizes="(max-width: 768px) 25vw, 20vw" className="object-cover" />

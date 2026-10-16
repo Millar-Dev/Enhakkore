@@ -130,7 +130,7 @@ export function TripFilters({ total }: { total: number }) {
               type="date"
               value={params.get('from') ?? ''}
               onChange={(event) => update({ from: event.target.value })}
-              className="h-11 rounded-[--radius-field] border border-line-strong px-3 text-[0.875rem] focus:border-acacia-600 focus:outline-none"
+              className="h-11 rounded-[var(--radius-field)] border border-line-strong px-3 text-[0.875rem] focus:border-acacia-600 focus:outline-none"
             />
           </label>
           <label className="flex flex-col gap-1.5">
@@ -139,7 +139,7 @@ export function TripFilters({ total }: { total: number }) {
               type="date"
               value={params.get('to') ?? ''}
               onChange={(event) => update({ to: event.target.value })}
-              className="h-11 rounded-[--radius-field] border border-line-strong px-3 text-[0.875rem] focus:border-acacia-600 focus:outline-none"
+              className="h-11 rounded-[var(--radius-field)] border border-line-strong px-3 text-[0.875rem] focus:border-acacia-600 focus:outline-none"
             />
           </label>
         </div>
@@ -269,7 +269,7 @@ export function TripFilters({ total }: { total: number }) {
               type="button"
               onClick={() => setSheetOpen(false)}
               aria-label="Close filters"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-[--radius-field] hover:bg-sand"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-field)] hover:bg-sand"
             >
               <Icon.close />
             </button>
@@ -336,7 +336,7 @@ function Chip({
       onClick={onClick}
       aria-pressed={active}
       className={cx(
-        'min-h-10 rounded-[--radius-pill] border px-3.5 text-[0.8125rem] font-semibold transition-all duration-150',
+        'min-h-10 rounded-[var(--radius-pill)] border px-3.5 text-[0.8125rem] font-semibold transition-all duration-150',
         active
           ? 'border-ink bg-ink text-white'
           : 'border-line-strong bg-white text-ink-soft hover:border-ink hover:text-ink',
@@ -365,7 +365,7 @@ function SortSelect({
         id="trip-sort"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-10 w-full cursor-pointer appearance-none rounded-[--radius-field] border border-line-strong bg-white pl-3.5 pr-9 text-[0.8125rem] font-semibold text-ink focus:border-acacia-600 focus:outline-none"
+        className="h-10 w-full cursor-pointer appearance-none rounded-[var(--radius-field)] border border-line-strong bg-white pl-3.5 pr-9 text-[0.8125rem] font-semibold text-ink focus:border-acacia-600 focus:outline-none"
       >
         {SORTS.map((sort) => (
           <option key={sort.value} value={sort.value}>

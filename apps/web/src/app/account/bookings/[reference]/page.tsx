@@ -104,7 +104,7 @@ function BookingContent() {
   return (
     <div className="mx-auto max-w-3xl">
       {justBooked && booking.status === 'CONFIRMED' && (
-        <div className="mb-8 animate-rise overflow-hidden rounded-[--radius-card] border border-acacia-100 bg-acacia-50">
+        <div className="mb-8 animate-rise overflow-hidden rounded-[var(--radius-card)] border border-acacia-100 bg-acacia-50">
           <div className="p-7 text-center md:p-10">
             <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-acacia-600 text-white">
               <Icon.check size={28} />
@@ -227,7 +227,7 @@ function BookingContent() {
           </dl>
 
           {booking.payment && (
-            <div className="mt-5 rounded-[--radius-field] bg-sand px-4 py-3.5">
+            <div className="mt-5 rounded-[var(--radius-field)] bg-sand px-4 py-3.5">
               <div className="flex flex-wrap items-center justify-between gap-2 text-[0.8125rem]">
                 <span className="text-ink-muted">
                   {booking.payment.method.replace('_', ' ').toLowerCase()} ·{' '}

@@ -30,7 +30,7 @@ export function TripCard({
   return (
     <article className={cx('group', className)}>
       <Link href={`/trips/${trip.slug}`} className="block focus-visible:outline-none">
-        <div className="media aspect-[4/3] rounded-[--radius-card]">
+        <div className="media aspect-[4/3] rounded-[var(--radius-card)]">
           <Image
             src={trip.heroImage}
             alt=""
@@ -129,7 +129,7 @@ export function DepartureCard({ trip }: { trip: TripSummary }) {
   return (
     <Link
       href={`/trips/${trip.slug}`}
-      className="group flex gap-4 rounded-[--radius-card] border border-line bg-white p-3 transition-all duration-200 hover:border-line-strong hover:shadow-[--shadow-card]"
+      className="group flex gap-4 rounded-[var(--radius-card)] border border-line bg-white p-3 transition-all duration-200 hover:border-line-strong hover:shadow-[var(--shadow-card)]"
     >
       <div className="media relative h-28 w-28 shrink-0 rounded-[0.75rem] sm:h-32 sm:w-32">
         <Image src={trip.heroImage} alt="" fill sizes="128px" className="object-cover" />

@@ -58,7 +58,7 @@ export default function GroupsPage() {
             const countdown = daysUntil(group.departure.startDate);
             return (
               <Link key={group.id} href={`/account/groups/${group.id}`} className="block">
-                <Card className="flex gap-4 p-3 transition-all hover:border-line-strong hover:shadow-[--shadow-card]">
+                <Card className="flex gap-4 p-3 transition-all hover:border-line-strong hover:shadow-[var(--shadow-card)]">
                   <div className="media relative h-20 w-20 shrink-0 rounded-[0.625rem] sm:h-24 sm:w-24">
                     <Image src={group.heroImage} alt="" fill sizes="96px" className="object-cover" />
                   </div>

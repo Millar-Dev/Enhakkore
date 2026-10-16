@@ -427,7 +427,7 @@ export default function CreateTripPage() {
 
             <div className="mt-7 space-y-6">
               {days.map((day, index) => (
-                <div key={index} className="rounded-[--radius-card] border border-line p-5">
+                <div key={index} className="rounded-[var(--radius-card)] border border-line p-5">
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-[0.9375rem] font-bold tracking-tight">Day {index + 1}</h3>
                     {days.length > 1 && (
@@ -564,7 +564,7 @@ export default function CreateTripPage() {
               {departures.map((departure, index) => (
                 <div
                   key={index}
-                  className="grid items-end gap-4 rounded-[--radius-card] border border-line p-5 sm:grid-cols-4"
+                  className="grid items-end gap-4 rounded-[var(--radius-card)] border border-line p-5 sm:grid-cols-4"
                 >
                   <Input
                     label="Departs"
@@ -622,7 +622,7 @@ export default function CreateTripPage() {
                         type="button"
                         onClick={() => setDepartures(departures.filter((_, i) => i !== index))}
                         aria-label={`Remove departure ${index + 1}`}
-                        className="mb-0.5 inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[--radius-field] border border-line-strong text-ink-muted hover:border-danger hover:text-danger"
+                        className="mb-0.5 inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-field)] border border-line-strong text-ink-muted hover:border-danger hover:text-danger"
                       >
                         <Icon.close />
                       </button>

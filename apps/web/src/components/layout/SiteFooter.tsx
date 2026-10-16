@@ -71,7 +71,7 @@ export function SiteFooter() {
         </div>
 
         {/* Honesty note. This stays until the platform is genuinely live. */}
-        <div className="mt-14 rounded-[--radius-card] border border-dashed border-line-strong bg-white/70 p-5">
+        <div className="mt-14 rounded-[var(--radius-card)] border border-dashed border-line-strong bg-white/70 p-5">
           <p className="text-[0.8125rem] leading-relaxed text-ink-muted">
             <span className="font-semibold text-ink">This is a pre-launch build.</span> Trips, operators,
             impact projects, contribution totals and reviews shown here are demonstration content created for

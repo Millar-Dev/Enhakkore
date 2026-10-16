@@ -72,7 +72,7 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
                   key={item.href}
                   href={item.href}
                   className={cx(
-                    'rounded-[--radius-field] px-3.5 py-2 text-[0.875rem] font-medium transition-colors',
+                    'rounded-[var(--radius-field)] px-3.5 py-2 text-[0.875rem] font-medium transition-colors',
                     floating
                       ? active
                         ? 'text-white'
@@ -126,7 +126,7 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={menuOpen}
               className={cx(
-                'inline-flex h-11 w-11 items-center justify-center rounded-[--radius-field] transition-colors lg:hidden',
+                'inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-field)] transition-colors lg:hidden',
                 floating ? 'text-white hover:bg-white/10' : 'text-ink hover:bg-sand',
               )}
             >

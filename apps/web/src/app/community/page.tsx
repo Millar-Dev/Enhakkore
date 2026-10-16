@@ -163,7 +163,7 @@ export default async function CommunityPage() {
               </div>
 
               <div className="space-y-4 bg-sand/30 p-5">
-                <div className="rounded-[--radius-card] border border-clay-100 bg-clay-50 px-4 py-3">
+                <div className="rounded-[var(--radius-card)] border border-clay-100 bg-clay-50 px-4 py-3">
                   <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-clay-600">
                     Announcement · Organizer
                   </p>
@@ -177,7 +177,7 @@ export default async function CommunityPage() {
                   <Avatar name="Lena Fischer" size="sm" />
                   <div>
                     <p className="text-[0.75rem] font-bold">Lena</p>
-                    <div className="mt-1 inline-block rounded-[--radius-card] bg-white px-3.5 py-2 text-[0.875rem] text-ink-soft">
+                    <div className="mt-1 inline-block rounded-[var(--radius-card)] bg-white px-3.5 py-2 text-[0.875rem] text-ink-soft">
                       First safari for me — any advice on what to actually bring?
                     </div>
                   </div>
@@ -187,7 +187,7 @@ export default async function CommunityPage() {
                   <Avatar name="Michael Temba" size="sm" />
                   <div>
                     <p className="text-[0.75rem] font-bold">Michael</p>
-                    <div className="mt-1 inline-block rounded-[--radius-card] bg-white px-3.5 py-2 text-[0.875rem] text-ink-soft">
+                    <div className="mt-1 inline-block rounded-[var(--radius-card)] bg-white px-3.5 py-2 text-[0.875rem] text-ink-soft">
                       Binoculars if you have them. Last time I borrowed a pair and regretted not having my
                       own.
                     </div>

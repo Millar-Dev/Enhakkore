@@ -135,7 +135,7 @@ export default async function SafariPage() {
             <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {parks.map((park) => (
                 <Link key={park.id} href={`/trips?destination=${park.slug}`} className="group">
-                  <div className="media aspect-[3/2] rounded-[--radius-card]">
+                  <div className="media aspect-[3/2] rounded-[var(--radius-card)]">
                     {park.heroImage && (
                       <Image
                         src={park.heroImage}

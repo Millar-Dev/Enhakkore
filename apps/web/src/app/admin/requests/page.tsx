@@ -90,7 +90,7 @@ export default function AdminRequestsPage() {
             onClick={() => setStatus(filter.id)}
             aria-pressed={status === filter.id}
             className={cx(
-              'h-10 shrink-0 rounded-[--radius-pill] border px-4 text-[0.8125rem] font-semibold transition-all',
+              'h-10 shrink-0 rounded-[var(--radius-pill)] border px-4 text-[0.8125rem] font-semibold transition-all',
               status === filter.id
                 ? 'border-ink bg-ink text-white'
                 : 'border-line-strong bg-white text-ink-soft hover:border-ink',
@@ -185,7 +185,7 @@ export default function AdminRequestsPage() {
               )}
 
               {request.notes && (
-                <p className="mt-4 rounded-[--radius-field] bg-sand px-4 py-3 text-[0.875rem] leading-relaxed text-ink-soft">
+                <p className="mt-4 rounded-[var(--radius-field)] bg-sand px-4 py-3 text-[0.875rem] leading-relaxed text-ink-soft">
                   {request.notes}
                 </p>
               )}

@@ -58,7 +58,7 @@ export default async function ImpactDashboardPage() {
           </p>
 
           {summary?.isDemoData && (
-            <div className="mt-7 flex flex-wrap items-center gap-3 rounded-[--radius-card] border border-dashed border-line-strong bg-white p-4">
+            <div className="mt-7 flex flex-wrap items-center gap-3 rounded-[var(--radius-card)] border border-dashed border-line-strong bg-white p-4">
               <DemoBadge label="Demonstration figures" />
               <p className="text-[0.8125rem] leading-relaxed text-ink-muted">
                 Every number on this page comes from the development seed. Nothing here has been raised,
@@ -72,7 +72,7 @@ export default async function ImpactDashboardPage() {
       {summary && (
         <section className="section-tight">
           <div className="shell">
-            <dl className="grid gap-px overflow-hidden rounded-[--radius-card] border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+            <dl className="grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
               {[
                 { label: 'Total contributions', value: price(summary.totalContributions), tone: 'impact' },
                 { label: 'Contributions made', value: summary.contributionCount.toLocaleString('en-GB') },

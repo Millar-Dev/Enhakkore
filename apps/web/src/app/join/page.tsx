@@ -101,7 +101,7 @@ function JoinForm() {
               aria-checked={active}
               onClick={() => setAccountType(option.value)}
               className={cx(
-                'flex flex-col items-start gap-2.5 rounded-[--radius-card] border p-4 text-left transition-all duration-150',
+                'flex flex-col items-start gap-2.5 rounded-[var(--radius-card)] border p-4 text-left transition-all duration-150',
                 active ? 'border-ink bg-ink/[0.03] ring-1 ring-ink' : 'border-line-strong hover:border-ink',
               )}
             >

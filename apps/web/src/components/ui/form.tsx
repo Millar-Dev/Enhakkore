@@ -12,7 +12,7 @@ import { cx } from './index';
    ========================================================================== */
 
 const CONTROL =
-  'w-full h-12 rounded-[--radius-field] border border-line-strong bg-white px-3.5 text-[0.9375rem] text-ink ' +
+  'w-full h-12 rounded-[var(--radius-field)] border border-line-strong bg-white px-3.5 text-[0.9375rem] text-ink ' +
   'placeholder:text-ink-faint transition-colors duration-150 ' +
   'hover:border-ink-faint focus:border-acacia-600 focus:outline-none focus:ring-4 focus:ring-acacia-600/10 ' +
   'disabled:bg-sand disabled:text-ink-muted';
@@ -197,7 +197,7 @@ export function ChoiceGroup<T extends string | number>({
               onClick={() => onChange(option.value)}
               aria-pressed={selected}
               className={cx(
-                'min-h-11 rounded-[--radius-field] border px-4 text-[0.875rem] font-semibold transition-all duration-150',
+                'min-h-11 rounded-[var(--radius-field)] border px-4 text-[0.875rem] font-semibold transition-all duration-150',
                 selected ? active : 'border-line-strong bg-white text-ink-soft hover:border-ink hover:text-ink',
               )}
             >

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { ImpactProjectDetail } from '@enhakkore/shared';
 import { formatMoney } from '@enhakkore/shared';
 import { Alert, Button, Icon, Progress, cx } from '@/components/ui';
+import { PARTNER, PartnerLogo } from '@/components/brand/Partner';
 import { ChoiceGroup, Input, Textarea } from '@/components/ui/form';
 import { ApiError, api } from '@/lib/api';
 import { price } from '@/lib/format';
@@ -72,7 +73,7 @@ export function DonatePanel({ project }: { project: ImpactProjectDetail }) {
 
   if (closed) {
     return (
-      <div className="rounded-[--radius-card] border border-line bg-white p-6">
+      <div className="rounded-[var(--radius-card)] border border-line bg-white p-6">
         <Progress percent={project.progress} />
         <p className="mt-3 text-[0.875rem]">
           <span className="font-bold text-clay-600">{price(project.raised, true)}</span>
@@ -89,7 +90,7 @@ export function DonatePanel({ project }: { project: ImpactProjectDetail }) {
 
   if (result?.ok) {
     return (
-      <div className="rounded-[--radius-card] border border-acacia-100 bg-acacia-50 p-7 text-center">
+      <div className="rounded-[var(--radius-card)] border border-acacia-100 bg-acacia-50 p-7 text-center">
         <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-acacia-600 text-white">
           <Icon.check size={24} />
         </span>
@@ -98,7 +99,7 @@ export function DonatePanel({ project }: { project: ImpactProjectDetail }) {
           {price({ amount, currency })} recorded against {project.title}.
         </p>
         {result.simulated && (
-          <p className="mt-4 rounded-[--radius-field] bg-white/70 px-4 py-3 text-[0.8125rem] leading-relaxed text-ink-muted">
+          <p className="mt-4 rounded-[var(--radius-field)] bg-white/70 px-4 py-3 text-[0.8125rem] leading-relaxed text-ink-muted">
             This was a simulated transaction — no payment provider is connected in this build and no money
             has moved.
           </p>
@@ -111,7 +112,7 @@ export function DonatePanel({ project }: { project: ImpactProjectDetail }) {
   }
 
   return (
-    <form onSubmit={submit} className="rounded-[--radius-card] border border-line bg-white p-6">
+    <form onSubmit={submit} className="rounded-[var(--radius-card)] border border-line bg-white p-6">
       <div>
         <Progress percent={project.progress} />
         <div className="mt-3 flex items-baseline justify-between gap-3">
@@ -214,6 +215,16 @@ export function DonatePanel({ project }: { project: ImpactProjectDetail }) {
         Enhakkore takes no commission on contributions. In this pre-launch build the transaction is
         simulated — do not enter real payment details anywhere on this site.
       </p>
+
+      {/* Who the contribution is given alongside, shown where the decision is
+          actually made rather than only on the page that led here. */}
+      <div className="mt-5 flex items-center gap-3 border-t border-line pt-5">
+        <PartnerLogo width={76} className="shrink-0" />
+        <p className="text-[0.75rem] leading-relaxed text-ink-muted">
+          Delivered with our charity partner{' '}
+          <span className="font-semibold text-ink">{PARTNER.name}</span> — {PARTNER.tagline.toLowerCase()}.
+        </p>
+      </div>
     </form>
   );
 }

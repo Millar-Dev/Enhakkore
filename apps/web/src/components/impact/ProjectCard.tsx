@@ -26,7 +26,7 @@ export function ProjectCard({
   return (
     <article className={cx('group', className)}>
       <Link href={`/impact/${project.slug}`} className="block">
-        <div className="media aspect-[16/10] rounded-[--radius-card]">
+        <div className="media aspect-[16/10] rounded-[var(--radius-card)]">
           <Image
             src={project.heroImage}
             alt=""
@@ -86,7 +86,7 @@ export function ProjectMini({ project }: { project: ImpactProjectSummary }) {
   return (
     <Link
       href={`/impact/${project.slug}`}
-      className="group flex gap-4 rounded-[--radius-card] border border-line bg-white p-3 transition-colors hover:border-clay-100 hover:bg-clay-50/40"
+      className="group flex gap-4 rounded-[var(--radius-card)] border border-line bg-white p-3 transition-colors hover:border-clay-100 hover:bg-clay-50/40"
     >
       <div className="media relative h-20 w-20 shrink-0 rounded-[0.625rem]">
         <Image src={project.heroImage} alt="" fill sizes="80px" className="object-cover" />

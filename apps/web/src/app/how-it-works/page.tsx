@@ -120,7 +120,7 @@ export default function HowItWorksPage() {
                   </p>
                 </div>
 
-                <div className="media aspect-[4/3] rounded-[--radius-card]">
+                <div className="media aspect-[4/3] rounded-[var(--radius-card)]">
                   <Image
                     src={step.image}
                     alt={step.alt}

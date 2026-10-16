@@ -6,6 +6,7 @@ import { DepartureCard, TripCard } from '@/components/trips/TripCard';
 import { SearchBar } from '@/components/trips/SearchBar';
 import { ProjectCard } from '@/components/impact/ProjectCard';
 import { HeroMedia, type HeroVideoSource } from '@/components/home/HeroMedia';
+import { PartnerPill } from '@/components/brand/Partner';
 import {
   Badge,
   ButtonLink,
@@ -193,11 +194,17 @@ export default async function HomePage() {
               <Link
                 key={category.href}
                 href={category.href}
-                className="shrink-0 rounded-[--radius-pill] border border-white/25 bg-white/10 px-4 py-2.5 text-[0.8125rem] font-semibold text-white backdrop-blur-md transition-colors hover:border-white/50 hover:bg-white/20"
+                className="shrink-0 rounded-[var(--radius-pill)] border border-white/25 bg-white/10 px-4 py-2.5 text-[0.8125rem] font-semibold text-white backdrop-blur-md transition-colors hover:border-white/50 hover:bg-white/20"
               >
                 {category.label}
               </Link>
             ))}
+          </div>
+
+          {/* Arrives last in the sequence: the partnership is a reason to
+              trust the place, not the first thing being sold. */}
+          <div className="animate-hero mt-8 md:mt-9" style={heroDelay(7)}>
+            <PartnerPill />
           </div>
         </div>
       </section>
@@ -296,7 +303,7 @@ export default async function HomePage() {
             }
           />
 
-          <ol className="mt-12 grid gap-px overflow-hidden rounded-[--radius-card] border border-line bg-line sm:grid-cols-2 lg:grid-cols-5">
+          <ol className="mt-12 grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-line bg-line sm:grid-cols-2 lg:grid-cols-5">
             {STEPS.map((step) => (
               <li key={step.number} className="bg-white p-6 lg:p-7">
                 <span className="text-[0.6875rem] font-bold tracking-[0.16em] text-acacia-600">
@@ -380,7 +387,7 @@ export default async function HomePage() {
               </p>
             )}
 
-            <dl className="mt-8 grid gap-px overflow-hidden rounded-[--radius-card] border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+            <dl className="mt-8 grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
               {[
                 { label: 'Travellers involved', value: counters.travellersInvolved.toLocaleString('en-GB') },
                 { label: 'Projects supported', value: counters.projectsSupported.toLocaleString('en-GB') },
@@ -519,7 +526,7 @@ async function StoriesSection() {
 
         <div className="mt-12 grid gap-6 lg:grid-cols-3">
           {stories.map((story) => (
-            <figure key={story.id} className="flex flex-col rounded-[--radius-card] border border-white/12 bg-white/[0.04] p-7">
+            <figure key={story.id} className="flex flex-col rounded-[var(--radius-card)] border border-white/12 bg-white/[0.04] p-7">
               <Stars rating={story.rating} />
               {story.title && (
                 <figcaption className="mt-4 text-[1.0625rem] font-bold leading-snug tracking-tight text-white">

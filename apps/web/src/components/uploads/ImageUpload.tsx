@@ -100,7 +100,7 @@ export function ImageUpload({
               {value.map((url, index) => (
                 <li
                   key={url}
-                  className="group relative aspect-[4/3] overflow-hidden rounded-[--radius-field] border border-line bg-sand"
+                  className="group relative aspect-[4/3] overflow-hidden rounded-[var(--radius-field)] border border-line bg-sand"
                 >
                   <Image
                     src={url}
@@ -131,7 +131,7 @@ export function ImageUpload({
               {pending.map((item, index) => (
                 <li
                   key={`${item.name}-${index}`}
-                  className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-[--radius-field] border border-dashed border-line-strong bg-sand px-2"
+                  className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-[var(--radius-field)] border border-dashed border-line-strong bg-sand px-2"
                 >
                   <div className="h-1 w-full overflow-hidden rounded-full bg-line">
                     <div
@@ -154,7 +154,7 @@ export function ImageUpload({
               onDragLeave={() => setDragging(false)}
               onDrop={onDrop}
               className={cx(
-                'rounded-[--radius-field] border border-dashed px-4 py-6 text-center transition-colors duration-150',
+                'rounded-[var(--radius-field)] border border-dashed px-4 py-6 text-center transition-colors duration-150',
                 dragging ? 'border-acacia-600 bg-acacia-600/5' : 'border-line-strong bg-white',
               )}
             >

@@ -71,7 +71,7 @@ export default function OrganizerBookingsPage() {
             onClick={() => setStatus(filter.id)}
             aria-pressed={status === filter.id}
             className={cx(
-              'h-10 shrink-0 rounded-[--radius-pill] border px-4 text-[0.8125rem] font-semibold transition-all',
+              'h-10 shrink-0 rounded-[var(--radius-pill)] border px-4 text-[0.8125rem] font-semibold transition-all',
               status === filter.id
                 ? 'border-ink bg-ink text-white'
                 : 'border-line-strong bg-white text-ink-soft hover:border-ink',

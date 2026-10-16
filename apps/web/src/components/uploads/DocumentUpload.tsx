@@ -65,7 +65,7 @@ export function DocumentUpload({ types, value, onChange, disabled }: DocumentUpl
             <li
               key={type.label}
               className={cx(
-                'rounded-[--radius-field] border px-4 py-3 transition-colors',
+                'rounded-[var(--radius-field)] border px-4 py-3 transition-colors',
                 attached ? 'border-acacia-600 bg-acacia-50' : 'border-line-strong',
               )}
             >
