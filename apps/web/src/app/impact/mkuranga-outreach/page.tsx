@@ -33,7 +33,7 @@ export default function MkurangaPage() {
           sizes="100vw"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#15110c] via-[#15110c]/60 to-[#15110c]/25" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#04121e] via-[#04121e]/60 to-[#04121e]/25" />
 
         <div className="shell relative">
           <Reveal>

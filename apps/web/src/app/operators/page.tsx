@@ -76,7 +76,7 @@ export default function OperatorsPage() {
           sizes="100vw"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#15110c] via-[#15110c]/55 to-[#15110c]/25" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#04121e] via-[#04121e]/55 to-[#04121e]/25" />
 
         <div className="shell relative">
           <Eyebrow className="text-white/55">For tour operators</Eyebrow>

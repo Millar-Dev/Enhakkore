@@ -46,7 +46,7 @@ export default function ArushaPackagePage() {
           className="absolute inset-0 opacity-70"
           style={{
             backgroundImage:
-              'radial-gradient(120% 80% at 15% 0%, #3a2f22 0%, transparent 55%), radial-gradient(90% 70% at 90% 20%, rgba(197,164,109,0.35) 0%, transparent 60%), radial-gradient(130% 90% at 50% 110%, #15110c 20%, transparent 70%)',
+              'radial-gradient(120% 80% at 15% 0%, #0e4269 0%, transparent 55%), radial-gradient(90% 70% at 90% 20%, rgba(212,175,83,0.35) 0%, transparent 60%), radial-gradient(130% 90% at 50% 110%, #04121e 20%, transparent 70%)',
           }}
         />
 

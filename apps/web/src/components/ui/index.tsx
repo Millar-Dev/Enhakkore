@@ -25,12 +25,17 @@ const BUTTON_BASE =
   'disabled:opacity-45 disabled:pointer-events-none select-none whitespace-nowrap';
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-ink text-white hover:bg-ink-soft active:scale-[0.985] shadow-[0_1px_2px_rgba(14,17,19,0.16)]',
-  secondary: 'bg-white text-ink border border-line-strong hover:border-ink hover:bg-sand active:scale-[0.985]',
-  ghost: 'text-ink-soft hover:text-ink hover:bg-sand',
-  impact: 'bg-clay-500 text-white hover:bg-clay-600 active:scale-[0.985]',
+  /* Golden sand with navy type — the pair reads at 7:1, so the brand's own
+     colours carry the most important action on the site without a compromise. */
+  primary:
+    'bg-clay-400 text-acacia-600 hover:bg-clay-500 hover:text-white active:scale-[0.985] shadow-[0_1px_2px_rgba(8,43,69,0.18)]',
+  secondary:
+    'bg-white text-acacia-600 border border-acacia-600/30 hover:border-acacia-600 hover:bg-acacia-50 active:scale-[0.985]',
+  ghost: 'text-ink-soft hover:text-acacia-600 hover:bg-sand',
+  /* Impact actions are green: giving is not the same gesture as booking. */
+  impact: 'bg-safari-500 text-white hover:bg-safari-600 active:scale-[0.985]',
   danger: 'bg-white text-danger border border-danger/25 hover:bg-danger-soft',
-  inverted: 'bg-white text-ink hover:bg-white/90 active:scale-[0.985]',
+  inverted: 'bg-white text-acacia-600 hover:bg-white/90 active:scale-[0.985]',
 };
 
 // Touch targets stay at 44px and up on the smallest size — this is a phone-first

@@ -72,15 +72,21 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? 'page' : undefined}
                   className={cx(
-                    'rounded-[var(--radius-field)] px-3.5 py-2 text-[0.875rem] font-medium transition-colors',
+                    'relative px-3.5 py-2 text-[0.875rem] font-medium transition-colors',
+                    // A thin golden rule under the current page — the one gold
+                    // mark in the navigation, so it means something.
+                    'after:absolute after:inset-x-3.5 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-clay-400',
+                    'after:origin-left after:transition-transform after:duration-200',
+                    active ? 'after:scale-x-100' : 'after:scale-x-0',
                     floating
                       ? active
                         ? 'text-white'
                         : 'text-white/75 hover:text-white'
                       : active
-                        ? 'text-ink'
-                        : 'text-ink-muted hover:text-ink',
+                        ? 'text-acacia-600'
+                        : 'text-ink-muted hover:text-acacia-600',
                   )}
                 >
                   {item.label}
@@ -109,13 +115,17 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
               <div className="hidden items-center gap-2 md:flex">
                 <ButtonLink
                   href="/signin"
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
-                  className={floating ? 'text-white/85 hover:bg-white/10 hover:text-white' : ''}
+                  className={
+                    floating
+                      ? 'border-white/35 bg-transparent text-white hover:border-white hover:bg-white/10 hover:text-white'
+                      : ''
+                  }
                 >
                   Sign in
                 </ButtonLink>
-                <ButtonLink href="/join" variant={floating ? 'inverted' : 'primary'} size="sm">
+                <ButtonLink href="/join" variant="primary" size="sm">
                   Get Started
                 </ButtonLink>
               </div>

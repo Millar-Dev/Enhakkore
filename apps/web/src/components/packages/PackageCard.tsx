@@ -35,7 +35,7 @@ export function PackageCard({ trip, priority }: { trip: UpcomingTrip; priority?:
             className="absolute inset-0"
             style={{
               backgroundImage:
-                'radial-gradient(100% 80% at 15% 0%, #3a2f22 0%, transparent 60%), radial-gradient(85% 80% at 90% 100%, rgba(197,164,109,0.42) 0%, transparent 62%)',
+                'radial-gradient(100% 80% at 15% 0%, #0e4269 0%, transparent 60%), radial-gradient(85% 80% at 90% 100%, rgba(212,175,83,0.42) 0%, transparent 62%)',
             }}
           />
         )}

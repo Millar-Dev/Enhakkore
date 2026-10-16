@@ -16,70 +16,79 @@
 
 @theme {
   /* --- Colour -----------------------------------------------------------
-     Beige, gold and white, anchored by a deep warm espresso.
+     Deep ocean navy for the brand, golden sand for actions, safari green for
+     nature and impact, white and soft cream for the interface.
 
-     The anchor is the part that makes this read as luxury rather than washed
-     out: cream and gold on their own have no weight, and every surface ends up
-     the same value. A near-black with brown in it — never a blue-grey — gives
-     the type somewhere to sit and the gold something to shine against.
-
-     Gold is used two ways and they are not interchangeable. The pale champagne
-     is a FILL, for surfaces and rules; it cannot carry small text. The bronze
-     steps are for TYPE, dark enough to pass contrast on white. The ramps below
-     keep that distinction so a component cannot pick the wrong one by accident.
+     The ramps exist because a brand colour is never one value. Each family has
+     a light step for dark grounds, a mid for fills, and dark steps that are
+     safe to set type in — the accent colours in particular, since golden sand
+     at full strength reads at 1.9:1 on white and cannot carry a word of text.
+     Gold fills, bronze writes. The tokens keep those apart so a component
+     cannot reach for the wrong one.
      ----------------------------------------------------------------------- */
 
-  /* Espresso, for type. Warm rather than grey — the brown is what keeps it in
-     the same family as the beige instead of looking like a default. */
-  --color-ink: #1f1a14;
-  --color-ink-soft: #3d352a;
-  --color-ink-muted: #6e6253;
-  --color-ink-faint: #9c9080;
+  /* Type. Dark text rather than full navy for body copy, which is easier to
+     read at length; muted grey for metadata and helper text. */
+  --color-ink: #17212b;
+  --color-ink-soft: #2c3a47;
+  --color-ink-muted: #667085;
+  --color-ink-faint: #98a2b3;
 
   --color-paper: #ffffff;
-  --color-sand: #f7f1e6;
-  --color-sand-deep: #efe4d1;
-  --color-line: #e8dcc8;
-  --color-line-strong: #d7c8ac;
+  --color-sand: #f8f6f1;
+  --color-sand-deep: #efece4;
+  --color-line: #e4e7ec;
+  --color-line-strong: #d0d5dd;
 
-  /* Acacia — the brand. Now antique gold: 300 is the light step for dark
-     grounds, 600 the brand colour itself, dark enough to carry white text. */
-  --color-acacia-50: #faf4e9;
-  --color-acacia-100: #f0e2c6;
-  --color-acacia-300: #d8bc84;
-  --color-acacia-500: #9a7636;
-  --color-acacia-600: #7c5d28;
-  --color-acacia-700: #5e4519;
-  --color-acacia-900: #3a2a0f;
+  /* Acacia — the brand, now deep ocean navy. 600 is the brand colour itself;
+     300 is the light step for navy grounds. */
+  --color-acacia-50: #eaf0f5;
+  --color-acacia-100: #ccdbe6;
+  --color-acacia-300: #6f9ab8;
+  --color-acacia-500: #0e4269;
+  --color-acacia-600: #082b45;
+  --color-acacia-700: #061f33;
+  --color-acacia-900: #04121e;
 
-  /* Clay — impact. Champagne for fills, bronze for anything that is read. */
-  --color-clay-50: #fbf5ea;
-  --color-clay-100: #f3e5c9;
-  --color-clay-400: #c5a46d;
-  --color-clay-500: #a8803f;
-  --color-clay-600: #86631f;
-  --color-clay-700: #674b13;
+  /* Clay — accents, prices and actions, now golden sand. 400 is the sand
+     itself and is a FILL; 600 and 700 are the steps that may carry text. */
+  --color-clay-50: #fdf8ec;
+  --color-clay-100: #f7ecd0;
+  --color-clay-400: #d4af53;
+  --color-clay-500: #a9842f;
+  --color-clay-600: #8a6a1f;
+  --color-clay-700: #6a5115;
+
+  /* Safari green — nature, positive status and impact. */
+  --color-safari-50: #eaf5ef;
+  --color-safari-100: #c9e6d6;
+  --color-safari-300: #6fb391;
+  --color-safari-500: #217a4d;
+  --color-safari-600: #1a6340;
+  --color-safari-700: #134a30;
+
+  /* Sunset orange — adventure only, and sparingly, so it never competes with
+     the gold. Deliberately has no ramp: one value, used rarely. */
+  --color-sunset: #f57a00;
 
   /* The palette by name, for artwork and anything that needs it literally. */
-  --color-beige: #e6d4b8;
-  --color-champagne: #c5a46d;
-  --color-ivory: #faf7f0;
-  --color-espresso: #1f1a14;
+  --color-navy: #082b45;
+  --color-sand-gold: #d4af53;
+  --color-cream: #f8f6f1;
 
-  /* The package pages were built on names from an earlier palette. Rather than
-     rewrite them, those names resolve here: espresso where they said navy,
-     champagne where they said gold. */
-  --color-navy-500: #3a2f22;
-  --color-navy-700: #241d14;
-  --color-navy-900: #15110c;
-  --color-gold-300: #e3c68c;
-  --color-gold-500: #c5a46d;
-  --color-gold-600: #a8803f;
+  /* The package pages were written against these names before the palette
+     settled. They now resolve to the navy and gold above. */
+  --color-navy-500: #0e4269;
+  --color-navy-700: #082b45;
+  --color-navy-900: #04121e;
+  --color-gold-300: #e6cb8c;
+  --color-gold-500: #d4af53;
+  --color-gold-600: #a9842f;
 
-  --color-success: #4e6b4f;
-  --color-warning: #9a6b12;
-  --color-danger: #9b3a2c;
-  --color-danger-soft: #f9eeeb;
+  --color-success: #217a4d;
+  --color-warning: #b54708;
+  --color-danger: #b42318;
+  --color-danger-soft: #fef3f2;
 
   /* --- Type -------------------------------------------------------------- */
   --font-sans: var(--font-jakarta), 'Plus Jakarta Sans', -apple-system,
