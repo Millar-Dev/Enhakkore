@@ -240,8 +240,8 @@ export default async function ImpactPage({
           </Link>
 
           <PartnerCard className="mt-6">
-            Enhakkore&rsquo;s impact work is delivered together with our charity partner. Contributions reach
-            the named project they were given to, and Enhakkore takes no commission on them.
+            No child should grow up in poverty. Contributions reach the named project they were given
+            to, and Enhakkore takes no commission on them.
           </PartnerCard>
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

@@ -3,39 +3,34 @@ import Link from 'next/link';
 import { PARTNER } from '@/components/brand/Partner';
 
 /**
- * WSC's mark in the hero, on the right, on its own.
+ * WSC's mark at the foot of the hero.
  *
- * No card, no tile, no white box: the cream artwork sits directly on the
- * photograph, the way the Enhakkore mark does. A faint drop shadow is the only
- * thing added, and only so the strapline survives a pale frame of video.
+ * Enhakkore's logo holds the top of the page; this sits at the bottom of the
+ * same hero, so the two are never read as a pair of badges side by side. It is
+ * not labelled as an outside partner — WSC is the impact side of what we do,
+ * not a sponsor bolted on.
  *
- * Sizing is fluid rather than stepped — a clamp between a floor that stays
- * legible on a small phone and a ceiling that stops it competing with the
- * headline — so it fits every viewport in between without a breakpoint for
- * each one. On short screens, where the headline needs every pixel of height,
- * it is dropped entirely.
+ * No card and no tile: the ivory artwork sits straight on the photograph, with
+ * a faint shadow only so the strapline survives a pale frame of video. The
+ * width is a clamp, so it fits every screen between a small phone and a wide
+ * desktop without a breakpoint for each, and it steps out of the way entirely
+ * on short screens where the headline needs the height.
  */
 export function HeroPartnerMark() {
   return (
     <Link
       href="/impact"
-      aria-label={`${PARTNER.fullName} — see our impact work`}
-      className="group pointer-events-auto absolute right-4 top-24 z-10 hidden [@media(min-height:520px)]:block md:right-8 md:top-28 lg:right-12"
+      aria-label={`${PARTNER.fullName} — see the impact work`}
+      className="group hidden [@media(min-height:560px)]:block"
     >
-      <span className="flex flex-col items-center gap-2 transition-transform duration-300 group-hover:-translate-y-0.5">
-        <Image
-          src={PARTNER.logoLight}
-          alt={`${PARTNER.fullName} logo`}
-          width={200}
-          height={113}
-          priority
-          className="h-auto drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]"
-          style={{ width: 'clamp(5rem, 10vw, 9rem)' }}
-        />
-        <span className="text-center text-[0.5625rem] font-semibold uppercase leading-tight tracking-[0.14em] text-white/75 drop-shadow-[0_1px_6px_rgba(0,0,0,0.7)] md:text-[0.625rem]">
-          Social impact partner
-        </span>
-      </span>
+      <Image
+        src={PARTNER.logoLight}
+        alt={`${PARTNER.fullName} logo`}
+        width={200}
+        height={113}
+        className="h-auto opacity-90 drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)] transition-opacity duration-300 group-hover:opacity-100"
+        style={{ width: 'clamp(4.5rem, 8vw, 7rem)' }}
+      />
     </Link>
   );
 }

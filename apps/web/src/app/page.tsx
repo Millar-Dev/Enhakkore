@@ -151,8 +151,6 @@ export default async function HomePage() {
         <HeroMedia poster={HERO_IMAGE} alt={HERO_ALT} videos={HERO_VIDEOS} />
         <div className="absolute inset-0 bg-gradient-to-t from-[#080a0b] via-[#080a0b]/55 to-[#080a0b]/35" />
 
-        {/* WSC, alone, opposite the headline. */}
-        <HeroPartnerMark />
 
         {/* The words arrive one line at a time, in pure CSS so they animate on
             first paint without waiting for JavaScript. The whole sequence is
@@ -205,6 +203,12 @@ export default async function HomePage() {
                 {category.label}
               </Link>
             ))}
+          </div>
+
+          {/* The foot of the hero — Enhakkore's mark holds the top of the page,
+              this holds the bottom, and the two are never a pair of badges. */}
+          <div className="animate-hero mt-8 md:mt-10" style={heroDelay(7)}>
+            <HeroPartnerMark />
           </div>
 
         </div>

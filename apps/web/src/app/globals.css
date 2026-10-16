@@ -44,6 +44,16 @@
   --color-clay-600: #9a4f24;
   --color-clay-700: #7c3e1c;
 
+  /* The brand palette: warm beige, champagne gold, deep forest green, ivory
+     and charcoal. Introduced for the logo artwork and the surfaces that carry
+     it. The wider site still runs on acacia and clay; migrating every
+     component to this palette is a pass of its own. */
+  --color-beige: #e6d4b8;
+  --color-champagne: #c5a46d;
+  --color-forest: #183d32;
+  --color-ivory: #faf7f0;
+  --color-charcoal: #292b27;
+
   /* Navy and gold — the partnership marks, and the Arusha package that carries
      both brands. Added for that lockup; not a replacement for acacia, which
      remains the brand colour everywhere else. */

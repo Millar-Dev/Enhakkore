@@ -154,11 +154,11 @@ export function SiteFooter() {
             loading="lazy"
             className="h-[38px] w-auto"
           />
-          <p className="max-w-md text-[0.8125rem] leading-relaxed text-ink-muted">
-            <span className="font-semibold text-ink">Our social-impact partner.</span> We Save Children works
-            so that no child grows up in poverty. Enhakkore runs the travel;{' '}
-            <Link href="/impact" className="underline underline-offset-2 hover:text-ink">
-              see the work
+          <p className="max-w-md text-[0.9375rem] leading-relaxed text-ink">
+            <span className="font-semibold">No child should grow up in poverty.</span> Every trip we run
+            helps us get back out to communities like Hoyoyo — and anyone can add to that.{' '}
+            <Link href="/impact" className="font-semibold text-acacia-700 underline underline-offset-2">
+              Give to the work
             </Link>
             .
           </p>

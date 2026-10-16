@@ -328,25 +328,16 @@ export default function ArushaPackagePage() {
             </h2>
           </Reveal>
           <Reveal delay={140}>
-            <div className="mx-auto mt-7 grid max-w-2xl gap-6 text-left sm:grid-cols-2">
-              <div className="rounded-[var(--radius-card)] bg-white/5 p-5">
-                <h3 className="text-[0.9375rem] font-bold text-gold-300">Enhakkore Travel &amp; Impact</h3>
-                <p className="mt-2 text-[0.875rem] leading-relaxed text-white/75">
-                  Plans and runs the travel: the route, the transport, the itinerary and the group.
-                </p>
-              </div>
-              <div className="rounded-[var(--radius-card)] bg-white/5 p-5">
-                <h3 className="text-[0.9375rem] font-bold text-gold-300">WSC — We Save Children</h3>
-                <p className="mt-2 text-[0.875rem] leading-relaxed text-white/75">
-                  Our social-impact partner, working so that no child grows up in poverty.
-                </p>
-              </div>
-            </div>
+            <p className="mx-auto mt-7 max-w-2xl text-[1.0625rem] leading-relaxed text-white/75">
+              Travelling with us is how the impact work keeps going. Every departure takes us
+              back out to communities like Hoyoyo — and you can add to that directly.
+            </p>
           </Reveal>
+
           <Reveal delay={200}>
             <p className="mx-auto mt-7 max-w-xl text-[0.875rem] leading-relaxed text-white/60">
-              This is a travel experience delivered in partnership with a social-impact organisation. It is
-              not a donation campaign, and WSC does not operate the travel.
+              This is a travel experience. Booking it is not a donation — if you want to give to the
+              community work, that is a separate thing and we will point you to it.
             </p>
           </Reveal>
         </div>

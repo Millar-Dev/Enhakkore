@@ -98,7 +98,7 @@ export default function ContactPage() {
                 className="inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-dashed border-line-strong px-4 py-2.5 text-[0.875rem] font-semibold text-ink-muted transition-colors hover:border-ink hover:text-ink"
               >
                 {CONTACT.partnerSocial.handle}
-                <span className="text-[0.75rem] font-normal text-ink-faint">our impact partner</span>
+                <span className="text-[0.75rem] font-normal text-ink-faint">impact</span>
               </a>
             </div>
           </Reveal>

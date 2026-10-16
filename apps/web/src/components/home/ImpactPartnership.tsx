@@ -61,24 +61,13 @@ export function ImpactPartnership() {
               connect experiences with opportunities to make a positive difference.
             </p>
 
-            {/* Who does what — stated plainly, so neither name stands in for the other. */}
-            <dl className="mt-8 grid gap-5 sm:grid-cols-2">
-              <div className="rounded-[var(--radius-card)] bg-white/5 p-5">
-                <dt className="text-[0.9375rem] font-bold text-gold-300">Enhakkore</dt>
-                <dd className="mt-2 text-[0.875rem] leading-relaxed text-white/70">
-                  Plans and runs the travel and the experiences, and organises our own community outreach.
-                </dd>
-              </div>
-              <div className="rounded-[var(--radius-card)] bg-white/5 p-5">
-                <dt className="text-[0.9375rem] font-bold text-gold-300">We Save Children (WSC)</dt>
-                <dd className="mt-2 text-[0.875rem] leading-relaxed text-white/70">
-                  Our social-impact partner, working so that no child grows up in poverty.
-                </dd>
-              </div>
-            </dl>
+            <p className="mt-5 max-w-xl text-[1.0625rem] leading-relaxed text-white/70">
+              We have seen what one day can do. Keeping it going takes more than good
+              intentions — it takes people who decide to be part of it.
+            </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-6">
-              {/* WSC's mark in cream, directly on the dark — no tile. */}
+              {/* WSC's mark in ivory, directly on the dark — no tile. */}
               <Image
                 src={PARTNER.logoLight}
                 alt={`${PARTNER.fullName} logo`}
@@ -90,9 +79,9 @@ export function ImpactPartnership() {
 
               <Link
                 href="/impact"
-                className="inline-flex items-center gap-2 text-[0.9375rem] font-semibold text-white underline-offset-4 hover:underline"
+                className="inline-flex items-center gap-2 rounded-[var(--radius-pill)] bg-gold-500 px-6 py-3 text-[0.9375rem] font-bold text-navy-900 transition-colors duration-200 hover:bg-gold-300"
               >
-                See the work
+                Be part of it
                 <Icon.arrow />
               </Link>
             </div>

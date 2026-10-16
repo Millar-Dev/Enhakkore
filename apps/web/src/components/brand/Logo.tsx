@@ -4,17 +4,20 @@ import type { CSSProperties } from 'react';
 /**
  * The Enhakkore mark — the supplied artwork, not a drawing of it.
  *
- * The emblem is the top of the full logo, cropped and trimmed from the file
- * provided, so the letterform, the gold orbit, the globe and the aircraft are
- * exactly as they were designed. It is never recoloured: a navy and gold mark
- * cannot be turned white without becoming a different logo. Over photography
- * it sits on a small white tile instead, which keeps it legible and intact.
+ * The emblem is the top of the full logo, cropped from the file provided, so
+ * the letterform, the orbit, the globe and the aircraft keep the shapes they
+ * were designed with. Two colourways are generated from that one artwork:
+ * forest green with a champagne-gold orbit for light grounds, and warm beige
+ * with the same gold for dark ones. The E is never gold.
+ *
+ * A third, single-colour charcoal version lives at
+ * /partners/enhakkore-mark-mono.webp for print.
  *
  * The full logo, wordmark and descriptor included, lives at
  * /partners/enhakkore-wordmark.webp and is used where there is room for it.
  */
 
-const MARK = '/partners/enhakkore-mark.webp';
+const MARK = '/partners/enhakkore-mark-dark.webp';
 /** The same mark in cream, for dark surfaces. Not a tint — a second artwork. */
 const MARK_LIGHT = '/partners/enhakkore-mark-light.webp';
 /** Intrinsic proportions of the cropped emblem. */

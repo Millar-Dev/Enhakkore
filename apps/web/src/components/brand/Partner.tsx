@@ -141,7 +141,7 @@ export function PartnerCard({ className, children }: { className?: string; child
       <PartnershipLockup size="lg" className="shrink-0" />
       <div className="min-w-0">
         <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-ink-muted">
-          Travel &amp; social impact
+          Why we travel
         </p>
         <p className="mt-1.5 text-[1.0625rem] font-bold leading-snug tracking-tight text-ink">
           {PARTNER.tagline}
