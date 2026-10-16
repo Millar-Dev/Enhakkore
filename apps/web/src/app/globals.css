@@ -15,54 +15,62 @@
    ========================================================================== */
 
 @theme {
-  /* --- Colour ----------------------------------------------------------- */
-  --color-ink: #0e1113;
-  --color-ink-soft: #2b3238;
-  --color-ink-muted: #6a7279;
-  --color-ink-faint: #98a0a6;
+  /* --- Colour -----------------------------------------------------------
+     The brand palette: deep forest green, champagne gold, warm beige, ivory
+     and charcoal. The ramps below are built around those five, so a component
+     written against `acacia` or `clay` picks the palette up without being
+     rewritten — the names describe the ROLE (brand, impact), the values carry
+     the identity.
+     ----------------------------------------------------------------------- */
+
+  /* Charcoal, for type. Each step keeps its contrast on ivory: ink-muted is
+     the lightest that still passes for body text. */
+  --color-ink: #292b27;
+  --color-ink-soft: #454940;
+  --color-ink-muted: #6b6f65;
+  --color-ink-faint: #9a9e93;
 
   --color-paper: #ffffff;
-  --color-sand: #f7f4ee;
-  --color-sand-deep: #efeade;
-  --color-line: #e6e1d7;
-  --color-line-strong: #d6d0c3;
+  --color-sand: #faf7f0;
+  --color-sand-deep: #f1ebdd;
+  --color-line: #e7e0d2;
+  --color-line-strong: #d6cdb8;
 
-  /* Acacia — the brand green. Deep enough to sit on white at any size. */
-  --color-acacia-50: #eef5f1;
-  --color-acacia-100: #d3e6dc;
-  --color-acacia-300: #7aab94;
-  --color-acacia-500: #2b7a5c;
-  --color-acacia-600: #1d6248;
-  --color-acacia-700: #14543f;
-  --color-acacia-900: #0b3427;
+  /* Acacia — the brand green, now deep forest. 300 is the light step, for
+     type on dark grounds; 600 is the brand colour itself. */
+  --color-acacia-50: #edf3f0;
+  --color-acacia-100: #d3e3db;
+  --color-acacia-300: #8bb0a1;
+  --color-acacia-500: #22594a;
+  --color-acacia-600: #183d32;
+  --color-acacia-700: #122f27;
+  --color-acacia-900: #0a1c17;
 
-  /* Clay — reserved for impact. Never used for generic UI emphasis. */
-  --color-clay-50: #fbf2ec;
-  --color-clay-100: #f4e0d1;
-  --color-clay-400: #cf8355;
-  --color-clay-500: #b4602f;
-  --color-clay-600: #9a4f24;
-  --color-clay-700: #7c3e1c;
+  /* Clay — reserved for impact, now champagne and bronze. 400 is the
+     champagne itself; 600 and 700 are dark enough to set type on ivory. */
+  --color-clay-50: #fbf5ea;
+  --color-clay-100: #f2e4c8;
+  --color-clay-400: #c5a46d;
+  --color-clay-500: #a9833f;
+  --color-clay-600: #8a6629;
+  --color-clay-700: #6b4d1c;
 
-  /* The brand palette: warm beige, champagne gold, deep forest green, ivory
-     and charcoal. Introduced for the logo artwork and the surfaces that carry
-     it. The wider site still runs on acacia and clay; migrating every
-     component to this palette is a pass of its own. */
+  /* The five, by name, for artwork and anything that needs them literally. */
   --color-beige: #e6d4b8;
   --color-champagne: #c5a46d;
   --color-forest: #183d32;
   --color-ivory: #faf7f0;
   --color-charcoal: #292b27;
 
-  /* Navy and gold — the partnership marks, and the Arusha package that carries
-     both brands. Added for that lockup; not a replacement for acacia, which
-     remains the brand colour everywhere else. */
-  --color-navy-500: #1b2a5c;
-  --color-navy-700: #14204a;
-  --color-navy-900: #0d1733;
-  --color-gold-300: #e2c074;
-  --color-gold-500: #c79a3f;
-  --color-gold-600: #a87f2c;
+  /* The package pages were built on navy and gold before this palette
+     existed. Rather than rewrite them, those names now resolve to forest and
+     champagne, so they match everything else. */
+  --color-navy-500: #22594a;
+  --color-navy-700: #183d32;
+  --color-navy-900: #0f241d;
+  --color-gold-300: #e3c68c;
+  --color-gold-500: #c5a46d;
+  --color-gold-600: #a9833f;
 
   --color-success: #1d6248;
   --color-warning: #9a6b12;
