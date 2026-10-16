@@ -23,6 +23,7 @@ import {
 } from '@/components/ui';
 import { apiGet, query } from '@/lib/api';
 import { price } from '@/lib/format';
+import { realProjects, realTrips } from '@/lib/demo';
 
 export const revalidate = 120;
 
@@ -138,9 +139,9 @@ export default async function HomePage() {
   ]);
 
   // Demonstration listings stay off the public homepage.
-  const featuredTrips = (featured?.items ?? []).filter((trip) => !trip.organizer.isDemo);
-  const upcomingTrips = upcoming?.items ?? [];
-  const impactProjects = (projects?.items ?? []).filter((project) => !project.isDemo);
+  const featuredTrips = realTrips(featured?.items);
+  const upcomingTrips = realTrips(upcoming?.items);
+  const impactProjects = realProjects(projects?.items);
 
   return (
     <PublicShell transparentHeader>
@@ -377,7 +378,9 @@ export default async function HomePage() {
       {/* ------------------------------------------------------------------ */}
       {/* 7. What the platform adds up to                                     */}
       {/* ------------------------------------------------------------------ */}
-      {counters && (
+      {/* Hidden while every figure comes from the seed. A number labelled as a
+          demonstration is still a number a visitor reads as an achievement. */}
+      {counters && !counters.isDemoData && (
         <section className="section-tight">
           <div className="shell">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

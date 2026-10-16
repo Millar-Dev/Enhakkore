@@ -20,6 +20,7 @@ import {
 } from '@/components/ui';
 import { apiGet, query } from '@/lib/api';
 import { price } from '@/lib/format';
+import { realProjects } from '@/lib/demo';
 
 export const metadata: Metadata = {
   title: 'Impact',
@@ -75,7 +76,7 @@ export default async function ImpactPage({
 
   // Demonstration projects are not shown. Our own completed outreach is
   // featured above; this grid fills as real projects are added.
-  const items = (projects?.items ?? []).filter((project) => !project.isDemo);
+  const items = realProjects(projects?.items);
 
   return (
     <PublicShell transparentHeader>
@@ -121,8 +122,8 @@ export default async function ImpactPage({
         </section>
       )}
 
-      {/* Numbers */}
-      {summary && (
+      {/* Numbers — hidden while they are the seed's rather than anyone's. */}
+      {summary && !summary.isDemoData && (
         <section className="border-b border-line bg-white">
           <div className="shell py-10 md:py-12">
             {summary.isDemoData && (

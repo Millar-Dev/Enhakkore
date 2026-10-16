@@ -17,6 +17,7 @@ import {
 } from '@/components/ui';
 import { apiGet } from '@/lib/api';
 import { formatDate } from '@/lib/format';
+import { realTrips } from '@/lib/demo';
 
 export const metadata: Metadata = {
   title: 'Community',
@@ -50,8 +51,9 @@ export default async function CommunityPage() {
     apiGet<PlatformCounters>('/stats'),
   ]);
 
-  const departures = upcoming?.items ?? [];
-  const stories = reviews?.items ?? [];
+  const departures = realTrips(upcoming?.items);
+  // Reviews belong to seeded trips, so they go with the rest of the demo.
+  const stories = counters?.isDemoData ? [] : (reviews?.items ?? []);
 
   return (
     <PublicShell>

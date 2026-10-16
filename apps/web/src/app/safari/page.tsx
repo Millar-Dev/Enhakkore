@@ -7,6 +7,7 @@ import { TripCard } from '@/components/trips/TripCard';
 import { SearchBar } from '@/components/trips/SearchBar';
 import { ButtonLink, Card, EmptyState, Eyebrow, Icon, SectionHead } from '@/components/ui';
 import { apiGet, query } from '@/lib/api';
+import { realTrips } from '@/lib/demo';
 
 export const metadata: Metadata = {
   title: 'Safari',
@@ -59,7 +60,7 @@ export default async function SafariPage() {
     apiGet<{ items: DestinationSummary[] }>('/destinations'),
   ]);
 
-  const safariTrips = trips?.items ?? [];
+  const safariTrips = realTrips(trips?.items);
   const parks = (destinations?.items ?? []).filter(
     (destination) => destination.country === 'Tanzania' && (destination.tripCount ?? 0) > 0,
   );

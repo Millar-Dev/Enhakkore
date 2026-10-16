@@ -9,6 +9,7 @@ import { TripFilters, TripSort } from '@/components/trips/TripFilters';
 import { SearchBar } from '@/components/trips/SearchBar';
 import { Alert, ButtonLink, EmptyState, Icon, cx } from '@/components/ui';
 import { apiGet, query } from '@/lib/api';
+import { realTrips } from '@/lib/demo';
 
 export const metadata: Metadata = {
   title: 'Explore trips',
@@ -58,9 +59,7 @@ export default async function ExplorePage({
   // Demonstration listings are not shown to the public. What remains are real
   // trips; while there are none on the marketplace, our own departures below
   // are the page.
-  // A trip carries no demo flag of its own, but a demo trip belongs to a demo
-  // operator, and that is the record the seed marks.
-  const trips = (results?.items ?? []).filter((trip) => !trip.organizer.isDemo);
+  const trips = realTrips(results?.items);
   const total = trips.length;
   const totalPages = results?.totalPages ?? 1;
   const searchTerm = first(params.q);

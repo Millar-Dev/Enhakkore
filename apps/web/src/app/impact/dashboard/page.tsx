@@ -7,6 +7,7 @@ import { ProjectCard } from '@/components/impact/ProjectCard';
 import { Card, DemoBadge, Eyebrow, Progress, SectionHead, cx } from '@/components/ui';
 import { apiGet } from '@/lib/api';
 import { price } from '@/lib/format';
+import { realProjects } from '@/lib/demo';
 
 export const metadata: Metadata = {
   title: 'Impact dashboard',
@@ -33,7 +34,10 @@ export default async function ImpactDashboardPage() {
     apiGet<Paginated<ImpactProjectSummary>>('/impact/projects?pageSize=24'),
   ]);
 
-  const items = projects?.items ?? [];
+  const items = realProjects(projects?.items);
+  // The dashboard is entirely derived figures. With only seeded data behind
+  // them there is nothing honest to show, so it says that instead.
+  const hasRealData = items.length > 0 && !summary?.isDemoData;
   const active = items.filter((project) => project.status === 'ACTIVE');
   const completed = items.filter((project) => project.status === 'COMPLETED');
 
@@ -57,19 +61,25 @@ export default async function ImpactDashboardPage() {
             entered by hand.
           </p>
 
-          {summary?.isDemoData && (
-            <div className="mt-7 flex flex-wrap items-center gap-3 rounded-[var(--radius-card)] border border-dashed border-line-strong bg-white p-4">
-              <DemoBadge label="Demonstration figures" />
-              <p className="text-[0.8125rem] leading-relaxed text-ink-muted">
-                Every number on this page comes from the development seed. Nothing here has been raised,
-                disbursed or delivered.
+          {!hasRealData && (
+            <div className="mt-7 rounded-[var(--radius-card)] border border-line bg-white p-5">
+              <p className="text-[0.9375rem] font-semibold text-ink">Nothing to total up yet</p>
+              <p className="mt-2 max-w-xl text-[0.875rem] leading-relaxed text-ink-muted">
+                This page adds up contributions as they come in. It stays empty until there are real ones
+                — we would rather show you nothing than a number that was never raised.
               </p>
+              <Link
+                href="/impact/mkuranga-outreach"
+                className="mt-4 inline-flex items-center gap-2 text-[0.875rem] font-semibold text-acacia-700 underline-offset-4 hover:underline"
+              >
+                See the work we have done
+              </Link>
             </div>
           )}
         </div>
       </div>
 
-      {summary && (
+      {hasRealData && summary && (
         <section className="section-tight">
           <div className="shell">
             <dl className="grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">

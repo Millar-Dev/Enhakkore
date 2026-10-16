@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { MobileTabBar, MobileTabBarSpacer } from './MobileTabBar';
 import { SiteFooter } from './SiteFooter';
+import { Assistant } from '@/components/assistant/Assistant';
 import { SiteHeader } from './SiteHeader';
 
 /**
@@ -26,6 +27,9 @@ export function PublicShell({
         {children}
       </main>
       {footer && <SiteFooter />}
+
+      {/* Bottom right of every public page. Closed, it is one small button. */}
+      <Assistant />
       <MobileTabBarSpacer />
       <MobileTabBar />
     </div>

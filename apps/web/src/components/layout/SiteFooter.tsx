@@ -166,10 +166,10 @@ export function SiteFooter() {
 
         <div className="mt-14 rounded-[var(--radius-card)] border border-dashed border-line-strong bg-white/70 p-5">
           <p className="text-[0.8125rem] leading-relaxed text-ink-muted">
-            <span className="font-semibold text-ink">This is a pre-launch build.</span> Trips, operators,
-            impact projects, contribution totals and reviews shown here are demonstration content created for
-            development and design review. No payment provider is connected, no organisation has been
-            verified, and no figure on this site represents money raised or work completed.
+            <span className="font-semibold text-ink">Payments are not taken on this website.</span> Trips are
+            booked by enquiry and paid directly to the organiser, who confirms your place once the payment
+            has been checked. The operator marketplace is not open yet — every trip listed here is one we run
+            ourselves.
           </p>
         </div>
 

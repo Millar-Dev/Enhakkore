@@ -258,6 +258,33 @@ the line — it contacts you about upgrading.
 
 ---
 
+## Part H · The question box (optional)
+
+Every public page has an **Ask Enhakkore** button, bottom right. It answers from
+what is published on this site — prices, dates, what a package covers, how
+booking and payment work, the outreach — and when it does not know something it
+says so and gives your phone numbers.
+
+**It already works, with nothing to set up.** The answers are read from the
+content files, so they can never drift from the pages or invent a price.
+
+To let it handle questions phrased in ways a keyword list cannot:
+
+1. Create an API key at <https://console.anthropic.com> → **API keys**.
+2. Vercel → your project → **Settings → Environment Variables**.
+3. Add `ANTHROPIC_API_KEY` with the key. Leave it as a normal variable — **not**
+   a public one, so it never reaches the browser.
+4. **Redeploy.**
+
+The same facts are then handed to Claude as the only source it may use. If the
+key is wrong, the account runs out, or the service is down, the box quietly goes
+back to answering from the facts — visitors never see a broken assistant.
+
+Costs are per question and small, but they are real: remove the variable and
+redeploy to switch back off.
+
+---
+
 ## If something goes wrong
 
 | What you see | Cause | Fix |
