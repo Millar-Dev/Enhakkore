@@ -44,6 +44,16 @@
   --color-clay-600: #9a4f24;
   --color-clay-700: #7c3e1c;
 
+  /* Navy and gold — the partnership marks, and the Arusha package that carries
+     both brands. Added for that lockup; not a replacement for acacia, which
+     remains the brand colour everywhere else. */
+  --color-navy-500: #1b2a5c;
+  --color-navy-700: #14204a;
+  --color-navy-900: #0d1733;
+  --color-gold-300: #e2c074;
+  --color-gold-500: #c79a3f;
+  --color-gold-600: #a87f2c;
+
   --color-success: #1d6248;
   --color-warning: #9a6b12;
   --color-danger: #a32b1f;

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { ImpactProjectDetail } from '@enhakkore/shared';
 import { formatMoney } from '@enhakkore/shared';
 import { Alert, Button, Icon, Progress, cx } from '@/components/ui';
-import { PARTNER, PartnerLogo } from '@/components/brand/Partner';
+import { PARTNER, PartnershipLockup } from '@/components/brand/Partner';
 import { ChoiceGroup, Input, Textarea } from '@/components/ui/form';
 import { ApiError, api } from '@/lib/api';
 import { price } from '@/lib/format';
@@ -218,11 +218,10 @@ export function DonatePanel({ project }: { project: ImpactProjectDetail }) {
 
       {/* Who the contribution is given alongside, shown where the decision is
           actually made rather than only on the page that led here. */}
-      <div className="mt-5 flex items-center gap-3 border-t border-line pt-5">
-        <PartnerLogo width={76} className="shrink-0" />
-        <p className="text-[0.75rem] leading-relaxed text-ink-muted">
-          Delivered with our charity partner{' '}
-          <span className="font-semibold text-ink">{PARTNER.name}</span> — {PARTNER.tagline.toLowerCase()}.
+      <div className="mt-5 border-t border-line pt-5">
+        <PartnershipLockup size="sm" surface="bare" />
+        <p className="mt-3 text-[0.75rem] leading-relaxed text-ink-muted">
+          Impact work is delivered together with {PARTNER.name} — {PARTNER.tagline.toLowerCase()}.
         </p>
       </div>
     </form>

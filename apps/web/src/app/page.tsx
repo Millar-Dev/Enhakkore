@@ -6,7 +6,8 @@ import { DepartureCard, TripCard } from '@/components/trips/TripCard';
 import { SearchBar } from '@/components/trips/SearchBar';
 import { ProjectCard } from '@/components/impact/ProjectCard';
 import { HeroMedia, type HeroVideoSource } from '@/components/home/HeroMedia';
-import { PartnerPill } from '@/components/brand/Partner';
+import { PartnershipLockup } from '@/components/brand/Partner';
+import { FeaturedPackage } from '@/components/packages/FeaturedPackage';
 import {
   Badge,
   ButtonLink,
@@ -204,10 +205,14 @@ export default async function HomePage() {
           {/* Arrives last in the sequence: the partnership is a reason to
               trust the place, not the first thing being sold. */}
           <div className="animate-hero mt-8 md:mt-9" style={heroDelay(7)}>
-            <PartnerPill />
+            <PartnershipLockup size="sm" />
           </div>
         </div>
       </section>
+
+      {/* The Arusha departure — run by Enhakkore with WSC, so it sits on its
+          own rather than inside the operator trip rail. */}
+      <FeaturedPackage />
 
       {/* ------------------------------------------------------------------ */}
       {/* 2. What there is to join                                            */}

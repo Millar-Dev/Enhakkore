@@ -5,7 +5,8 @@ import type { ImpactProjectSummary, Money, Paginated } from '@enhakkore/shared';
 import { IMPACT_CATEGORIES, IMPACT_CATEGORY_LABELS } from '@enhakkore/shared';
 import { PublicShell } from '@/components/layout/PublicShell';
 import { ProjectCard } from '@/components/impact/ProjectCard';
-import { PartnerCard, PartnerPill } from '@/components/brand/Partner';
+import { PartnerCard, PartnershipLockup } from '@/components/brand/Partner';
+import { GivingCounter } from '@/components/impact/GivingCounter';
 import {
   ButtonLink,
   Card,
@@ -97,9 +98,23 @@ export default async function ImpactPage({
             then follow what happens next.
           </p>
 
-          <PartnerPill className="mt-8" />
+          <PartnershipLockup size="sm" className="mt-8" />
         </div>
       </section>
+
+      {/* Giving — who has given and how much, before any other number. */}
+      {summary && (
+        <section className="bg-sand">
+          <div className="shell py-10 md:py-12">
+            <GivingCounter
+              donors={summary.travellersInvolved}
+              contributions={summary.contributionCount}
+              total={summary.totalContributions}
+              isDemoData={summary.isDemoData}
+            />
+          </div>
+        </section>
+      )}
 
       {/* Numbers */}
       {summary && (
