@@ -150,7 +150,7 @@ export default async function HomePage() {
       {/* ------------------------------------------------------------------ */}
       <section className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-end overflow-hidden pb-10 pt-32 md:min-h-[42rem] md:pb-16">
         <HeroMedia poster={HERO_IMAGE} alt={HERO_ALT} videos={HERO_VIDEOS} />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#080a0b] via-[#080a0b]/55 to-[#080a0b]/35" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#15110c] via-[#15110c]/55 to-[#15110c]/35" />
 
 
         {/* The words arrive one line at a time, in pure CSS so they animate on
@@ -481,7 +481,7 @@ export default async function HomePage() {
             sizes="100vw"
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-[#080a0b]/68" />
+          <div className="absolute inset-0 bg-[#15110c]/68" />
           <div className="shell relative py-24 text-center md:py-32">
             <h2 className="mx-auto max-w-3xl text-[2.25rem] font-extrabold leading-[1.05] tracking-[-0.03em] text-white text-balance md:text-[3.25rem]">
               Your next journey can mean more.

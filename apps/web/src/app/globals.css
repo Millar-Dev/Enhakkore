@@ -16,66 +16,70 @@
 
 @theme {
   /* --- Colour -----------------------------------------------------------
-     The brand palette: deep forest green, champagne gold, warm beige, ivory
-     and charcoal. The ramps below are built around those five, so a component
-     written against `acacia` or `clay` picks the palette up without being
-     rewritten — the names describe the ROLE (brand, impact), the values carry
-     the identity.
+     Beige, gold and white, anchored by a deep warm espresso.
+
+     The anchor is the part that makes this read as luxury rather than washed
+     out: cream and gold on their own have no weight, and every surface ends up
+     the same value. A near-black with brown in it — never a blue-grey — gives
+     the type somewhere to sit and the gold something to shine against.
+
+     Gold is used two ways and they are not interchangeable. The pale champagne
+     is a FILL, for surfaces and rules; it cannot carry small text. The bronze
+     steps are for TYPE, dark enough to pass contrast on white. The ramps below
+     keep that distinction so a component cannot pick the wrong one by accident.
      ----------------------------------------------------------------------- */
 
-  /* Charcoal, for type. Each step keeps its contrast on ivory: ink-muted is
-     the lightest that still passes for body text. */
-  --color-ink: #292b27;
-  --color-ink-soft: #454940;
-  --color-ink-muted: #6b6f65;
-  --color-ink-faint: #9a9e93;
+  /* Espresso, for type. Warm rather than grey — the brown is what keeps it in
+     the same family as the beige instead of looking like a default. */
+  --color-ink: #1f1a14;
+  --color-ink-soft: #3d352a;
+  --color-ink-muted: #6e6253;
+  --color-ink-faint: #9c9080;
 
   --color-paper: #ffffff;
-  --color-sand: #faf7f0;
-  --color-sand-deep: #f1ebdd;
-  --color-line: #e7e0d2;
-  --color-line-strong: #d6cdb8;
+  --color-sand: #f7f1e6;
+  --color-sand-deep: #efe4d1;
+  --color-line: #e8dcc8;
+  --color-line-strong: #d7c8ac;
 
-  /* Acacia — the brand green, now deep forest. 300 is the light step, for
-     type on dark grounds; 600 is the brand colour itself. */
-  --color-acacia-50: #edf3f0;
-  --color-acacia-100: #d3e3db;
-  --color-acacia-300: #8bb0a1;
-  --color-acacia-500: #22594a;
-  --color-acacia-600: #183d32;
-  --color-acacia-700: #122f27;
-  --color-acacia-900: #0a1c17;
+  /* Acacia — the brand. Now antique gold: 300 is the light step for dark
+     grounds, 600 the brand colour itself, dark enough to carry white text. */
+  --color-acacia-50: #faf4e9;
+  --color-acacia-100: #f0e2c6;
+  --color-acacia-300: #d8bc84;
+  --color-acacia-500: #9a7636;
+  --color-acacia-600: #7c5d28;
+  --color-acacia-700: #5e4519;
+  --color-acacia-900: #3a2a0f;
 
-  /* Clay — reserved for impact, now champagne and bronze. 400 is the
-     champagne itself; 600 and 700 are dark enough to set type on ivory. */
+  /* Clay — impact. Champagne for fills, bronze for anything that is read. */
   --color-clay-50: #fbf5ea;
-  --color-clay-100: #f2e4c8;
+  --color-clay-100: #f3e5c9;
   --color-clay-400: #c5a46d;
-  --color-clay-500: #a9833f;
-  --color-clay-600: #8a6629;
-  --color-clay-700: #6b4d1c;
+  --color-clay-500: #a8803f;
+  --color-clay-600: #86631f;
+  --color-clay-700: #674b13;
 
-  /* The five, by name, for artwork and anything that needs them literally. */
+  /* The palette by name, for artwork and anything that needs it literally. */
   --color-beige: #e6d4b8;
   --color-champagne: #c5a46d;
-  --color-forest: #183d32;
   --color-ivory: #faf7f0;
-  --color-charcoal: #292b27;
+  --color-espresso: #1f1a14;
 
-  /* The package pages were built on navy and gold before this palette
-     existed. Rather than rewrite them, those names now resolve to forest and
-     champagne, so they match everything else. */
-  --color-navy-500: #22594a;
-  --color-navy-700: #183d32;
-  --color-navy-900: #0f241d;
+  /* The package pages were built on names from an earlier palette. Rather than
+     rewrite them, those names resolve here: espresso where they said navy,
+     champagne where they said gold. */
+  --color-navy-500: #3a2f22;
+  --color-navy-700: #241d14;
+  --color-navy-900: #15110c;
   --color-gold-300: #e3c68c;
   --color-gold-500: #c5a46d;
-  --color-gold-600: #a9833f;
+  --color-gold-600: #a8803f;
 
-  --color-success: #1d6248;
+  --color-success: #4e6b4f;
   --color-warning: #9a6b12;
-  --color-danger: #a32b1f;
-  --color-danger-soft: #fbeeec;
+  --color-danger: #9b3a2c;
+  --color-danger-soft: #f9eeeb;
 
   /* --- Type -------------------------------------------------------------- */
   --font-sans: var(--font-jakarta), 'Plus Jakarta Sans', -apple-system,

@@ -25,7 +25,7 @@ export function FeaturedPackage() {
             className="absolute inset-0 opacity-80 transition-opacity duration-500 group-hover:opacity-100"
             style={{
               backgroundImage:
-                'radial-gradient(100% 70% at 10% 0%, #1b2a5c 0%, transparent 60%), radial-gradient(80% 90% at 95% 100%, rgba(199,154,63,0.4) 0%, transparent 60%)',
+                'radial-gradient(100% 70% at 10% 0%, #3a2f22 0%, transparent 60%), radial-gradient(80% 90% at 95% 100%, rgba(197,164,109,0.4) 0%, transparent 60%)',
             }}
           />
 

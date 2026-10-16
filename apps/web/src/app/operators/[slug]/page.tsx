@@ -64,7 +64,7 @@ export default async function OperatorProfilePage({ params }: { params: Promise<
           sizes="100vw"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-[#080a0b]/35" />
+        <div className="absolute inset-0 bg-[#15110c]/35" />
       </div>
 
       <div className="shell">

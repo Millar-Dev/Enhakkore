@@ -75,7 +75,7 @@ export function TripGallery({ images, title }: { images: string[]; title: string
 
       {lightbox !== null && (
         <div
-          className="fixed inset-0 z-[70] flex animate-fade flex-col bg-[#080a0b]/97"
+          className="fixed inset-0 z-[70] flex animate-fade flex-col bg-[#15110c]/97"
           role="dialog"
           aria-modal="true"
           aria-label={`${title} photographs`}

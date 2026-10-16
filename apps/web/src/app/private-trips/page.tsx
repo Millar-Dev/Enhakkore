@@ -350,7 +350,7 @@ export default function PrivateTripsPage() {
             sizes="100vw"
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-[#080a0b]/55" />
+          <div className="absolute inset-0 bg-[#15110c]/55" />
           <div className="shell absolute inset-0 flex flex-col justify-center">
             <Eyebrow className="text-white/55">Private &amp; custom</Eyebrow>
             <h1 className="mt-3 max-w-2xl text-[2.25rem] font-extrabold leading-[1.05] tracking-[-0.03em] text-white text-balance md:text-[3.25rem]">

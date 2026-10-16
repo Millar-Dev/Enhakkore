@@ -54,12 +54,12 @@ export default function NapuruPage() {
               className="absolute inset-0 opacity-70"
               style={{
                 backgroundImage:
-                  'radial-gradient(110% 80% at 12% 0%, #1b2a5c 0%, transparent 58%), radial-gradient(85% 70% at 92% 25%, rgba(199,154,63,0.33) 0%, transparent 62%)',
+                  'radial-gradient(110% 80% at 12% 0%, #3a2f22 0%, transparent 58%), radial-gradient(85% 70% at 92% 25%, rgba(197,164,109,0.33) 0%, transparent 62%)',
               }}
             />
           </>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#080a0b]/85 via-[#080a0b]/45 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#15110c]/85 via-[#15110c]/45 to-transparent" />
 
         <div className="shell relative">
           <Reveal>
