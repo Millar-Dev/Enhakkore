@@ -125,12 +125,7 @@ export const ARUSHA = {
 
   payment: {
     method: 'Vodacom M-Pesa',
-    /**
-     * Two sets of details were supplied for this trip. Both are shown, each
-     * labelled, because sending money to the wrong one is not a recoverable
-     * mistake. CONFIRM BOTH BEFORE THIS PAGE IS SHARED PUBLICLY — and delete
-     * whichever is not in use.
-     */
+    /** Both sets are in use and confirmed by the organiser. Either works. */
     options: [
       { kind: 'Lipa number', number: '58475848', name: 'Marystella Kirati' },
       { kind: 'M-Pesa number', number: '0750998996', name: 'Neema Maganga' },
@@ -139,17 +134,65 @@ export const ARUSHA = {
       'Please contact the trip organiser to confirm availability and payment instructions before sending money. Submit your payment confirmation using the official booking contact.',
   },
 
+  /** Who to call about a place, and where a payment confirmation goes. */
+  contacts: [
+    { label: 'Tanzania', display: '+255 745 341 440', dial: '+255745341440' },
+    { label: 'Tanzania', display: '+255 672 302 026', dial: '+255672302026' },
+    { label: 'Malaysia', display: '+60 11-3936 9848', dial: '+601139369848' },
+  ],
+
   /**
-   * Illustrative photography only — northern Tanzania and East African
-   * landscapes, NOT photographs of this route or of these venues. Replace with
-   * your own pictures from the trip; each caption below should then describe
-   * what it actually shows.
+   * Photographs of the places this trip actually goes to, from Wikimedia
+   * Commons under Creative Commons licences. Each one names its
+   * photographer and links to the original, because that is the condition
+   * of using them — and because a credit costs nothing.
+   *
+   * Replace these with your own pictures from the trip when you have them;
+   * drop the credit fields at the same time and the line disappears.
    */
   gallery: [
-    { src: 'https://images.unsplash.com/photo-1489392191049-fc10c97e64b6?auto=format&fit=crop&w=1200&h=800&q=80', alt: 'A snow-topped peak above open plain' },
-    { src: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1200&h=800&q=80', alt: 'Light through a misty forest' },
-    { src: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&h=800&q=80', alt: 'Green highlands under a wide sky' },
-    { src: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&h=800&q=80', alt: 'Still water beneath mountains' },
+    {
+      src: '/packages/arusha/napuru-waterfalls.webp',
+      alt: 'Napuru Waterfalls, Arusha',
+      credit: 'Tobias Kasambala',
+      licence: 'CC BY-SA 4.0',
+      source: 'https://commons.wikimedia.org/wiki/File:Napuru_waterfalls.jpg',
+    },
+    {
+      src: '/packages/arusha/mount-meru.webp',
+      alt: 'Mount Meru',
+      credit: 'AmyAbroad',
+      licence: 'CC BY-SA 4.0',
+      source: 'https://commons.wikimedia.org/wiki/File:Mount_Meru_Tanzania_July_2025.jpg',
+    },
+    {
+      src: '/packages/arusha/cultural-heritage-centre.webp',
+      alt: 'Cultural Heritage Centre, Arusha',
+      credit: 'George Lamson',
+      licence: 'CC BY-SA 2.0',
+      source: 'https://commons.wikimedia.org/wiki/File:Arusha_Cultural_Heritage_Centre.jpg',
+    },
+    {
+      src: '/packages/arusha/arusha-city.webp',
+      alt: 'Arusha',
+      credit: 'Halidtz',
+      licence: 'CC BY-SA 4.0',
+      source: 'https://commons.wikimedia.org/wiki/File:Arusha_City_view.jpg',
+    },
+    {
+      src: '/packages/arusha/chemka-1.webp',
+      alt: 'Chemka / Kikuletwa Hot Springs',
+      credit: 'Snomwajay',
+      licence: 'CC BY-SA 4.0',
+      source: 'https://commons.wikimedia.org/wiki/File:Chemka_Hot_Springs_01.jpg',
+    },
+    {
+      src: '/packages/arusha/chemka-2.webp',
+      alt: 'Chemka / Kikuletwa Hot Springs',
+      credit: 'Daniel Msirikale',
+      licence: 'CC BY-SA 4.0',
+      source: 'https://commons.wikimedia.org/wiki/File:Chemka_Hot_Springs_6.jpg',
+    },
   ],
 } as const;
 

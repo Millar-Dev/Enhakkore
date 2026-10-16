@@ -1,17 +1,22 @@
+import Image from 'next/image';
 import type { CSSProperties } from 'react';
 
 /**
- * The Enhakkore mark.
+ * The Enhakkore mark — the supplied artwork, not a drawing of it.
  *
- * The name comes from a spring — a source. The emblem reads as ripples moving
- * out from a point, with one line leaving the centre and travelling beyond
- * them: a journey that starts at a source and carries outward. It is three
- * elements only, so it survives being rendered at 16px as a favicon or cropped
- * into a circle as an avatar.
+ * The emblem is the top of the full logo, cropped and trimmed from the file
+ * provided, so the letterform, the gold orbit, the globe and the aircraft are
+ * exactly as they were designed. It is never recoloured: a navy and gold mark
+ * cannot be turned white without becoming a different logo. Over photography
+ * it sits on a small white tile instead, which keeps it legible and intact.
  *
- * Geometry is fixed on a 32×32 grid. The ripple arcs are open toward the upper
- * right; the travelling stroke leaves through that opening.
+ * The full logo, wordmark and descriptor included, lives at
+ * /partners/enhakkore-wordmark.webp and is used where there is room for it.
  */
+
+const MARK = '/partners/enhakkore-mark.webp';
+/** Intrinsic proportions of the cropped emblem. */
+const MARK_RATIO = 300 / 155;
 
 interface MarkProps {
   size?: number;
@@ -22,44 +27,16 @@ interface MarkProps {
 
 export function EnhakkoreMark({ size = 32, className, style, title }: MarkProps) {
   return (
-    <svg
-      viewBox="0 0 32 32"
-      width={size}
+    <Image
+      src={MARK}
+      alt={title ?? ''}
+      aria-hidden={title ? undefined : true}
+      width={Math.round(size * MARK_RATIO)}
       height={size}
       className={className}
-      style={style}
-      role={title ? 'img' : 'presentation'}
-      aria-label={title}
-      aria-hidden={title ? undefined : true}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Outer ripple */}
-      <path
-        d="M18.98 4.89A11.5 11.5 0 1 0 27.33 14"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        opacity="0.34"
-      />
-      {/* Inner ripple */}
-      <path
-        d="M17.81 9.24A7 7 0 1 0 22.89 14.78"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        opacity="0.62"
-      />
-      {/* The journey: leaves the source and passes through the opening */}
-      <path
-        d="M16 16C19.6 15.2 22.6 12.4 26.6 6.1"
-        stroke="currentColor"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-      />
-      {/* The source */}
-      <circle cx="16" cy="16" r="2.7" fill="currentColor" />
-    </svg>
+      style={{ height: size, width: 'auto', ...style }}
+      priority
+    />
   );
 }
 
@@ -88,15 +65,23 @@ export function Logo({
   inverted = false,
 }: LogoProps) {
   const scale = SIZES[size];
-  const tone = inverted ? 'text-white' : 'text-acacia-700';
+  // Over photography the navy mark would disappear, so it gets its own tile
+  // rather than being recoloured into something that is no longer the logo.
+  const tile = inverted ? 'rounded-[0.5rem] bg-white/95 p-1.5' : '';
 
   if (variant === 'mark') {
-    return <EnhakkoreMark size={scale.mark} className={`${tone} ${className}`} title="Enhakkore" />;
+    return (
+      <span className={`inline-flex ${tile} ${className}`}>
+        <EnhakkoreMark size={scale.mark} title="Enhakkore" />
+      </span>
+    );
   }
 
   return (
     <span className={`inline-flex items-center ${scale.gap} ${className}`}>
-      <EnhakkoreMark size={scale.mark} className={tone} title="Enhakkore" />
+      <span className={`inline-flex ${tile}`}>
+        <EnhakkoreMark size={scale.mark} title="Enhakkore" />
+      </span>
       <span className="flex flex-col leading-none">
         <span
           className={`${scale.word} font-bold tracking-[0.14em] ${inverted ? 'text-white' : 'text-ink'}`}

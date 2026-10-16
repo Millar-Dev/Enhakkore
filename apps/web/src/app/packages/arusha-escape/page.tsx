@@ -202,12 +202,12 @@ export default function ArushaPackagePage() {
       <section className="section bg-sand">
         <div className="shell">
           <Reveal>
-            <SectionHead eyebrow="The region" title="Northern Tanzania" />
+            <SectionHead eyebrow="Where you are going" title="The places on this route" />
           </Reveal>
           <Reveal delay={80}>
             <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-              {ARUSHA.gallery.map((photo, index) => (
-                <div
+              {ARUSHA.gallery.map((photo) => (
+                <figure
                   key={photo.src}
                   className="group relative aspect-[4/5] overflow-hidden rounded-[var(--radius-card)] bg-sand-deep"
                 >
@@ -217,16 +217,33 @@ export default function ArushaPackagePage() {
                     fill
                     sizes="(max-width: 768px) 50vw, 25vw"
                     className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                    priority={index === 0}
                   />
-                </div>
+                  {/* The name of the place, legible over any photograph. */}
+                  <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-3 pt-8 text-[0.75rem] font-semibold leading-tight text-white">
+                    {photo.alt}
+                  </figcaption>
+                </figure>
               ))}
             </div>
           </Reveal>
           <Reveal delay={140}>
-            <p className="mt-5 text-[0.8125rem] leading-relaxed text-ink-muted">
-              Illustrative photography of the wider region — not photographs of this route or of these
-              venues. Pictures from the trip will replace them.
+            <p className="mt-5 text-[0.75rem] leading-relaxed text-ink-muted">
+              Photographs of these places by{' '}
+              {ARUSHA.gallery.map((photo, index) => (
+                <span key={photo.src}>
+                  {index > 0 && ', '}
+                  <a
+                    href={photo.source}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="underline underline-offset-2 hover:text-ink"
+                  >
+                    {photo.credit}
+                  </a>
+                </span>
+              ))}
+              , via Wikimedia Commons, used under their Creative Commons licences (
+              {[...new Set(ARUSHA.gallery.map((photo) => photo.licence))].join(', ')}).
             </p>
           </Reveal>
         </div>
@@ -256,6 +273,32 @@ export default function ArushaPackagePage() {
               {ARUSHA.payment.options.map((option) => (
                 <CopyNumber key={option.number} kind={option.kind} number={option.number} name={option.name} />
               ))}
+            </div>
+          </Reveal>
+
+          <Reveal delay={180}>
+            <div className="mt-8 rounded-[var(--radius-card)] border border-line bg-sand p-6">
+              <h3 className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-ink-muted">
+                Booking contact
+              </h3>
+              <p className="mt-2 text-[0.875rem] leading-relaxed text-ink-muted">
+                Call to confirm a place, and send your payment confirmation to the same number.
+              </p>
+              <ul className="mt-4 flex flex-wrap gap-x-8 gap-y-3">
+                {ARUSHA.contacts.map((contact) => (
+                  <li key={contact.dial}>
+                    <p className="text-[0.6875rem] uppercase tracking-[0.08em] text-ink-faint">
+                      {contact.label}
+                    </p>
+                    <a
+                      href={`tel:${contact.dial}`}
+                      className="font-mono text-[1.0625rem] font-bold tracking-[0.02em] text-navy-700 underline-offset-4 hover:underline"
+                    >
+                      {contact.display}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           </Reveal>
 
