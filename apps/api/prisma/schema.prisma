@@ -606,7 +606,9 @@ model CustomTripRequest {
   id            String    @id @default(cuid())
   userId        String?
   contactName   String
-  contactEmail  String
+  /// Optional because an enquiry may arrive with a phone number instead. The
+  /// API requires at least one of the two.
+  contactEmail  String?
   contactPhone  String?
   destination   String
   startDate     DateTime?

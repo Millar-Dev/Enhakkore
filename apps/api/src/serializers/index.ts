@@ -353,6 +353,7 @@ export function toCustomTripRequest(request: any): CustomTripRequestDto {
     createdAt: iso(request.createdAt),
     contactName: request.contactName,
     contactEmail: request.contactEmail,
+    contactPhone: request.contactPhone,
   };
 }
 

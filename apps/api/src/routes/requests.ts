@@ -20,9 +20,15 @@ const requestSchema = z.object({
   activities: z.array(z.string().trim().max(80)).max(20).default([]),
   notes: z.string().trim().max(2000).optional(),
   contactName: z.string().trim().min(2, 'Tell us your name.').max(120),
-  contactEmail: z.string().trim().email('Enter a valid email address.'),
-  contactPhone: z.string().trim().max(40).optional(),
-});
+  contactEmail: z.string().trim().email('Enter a valid email address.').optional(),
+  contactPhone: z.string().trim().min(6, 'Enter a reachable phone number.').max(40).optional(),
+})
+  // One way to reach them is enough — some people give a phone number and
+  // never an address — but an enquiry nobody can answer is not an enquiry.
+  .refine((input) => Boolean(input.contactEmail || input.contactPhone), {
+    message: 'Leave an email address or a phone number so we can reply.',
+    path: ['contactEmail'],
+  });
 
 /**
  * Captures a private/custom trip enquiry.
@@ -41,7 +47,7 @@ requestsRouter.post(
       data: {
         userId: req.auth?.id ?? null,
         contactName: input.contactName,
-        contactEmail: input.contactEmail,
+        contactEmail: input.contactEmail ?? null,
         contactPhone: input.contactPhone ?? null,
         destination: input.destination,
         startDate: input.startDate ? new Date(input.startDate) : null,

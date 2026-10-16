@@ -320,7 +320,8 @@ export interface CustomTripRequestDto {
   status: RequestStatus;
   createdAt: string;
   contactName: string;
-  contactEmail: string;
+  contactEmail: string | null;
+  contactPhone: string | null;
 }
 
 export interface TravellerStats {

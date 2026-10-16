@@ -47,6 +47,11 @@ export function PackageEnquiry() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (!form.contactEmail.trim() && !form.contactPhone.trim()) {
+      setFields({ contactEmail: 'Leave an email address or a phone number so we can reply.' });
+      return;
+    }
+
     setBusy(true);
     setError(null);
     setFields({});
@@ -59,7 +64,7 @@ export function PackageEnquiry() {
         budget: chosen.amount.amount * form.travellers,
         currency: chosen.amount.currency,
         contactName: form.contactName,
-        contactEmail: form.contactEmail,
+        contactEmail: form.contactEmail || undefined,
         contactPhone: form.contactPhone || undefined,
         activities: ['Arusha Escape 18–20 December 2026'],
         notes: [
@@ -189,15 +194,17 @@ export function PackageEnquiry() {
           autoComplete="name"
         />
 
+        {/* Either one will do. Asking for an address someone does not use is
+            how an enquiry gets abandoned halfway. */}
         <div className="grid gap-4 sm:grid-cols-2">
           <Input
             label="Email"
             type="email"
-            required
             value={form.contactEmail}
             onChange={(event) => setForm({ ...form, contactEmail: event.target.value })}
             error={fields.contactEmail}
             autoComplete="email"
+            hint="Email or phone — whichever suits you."
           />
           <Input
             label="Phone"

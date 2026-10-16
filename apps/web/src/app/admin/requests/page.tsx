@@ -146,10 +146,23 @@ export default function AdminRequestsPage() {
 
                   <p className="mt-1 text-[0.8125rem] text-ink-muted">
                     {request.contactName} ·{' '}
-                    <a href={`mailto:${request.contactEmail}`} className="hover:text-acacia-700">
-                      {request.contactEmail}
-                    </a>{' '}
-                    · received {formatDate(request.createdAt, 'long')}
+                    {request.contactEmail && (
+                      <>
+                        <a href={`mailto:${request.contactEmail}`} className="hover:text-acacia-700">
+                          {request.contactEmail}
+                        </a>{' '}
+                        ·{' '}
+                      </>
+                    )}
+                    {request.contactPhone && (
+                      <>
+                        <a href={`tel:${request.contactPhone}`} className="hover:text-acacia-700">
+                          {request.contactPhone}
+                        </a>{' '}
+                        ·{' '}
+                      </>
+                    )}
+                    received {formatDate(request.createdAt, 'long')}
                   </p>
                 </div>
 
