@@ -7,6 +7,7 @@ import { PublicShell } from '@/components/layout/PublicShell';
 import { ProjectCard } from '@/components/impact/ProjectCard';
 import { PartnerCard, PartnershipLockup } from '@/components/brand/Partner';
 import { GivingCounter } from '@/components/impact/GivingCounter';
+import { MKURANGA } from '@/content/mkuranga';
 import {
   ButtonLink,
   Card,
@@ -202,7 +203,39 @@ export default async function ImpactPage({
             description="Charity asks for trust. The least a platform can do is make that trust checkable."
           />
 
-          <PartnerCard className="mt-10">
+          {/* Our own completed outreach, before the explanation of how the
+              platform's projects work. It is the one piece of impact on this
+              site that has actually happened. */}
+          <Link
+            href={`/impact/${MKURANGA.slug}`}
+            className="group mt-10 block overflow-hidden rounded-[var(--radius-card)] border border-line bg-white transition-transform duration-300 hover:-translate-y-1"
+          >
+            <div className="grid sm:grid-cols-[18rem_1fr]">
+              <div className="relative aspect-[4/3] sm:aspect-auto">
+                <Image
+                  src={MKURANGA.cover.src}
+                  alt={MKURANGA.cover.alt}
+                  fill
+                  sizes="(max-width: 640px) 100vw, 18rem"
+                  loading="lazy"
+                  className="object-cover"
+                />
+              </div>
+              <div className="p-6 md:p-7">
+                <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-acacia-700">
+                  {MKURANGA.status} · {MKURANGA.dateLabel}
+                </p>
+                <h3 className="mt-2 text-[1.25rem] font-bold tracking-tight">{MKURANGA.title}</h3>
+                <p className="mt-2 text-[0.9375rem] leading-relaxed text-ink-muted">{MKURANGA.summary}</p>
+                <span className="mt-4 inline-flex items-center gap-2 text-[0.875rem] font-semibold text-acacia-700">
+                  See the day
+                  <Icon.arrow />
+                </span>
+              </div>
+            </div>
+          </Link>
+
+          <PartnerCard className="mt-6">
             Enhakkore&rsquo;s impact work is delivered together with our charity partner. Contributions reach
             the named project they were given to, and Enhakkore takes no commission on them.
           </PartnerCard>

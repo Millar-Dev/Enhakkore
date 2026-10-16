@@ -18,7 +18,8 @@ export function CopyNumber({
 }: {
   kind: string;
   number: string;
-  name: string;
+  /** The account holder, where one has been given. */
+  name?: string;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -40,7 +41,7 @@ export function CopyNumber({
         <p className="mt-1 font-mono text-[1.375rem] font-bold leading-none tracking-[0.06em] text-navy-700">
           {number}
         </p>
-        <p className="mt-1.5 text-[0.875rem] text-ink-muted">{name}</p>
+        {name && <p className="mt-1.5 text-[0.875rem] text-ink-muted">{name}</p>}
       </div>
 
       <button

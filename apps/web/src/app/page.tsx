@@ -6,8 +6,8 @@ import { DepartureCard, TripCard } from '@/components/trips/TripCard';
 import { SearchBar } from '@/components/trips/SearchBar';
 import { ProjectCard } from '@/components/impact/ProjectCard';
 import { HeroMedia, type HeroVideoSource } from '@/components/home/HeroMedia';
-import { PartnershipLockup } from '@/components/brand/Partner';
 import { FeaturedPackage } from '@/components/packages/FeaturedPackage';
+import { ImpactPartnership } from '@/components/home/ImpactPartnership';
 import {
   Badge,
   ButtonLink,
@@ -202,11 +202,6 @@ export default async function HomePage() {
             ))}
           </div>
 
-          {/* Arrives last in the sequence: the partnership is a reason to
-              trust the place, not the first thing being sold. */}
-          <div className="animate-hero mt-8 md:mt-9" style={heroDelay(7)}>
-            <PartnershipLockup size="sm" />
-          </div>
         </div>
       </section>
 
@@ -458,7 +453,12 @@ export default async function HomePage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 10. Go                                                              */}
+      {/* 10. Travel that goes beyond the journey — Enhakkore and WSC         */}
+      {/* ------------------------------------------------------------------ */}
+      <ImpactPartnership />
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 11. Go                                                              */}
       {/* ------------------------------------------------------------------ */}
       <section className="relative overflow-hidden">
         <div className="relative">

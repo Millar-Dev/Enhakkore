@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Logo } from '@/components/brand/Logo';
+import { PARTNER } from '@/components/brand/Partner';
 
 const COLUMNS = [
   {
@@ -71,6 +73,27 @@ export function SiteFooter() {
         </div>
 
         {/* Honesty note. This stays until the platform is genuinely live. */}
+        <div className="mt-14 flex flex-wrap items-center gap-5 border-t border-line pt-8">
+          <span className="inline-flex rounded-[var(--radius-field)] bg-white px-3.5 py-2.5 ring-1 ring-line">
+            <Image
+              src={PARTNER.logo}
+              alt={`${PARTNER.fullName} logo`}
+              width={96}
+              height={54}
+              loading="lazy"
+              className="h-[34px] w-auto"
+            />
+          </span>
+          <p className="max-w-md text-[0.8125rem] leading-relaxed text-ink-muted">
+            <span className="font-semibold text-ink">Our social-impact partner.</span> We Save Children works
+            so that no child grows up in poverty. Enhakkore runs the travel;{' '}
+            <Link href="/impact" className="underline underline-offset-2 hover:text-ink">
+              see the work
+            </Link>
+            .
+          </p>
+        </div>
+
         <div className="mt-14 rounded-[var(--radius-card)] border border-dashed border-line-strong bg-white/70 p-5">
           <p className="text-[0.8125rem] leading-relaxed text-ink-muted">
             <span className="font-semibold text-ink">This is a pre-launch build.</span> Trips, operators,
@@ -92,9 +115,9 @@ export function SiteFooter() {
             <Link href="/trust" className="transition-colors hover:text-ink">
               Trust &amp; safety
             </Link>
-            <a href="mailto:hello@enhakkore.com" className="transition-colors hover:text-ink">
-              hello@enhakkore.com
-            </a>
+            <Link href="/contact" className="transition-colors hover:text-ink">
+              Contact us
+            </Link>
           </div>
         </div>
       </div>

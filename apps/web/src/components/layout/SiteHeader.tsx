@@ -13,6 +13,7 @@ const PRIMARY_NAV = [
   { href: '/impact', label: 'Impact' },
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/community', label: 'Community' },
+  { href: '/contact', label: 'Contact' },
 ];
 
 /**
