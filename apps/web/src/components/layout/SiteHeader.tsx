@@ -126,7 +126,7 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
                   Sign in
                 </ButtonLink>
                 <ButtonLink href="/join" variant="primary" size="sm">
-                  Get Started
+                  Join Now
                 </ButtonLink>
               </div>
             )}
@@ -183,7 +183,7 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
               ) : (
                 <>
                   <ButtonLink href="/join" size="lg" full>
-                    Get Started
+                    Join Now
                   </ButtonLink>
                   <ButtonLink href="/signin" variant="secondary" size="lg" full>
                     Sign in

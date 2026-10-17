@@ -9,6 +9,10 @@ import { HeroMedia, type HeroVideoSource } from '@/components/home/HeroMedia';
 import { FeaturedPackage } from '@/components/packages/FeaturedPackage';
 import { ImpactPartnership } from '@/components/home/ImpactPartnership';
 import { HeroPartnerMark } from '@/components/home/HeroPartnerMark';
+import { HowStrip, TrustStrip } from '@/components/home/Strips';
+import { PurposeCard } from '@/components/home/PurposeCard';
+import { PackageCard } from '@/components/packages/PackageCard';
+import { UPCOMING_TRIPS } from '@/content/packages';
 import {
   Badge,
   ButtonLink,
@@ -68,13 +72,16 @@ function heroDelay(step: number): React.CSSProperties {
   return { animationDelay: `${150 + step * 180}ms` };
 }
 
+/**
+ * The three ways people arrive, as white pills under the search. Each keeps
+ * one colour: green for the bush, navy for people, gold for the giving. The
+ * rest of the categories live on the Explore page, where there is room to
+ * choose rather than guess.
+ */
 const CATEGORIES = [
-  { label: 'Safari', href: '/trips?type=SAFARI' },
-  { label: 'Group Trips', href: '/trips?type=GROUP' },
-  { label: 'Private Trips', href: '/private-trips' },
-  { label: 'Beach & Island', href: '/trips?type=BEACH' },
-  { label: 'Adventure', href: '/trips?type=ADVENTURE' },
-  { label: 'International', href: '/trips?type=INTERNATIONAL' },
+  { label: 'Safari Trips', href: '/trips?type=SAFARI', icon: 'compass' as const, tone: 'text-safari-500' },
+  { label: 'Group Trips', href: '/trips?type=GROUP', icon: 'users' as const, tone: 'text-acacia-600' },
+  { label: 'Charity Projects', href: '/impact', icon: 'heart' as const, tone: 'text-clay-600' },
 ];
 
 const STEPS = [
@@ -190,20 +197,26 @@ export default async function HomePage() {
             <SearchBar />
           </div>
 
-          {/* Quick discovery — the six ways people actually start looking. */}
+          {/* The three ways people arrive. */}
           <div
             className="animate-hero mt-6 flex gap-2 overflow-x-auto pb-1 no-scrollbar md:mt-7"
             style={heroDelay(6)}
           >
-            {CATEGORIES.map((category) => (
-              <Link
-                key={category.href}
-                href={category.href}
-                className="shrink-0 rounded-[var(--radius-pill)] border border-white/25 bg-white/10 px-4 py-2.5 text-[0.8125rem] font-semibold text-white backdrop-blur-md transition-colors hover:border-white/50 hover:bg-white/20"
-              >
-                {category.label}
-              </Link>
-            ))}
+            {CATEGORIES.map((category) => {
+              const Glyph = Icon[category.icon];
+              return (
+                <Link
+                  key={category.href}
+                  href={category.href}
+                  className="inline-flex shrink-0 items-center gap-2 rounded-[var(--radius-pill)] bg-white px-4 py-2.5 text-[0.8125rem] font-bold text-acacia-600 shadow-sm transition-transform duration-200 hover:-translate-y-0.5"
+                >
+                  <span className={category.tone}>
+                    <Glyph size={15} />
+                  </span>
+                  {category.label}
+                </Link>
+              );
+            })}
           </div>
 
           {/* The foot of the hero — Enhakkore's mark holds the top of the page,
@@ -215,6 +228,8 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <TrustStrip />
+
       {/* The Arusha departure — run by Enhakkore with WSC, so it sits on its
           own rather than inside the operator trip rail. */}
       <FeaturedPackage />
@@ -222,29 +237,35 @@ export default async function HomePage() {
       {/* ------------------------------------------------------------------ */}
       {/* 2. What there is to join                                            */}
       {/* ------------------------------------------------------------------ */}
-      {featuredTrips.length > 0 && (
-        <section className="section">
-          <div className="shell">
-            <SectionHead
-              eyebrow="Featured trips"
-              title="Journeys worth clearing your calendar for"
-              description="Hand-picked departures from operators on the platform, with real seats and real dates."
-              action={
-                <ButtonLink href="/trips" variant="secondary">
-                  See all trips
-                  <Icon.arrow />
-                </ButtonLink>
-              }
-            />
+      <section className="section">
+        <div className="shell">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <Eyebrow>Featured trips</Eyebrow>
+              <h2 className="mt-3 text-h2">Journeys worth clearing your calendar for</h2>
+            </div>
+            <ButtonLink href="/trips" variant="secondary" size="sm">
+              View all
+              <Icon.arrow />
+            </ButtonLink>
+          </div>
 
-            <div className="rail mt-10">
-              {featuredTrips.slice(0, 6).map((trip, index) => (
-                <TripCard key={trip.id} trip={trip} priority={index < 3} />
+          {/* Trips on the left, the community work level with them on the
+              right — the same row, because they are the same undertaking. */}
+          <div className="mt-9 grid gap-6 lg:grid-cols-[1fr_22rem] lg:gap-8">
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {UPCOMING_TRIPS.map((trip, index) => (
+                <PackageCard key={trip.slug} trip={trip} priority={index === 0} />
+              ))}
+              {featuredTrips.slice(0, 1).map((trip) => (
+                <TripCard key={trip.id} trip={trip} />
               ))}
             </div>
+
+            <PurposeCard />
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* ------------------------------------------------------------------ */}
       {/* 3. The thing that makes this different                              */}
@@ -463,6 +484,8 @@ export default async function HomePage() {
           </Card>
         </div>
       </section>
+
+      <HowStrip />
 
       {/* ------------------------------------------------------------------ */}
       {/* 10. Travel that goes beyond the journey — Enhakkore and WSC         */}

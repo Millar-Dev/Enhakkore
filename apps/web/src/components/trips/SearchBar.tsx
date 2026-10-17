@@ -79,17 +79,33 @@ export function SearchBar({ variant = 'hero' }: { variant?: 'hero' | 'inline' })
       <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-0">
         {/* Where */}
         <div className="relative flex-[1.6] md:px-5">
-          <label htmlFor="search-destination" className="block px-3.5 pt-3 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-ink-muted md:px-0 md:pt-0">
+          <label
+            htmlFor="search-destination"
+            className={cx(
+              hero
+                ? 'sr-only'
+                : 'block px-3.5 pt-3 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-ink-muted md:px-0 md:pt-0',
+            )}
+          >
             Where do you want to go?
           </label>
+          {hero && (
+            <Icon.pin
+              size={16}
+              className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-ink-faint"
+            />
+          )}
           <input
             id="search-destination"
             value={destination}
             onChange={(event) => setDestination(event.target.value)}
             onFocus={() => suggestions.length > 0 && setOpen(true)}
-            placeholder="Serengeti, Zanzibar, anywhere…"
+            placeholder="Where do you want to go?"
             autoComplete="off"
-            className="h-11 w-full bg-transparent px-3.5 text-[0.9375rem] font-medium text-ink placeholder:font-normal placeholder:text-ink-faint focus:outline-none md:px-0"
+            className={cx(
+              'h-11 w-full bg-transparent text-[0.9375rem] font-medium text-ink placeholder:font-normal placeholder:text-ink-faint focus:outline-none',
+              hero ? 'pl-6 pr-2 md:pl-6' : 'px-3.5 md:px-0',
+            )}
           />
 
           {open && (
@@ -122,31 +138,64 @@ export function SearchBar({ variant = 'hero' }: { variant?: 'hero' | 'inline' })
         <div className="hidden h-9 w-px bg-line md:block" />
 
         {/* When */}
-        <div className="flex-1 border-t border-line md:border-0 md:px-5">
-          <label htmlFor="search-from" className="block px-3.5 pt-3 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-ink-muted md:px-0 md:pt-0">
+        <div className="relative flex-1 border-t border-line md:border-0 md:px-5">
+          <label
+            htmlFor="search-from"
+            className={cx(
+              hero
+                ? 'sr-only'
+                : 'block px-3.5 pt-3 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-ink-muted md:px-0 md:pt-0',
+            )}
+          >
             Dates
           </label>
+          {hero && (
+            <Icon.calendar
+              size={16}
+              className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-ink-faint md:left-5"
+            />
+          )}
           <input
             id="search-from"
             type="date"
             value={from}
             onChange={(event) => setFrom(event.target.value)}
-            className="h-11 w-full bg-transparent px-3.5 text-[0.9375rem] font-medium text-ink focus:outline-none md:px-0"
+            aria-label="When"
+            className={cx(
+              'h-11 w-full bg-transparent text-[0.9375rem] font-medium text-ink focus:outline-none',
+              hero ? 'pl-6 pr-2 md:pl-6' : 'px-3.5 md:px-0',
+            )}
           />
         </div>
 
         <div className="hidden h-9 w-px bg-line md:block" />
 
         {/* How many */}
-        <div className="border-t border-line md:w-40 md:border-0 md:px-5">
-          <label htmlFor="search-travellers" className="block px-3.5 pt-3 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-ink-muted md:px-0 md:pt-0">
+        <div className="relative border-t border-line md:w-44 md:border-0 md:px-5">
+          <label
+            htmlFor="search-travellers"
+            className={cx(
+              hero
+                ? 'sr-only'
+                : 'block px-3.5 pt-3 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-ink-muted md:px-0 md:pt-0',
+            )}
+          >
             Travellers
           </label>
+          {hero && (
+            <Icon.users
+              size={16}
+              className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-ink-faint md:left-5"
+            />
+          )}
           <select
             id="search-travellers"
             value={travellers}
             onChange={(event) => setTravellers(event.target.value)}
-            className="h-11 w-full cursor-pointer appearance-none bg-transparent px-3.5 text-[0.9375rem] font-medium text-ink focus:outline-none md:px-0"
+            className={cx(
+              'h-11 w-full cursor-pointer appearance-none bg-transparent text-[0.9375rem] font-medium text-ink focus:outline-none',
+              hero ? 'pl-6 pr-2 md:pl-6' : 'px-3.5 md:px-0',
+            )}
           >
             {[1, 2, 3, 4, 5, 6, 8, 10, 12].map((count) => (
               <option key={count} value={count}>
@@ -159,7 +208,7 @@ export function SearchBar({ variant = 'hero' }: { variant?: 'hero' | 'inline' })
         <div className="p-1.5 md:p-0">
           <Button type="submit" size={hero ? 'lg' : 'md'} full className="md:w-auto md:rounded-[var(--radius-pill)] md:px-8">
             <Icon.search size={17} />
-            Search trips
+            Search Trips
           </Button>
         </div>
       </div>
