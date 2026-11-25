@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Cormorant_Garamond, Plus_Jakarta_Sans } from 'next/font/google';
+import { getSite } from '@/lib/site';
 import { SessionProvider } from '@/lib/session';
 import './globals.css';
 
@@ -10,36 +11,34 @@ const jakarta = Plus_Jakarta_Sans({
   weight: ['400', '500', '600', '700', '800'],
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL('https://enhakkore.com'),
-  title: {
-    default: 'Enhakkore — Travel & Impact',
-    template: '%s · Enhakkore',
-  },
-  description:
-    'Discover unforgettable journeys, connect with fellow travellers, and make a meaningful impact along the way. Travel together. Experience more. Give back.',
-  keywords: [
-    'Tanzania safari',
-    'group travel',
-    'Zanzibar',
-    'Serengeti',
-    'travel with purpose',
-    'social impact travel',
-  ],
-  openGraph: {
-    title: 'Enhakkore — Travel & Impact',
-    description: 'Travel together. Experience more. Give back.',
-    type: 'website',
-    siteName: 'Enhakkore',
-  },
-  icons: {
-    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
-    apple: '/icon.svg',
-  },
-};
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  variable: '--font-cormorant',
+  display: 'swap',
+  weight: ['500', '600', '700'],
+});
+
+/** Title, description and icon come from the control centre (Settings → Brand and SEO). */
+export async function generateMetadata(): Promise<Metadata> {
+  const { settings } = await getSite();
+  return {
+    metadataBase: new URL(process.env.SITE_URL ?? 'https://enhakkore-one.vercel.app'),
+    title: { default: settings.seo.title, template: `%s · ${settings.brand.shortName}` },
+    description: settings.seo.description,
+    keywords: settings.seo.keywords,
+    openGraph: {
+      title: settings.seo.title,
+      description: settings.seo.description,
+      type: 'website',
+      siteName: settings.brand.name,
+      images: [{ url: settings.homepage.hero.imageUrl }],
+    },
+    icons: { icon: [{ url: settings.brand.faviconUrl }], apple: settings.brand.markUrl },
+  };
+}
 
 export const viewport: Viewport = {
-  themeColor: '#ffffff',
+  themeColor: '#082b45',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
@@ -47,7 +46,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={jakarta.variable}>
+    <html lang="en" className={`${jakarta.variable} ${cormorant.variable}`}>
       <body>
         {/* Keyboard users reach the content without walking the whole nav. */}
         <a

@@ -16,16 +16,16 @@ import { useSession } from '@/lib/session';
 
 const TABS = [
   { href: '/', label: 'Home', icon: Icon.home, exact: true },
-  { href: '/trips', label: 'Explore', icon: Icon.compass },
-  { href: '/account/trips', label: 'Trips', icon: Icon.ticket },
-  { href: '/impact', label: 'Impact', icon: Icon.ripple },
-  { href: '/account', label: 'Profile', icon: Icon.user, exact: true },
+  { href: '/activities', label: 'Activities', icon: Icon.users },
+  { href: '/travel', label: 'Travel', icon: Icon.compass },
+  { href: '/discover', label: 'Discover', icon: Icon.pin },
+  { href: '/account', label: 'Me', icon: Icon.user, exact: true },
 ];
 
 // Screens with their own pinned bottom action, or their own navigation.
 // `/trips/` with the trailing slash matches trip detail (where the booking bar
 // lives) without matching `/trips` itself.
-const HIDDEN_PREFIXES = ['/book', '/organizer', '/admin', '/account/groups/', '/trips/'];
+const HIDDEN_PREFIXES = ['/book', '/organizer', '/admin', '/account/groups/', '/trips/', '/travel/'];
 
 /** Whether the tab bar shows on this route for this account type. */
 function useTabBarVisible(): boolean {
@@ -33,7 +33,7 @@ function useTabBarVisible(): boolean {
   const { user } = useSession();
 
   if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return false;
-  if (user && user.role !== 'TRAVELER') return false;
+  if (user && user.role === 'ORGANIZER') return false;
   return true;
 }
 

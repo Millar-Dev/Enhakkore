@@ -43,6 +43,14 @@ const nextConfig: NextConfig = {
   // Media files are named by content (a new video gets a new filename), so the
   // browser can keep them for a year: returning visitors never re-download the
   // hero video.
+  // Enhakkore's own trips moved from hand-built pages to the database-driven
+  // /travel pages, so old links (shared on WhatsApp and Instagram) still work.
+  async redirects() {
+    return [
+      { source: '/packages/:slug', destination: '/travel/:slug', permanent: true },
+      { source: '/impact/dashboard', destination: '/impact', permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

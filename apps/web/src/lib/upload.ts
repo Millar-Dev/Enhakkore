@@ -12,7 +12,7 @@ import { API_URL, ApiError, api } from './api';
  *    address to use. Nothing a page writes down came from the browser's word.
  */
 
-export type UploadKind = 'TRIP_IMAGE' | 'AVATAR' | 'VERIFICATION_DOCUMENT';
+export type UploadKind = 'TRIP_IMAGE' | 'AVATAR' | 'VERIFICATION_DOCUMENT' | 'MEDIA_IMAGE' | 'MEDIA_VIDEO' | 'RECEIPT';
 
 export interface UploadedFile {
   assetId: string;

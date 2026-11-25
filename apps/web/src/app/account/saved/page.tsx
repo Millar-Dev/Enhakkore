@@ -1,56 +1,49 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import type { TripSummary } from '@enhakkore/shared';
-import { DashboardShell, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
-import { TripCard } from '@/components/trips/TripCard';
-import { ButtonLink, EmptyState, Icon, TripCardSkeleton } from '@/components/ui';
+import { DashboardShell, MEMBER_ROLES, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
+import { SmartImage } from '@/components/public/SmartImage';
 import { api } from '@/lib/api';
 
-export default function SavedPage() {
-  const [trips, setTrips] = useState<TripSummary[] | null>(null);
+interface Saved {
+  itemType: string;
+  itemId: string;
+  title: string;
+  href: string;
+  image: string | null;
+}
 
+/** The travel wishlist: places, trips, events, activities and destinations saved for later. */
+export default function WishlistPage() {
+  const [items, setItems] = useState<Saved[] | null>(null);
+  const load = () => api.get<Saved[]>('/community/saved').then(setItems).catch(() => setItems([]));
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const result = await api.get<{ items: TripSummary[] }>('/me/saved');
-        if (!cancelled) setTrips(result.items);
-      } catch {
-        if (!cancelled) setTrips([]);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    void load();
   }, []);
-
   return (
-    <DashboardShell nav={TRAVELLER_NAV} allow={['TRAVELER', 'ORGANIZER', 'ADMIN']} title="Saved trips">
-      {trips === null ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[0, 1, 2].map((index) => (
-            <TripCardSkeleton key={index} />
-          ))}
+    <DashboardShell nav={TRAVELLER_NAV} allow={MEMBER_ROLES} title="Wishlist">
+      {items === null ? <p className="text-ink-muted">Loading…</p> : items.length === 0 ? (
+        <div className="rounded-xl bg-[color:var(--color-cream)] p-8 text-center">
+          <p className="font-display text-2xl text-acacia-700">Nothing saved yet</p>
+          <p className="mt-2 text-sm text-ink-soft">Tap “Save to wishlist” on any trip, place, event or activity.</p>
+          <Link href="/discover" className="mt-4 inline-flex h-11 items-center rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">Start discovering</Link>
         </div>
-      ) : trips.length === 0 ? (
-        <EmptyState
-          icon={<Icon.heart size={34} />}
-          title="Nothing saved yet"
-          description="Save trips you are considering and they will wait for you here — useful when you are comparing dates or waiting on a friend to decide."
-          action={
-            <ButtonLink href="/trips">
-              Explore trips
-              <Icon.arrow />
-            </ButtonLink>
-          }
-        />
       ) : (
-        <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {trips.map((trip) => (
-            <TripCard key={trip.id} trip={trip} />
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((item) => (
+            <li key={`${item.itemType}-${item.itemId}`} className="overflow-hidden rounded-xl border border-line bg-white">
+              <Link href={item.href}>
+                <div className="relative aspect-[16/10] bg-[color:var(--color-cream-deep)]">{item.image && <SmartImage src={item.image} alt="" fill sizes="33vw" className="object-cover" />}</div>
+                <div className="p-4">
+                  <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-clay-600">{item.itemType.toLowerCase()}</p>
+                  <p className="font-display text-xl text-acacia-700">{item.title}</p>
+                </div>
+              </Link>
+              <button onClick={async () => { await api.post('/community/saved', { itemType: item.itemType, itemId: item.itemId }); void load(); }} className="mx-4 mb-4 text-xs font-semibold text-ink-muted underline">Remove</button>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </DashboardShell>
   );

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { BookingDto, Paginated, TravellerStats } from '@enhakkore/shared';
-import { DashboardShell, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
+import { DashboardShell, MEMBER_ROLES, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
 import {
   Alert,
   Avatar,
@@ -96,7 +96,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <DashboardShell nav={TRAVELLER_NAV} allow={['TRAVELER', 'ORGANIZER', 'ADMIN']}>
+    <DashboardShell nav={TRAVELLER_NAV} allow={MEMBER_ROLES}>
       {!user ? (
         <Skeleton className="h-64 w-full" />
       ) : (

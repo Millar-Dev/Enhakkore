@@ -1,65 +1,26 @@
-import Image from 'next/image';
 import Link from 'next/link';
-import type { ImpactProjectSummary, Money, Paginated, TripSummary } from '@enhakkore/shared';
-import { PublicShell } from '@/components/layout/PublicShell';
-import { DepartureCard, TripCard } from '@/components/trips/TripCard';
-import { SearchBar } from '@/components/trips/SearchBar';
-import { ProjectCard } from '@/components/impact/ProjectCard';
+import type { HomepageSectionKey } from '@enhakkore/shared';
+import { formatInZone } from '@enhakkore/shared';
 import { HeroMedia, type HeroVideoSource } from '@/components/home/HeroMedia';
-import { FeaturedPackage } from '@/components/packages/FeaturedPackage';
-import { ImpactPartnership } from '@/components/home/ImpactPartnership';
-import { HeroPartnerMark } from '@/components/home/HeroPartnerMark';
-import { HowStrip, TrustStrip } from '@/components/home/Strips';
-import { PurposeCard } from '@/components/home/PurposeCard';
-import { PackageCard } from '@/components/packages/PackageCard';
-import { UPCOMING_TRIPS } from '@/content/packages';
-import {
-  Badge,
-  ButtonLink,
-  Card,
-  DemoBadge,
-  Divider,
-  Eyebrow,
-  Icon,
-  SectionHead,
-  Stars,
-  cx,
-} from '@/components/ui';
-import { apiGet, query } from '@/lib/api';
-import { price } from '@/lib/format';
-import { realProjects, realTrips } from '@/lib/demo';
+import { Globe } from '@/components/home/Globe';
+import type { HomeData } from '@/components/home/types';
+import { PublicShell } from '@/components/layout/PublicShell';
+import { CardGrid, ListingCard, SectionTitle } from '@/components/public/Cards';
+import { ActivityCard, EventCard, ExperienceCard, PlaceCard, TripCard } from '@/components/public/listings';
+import { SmartImage } from '@/components/public/SmartImage';
+import { WscLogo } from '@/components/site/BrandLogo';
+import { SocialIcon } from '@/components/site/SocialIcon';
+import { apiGet } from '@/lib/api';
+import { getCatalogue, type Catalogue } from '@/lib/public';
+import { getSite, waHref, type Site } from '@/lib/site';
 
-export const revalidate = 120;
-
-interface PlatformCounters {
-  travellersInvolved: number;
-  projectsSupported: number;
-  communitiesReached: number;
-  totalContributions: Money;
-  publishedTrips: number;
-  activeOrganizers: number;
-  isDemoData: boolean;
-}
+export const revalidate = 60;
 
 /**
- * The first frame of the hero video, captured from the 720p file. Because the
- * video starts on this exact frame, the still-to-video fade is invisible.
- * Re-capture it whenever the clip changes.
- */
-const HERO_IMAGE = '/media/hero/safari-tourist-poster-v1.jpg';
-const HERO_ALT = 'A traveller in an open safari vehicle photographing a giraffe on the savannah';
-
-/**
- * Hero background video, smallest file first. Served from /public so it is on
- * the same CDN as the site and cached for a year (see next.config.ts headers).
- * Empty means the photo alone, which is also what every visitor sees until the
- * page has finished loading.
- *
- * "Wildlife photography at Nairobi National Park" by In Old News LLC, Pexels
- * (pexels.com/video/15896377), used under the Pexels License. Three of
- * Pexels' own renditions, unmodified: 0.5 / 1.1 / 2.0 MB. To change the clip,
- * add files with a new version suffix — the year-long cache means reusing a
- * filename would leave returning visitors on the old video.
+ * Pexels clip "Wildlife photography at Nairobi National Park" (In Old News LLC,
+ * Pexels License), three renditions, smallest first. Shown only when the owner
+ * leaves the hero video switched on, and never on slow connections or with
+ * reduced motion (see HeroMedia).
  */
 const HERO_VIDEOS: HeroVideoSource[] = [
   { src: '/media/hero/safari-tourist-360-v1.mp4', maxViewport: 767 },
@@ -67,524 +28,367 @@ const HERO_VIDEOS: HeroVideoSource[] = [
   { src: '/media/hero/safari-tourist-720-v1.mp4', maxViewport: Infinity },
 ];
 
-/** Staggered entrance for the hero lines: 180ms apart, the first after 150ms. */
-function heroDelay(step: number): React.CSSProperties {
-  return { animationDelay: `${150 + step * 180}ms` };
-}
-
-/**
- * The three ways people arrive, as white pills under the search. Each keeps
- * one colour: green for the bush, navy for people, gold for the giving. The
- * rest of the categories live on the Explore page, where there is room to
- * choose rather than guess.
- */
-const CATEGORIES = [
-  { label: 'Safari Trips', href: '/trips?type=SAFARI', icon: 'compass' as const, tone: 'text-safari-500' },
-  { label: 'Group Trips', href: '/trips?type=GROUP', icon: 'users' as const, tone: 'text-acacia-600' },
-  { label: 'Charity Projects', href: '/impact', icon: 'heart' as const, tone: 'text-clay-600' },
-];
-
-const STEPS = [
-  {
-    number: '01',
-    title: 'Discover',
-    body: 'Find a journey that fits you — by place, by date, by the kind of travel you actually enjoy.',
-  },
-  {
-    number: '02',
-    title: 'Join',
-    body: 'Book a seat on an existing group departure, or ask for a private trip built around you.',
-  },
-  {
-    number: '03',
-    title: 'Connect',
-    body: 'Meet the people you will travel with before you go, in your trip’s own private group.',
-  },
-  {
-    number: '04',
-    title: 'Travel',
-    body: 'Go. Your organizer handles the logistics and stays reachable the whole way through.',
-  },
-  {
-    number: '05',
-    title: 'Give back',
-    body: 'Add a contribution to a project you choose, and follow what happens with it afterwards.',
-  },
-];
-
-const REASONS = [
-  {
-    title: 'Trusted organizers',
-    body: 'Every operator submits identity, licensing and contact details before a single listing goes live. Nothing publishes without a human review.',
-    icon: Icon.shield,
-  },
-  {
-    title: 'Meaningful experiences',
-    body: 'Trips run by people from the places they take you to — small groups, real guides, itineraries with room to breathe.',
-    icon: Icon.compass,
-  },
-  {
-    title: 'Travel communities',
-    body: 'Every departure has its own private group. You know who you are travelling with long before you meet them.',
-    icon: Icon.chat,
-  },
-  {
-    title: 'Real-world impact',
-    body: 'Contributions go to named projects with a stated goal, a public total and a dated record of what was done.',
-    icon: Icon.ripple,
-  },
-];
+const More = ({ href, label = 'See all' }: { href: string; label?: string }) => (
+  <Link href={href} className="chip w-fit">
+    {label} →
+  </Link>
+);
 
 export default async function HomePage() {
-  // Every rail degrades to a hidden section rather than a broken page if the
-  // API is unreachable.
-  const [featured, upcoming, projects, counters] = await Promise.all([
-    apiGet<Paginated<TripSummary>>(`/trips${query({ sort: 'recommended', pageSize: 6 })}`),
-    apiGet<{ items: TripSummary[] }>('/trips/upcoming?limit=4'),
-    apiGet<Paginated<ImpactProjectSummary>>(`/impact/projects${query({ pageSize: 3, featured: true })}`),
-    apiGet<PlatformCounters>('/stats'),
-  ]);
-
-  // Demonstration listings stay off the public homepage.
-  const featuredTrips = realTrips(featured?.items);
-  const upcomingTrips = realTrips(upcoming?.items);
-  const impactProjects = realProjects(projects?.items);
+  const site = await getSite();
+  const { settings } = site;
+  const [home, catalogue] = await Promise.all([apiGet<HomeData>(`/public/home?city=${settings.launch.citySlug}`, 60), getCatalogue()]);
+  const hero = settings.homepage.hero;
+  const homeBanners = site.banners.filter((banner) => banner.placement === 'HOME');
 
   return (
-    <PublicShell transparentHeader>
-      {/* ------------------------------------------------------------------ */}
-      {/* 1. A place worth going                                              */}
-      {/* ------------------------------------------------------------------ */}
-      <section className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-end overflow-hidden pb-10 pt-32 md:min-h-[42rem] md:pb-16">
-        <HeroMedia poster={HERO_IMAGE} alt={HERO_ALT} videos={HERO_VIDEOS} />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#04121e] via-[#04121e]/55 to-[#04121e]/35" />
-
-
-        {/* The words arrive one line at a time, in pure CSS so they animate on
-            first paint without waiting for JavaScript. The whole sequence is
-            done in about 1.5 seconds; reduce-motion users see it all at once. */}
-        <div className="shell relative">
-          <div className="max-w-3xl">
-            <div className="animate-hero" style={heroDelay(0)}>
-              <Badge tone="dark" className="border-white/25 bg-white/15 text-white backdrop-blur-md">
-                <Icon.ripple size={13} />
-                Travel with purpose
-              </Badge>
-            </div>
-
-            <h1 className="mt-6 text-[2.75rem] font-extrabold leading-[1.02] tracking-[-0.035em] text-white text-balance sm:text-[3.5rem] md:text-display">
-              <span className="animate-hero block" style={heroDelay(1)}>
-                Travel together.
-              </span>
-              <span className="animate-hero block" style={heroDelay(2)}>
-                Experience more.
-              </span>
-              <span className="animate-hero block text-clay-400" style={heroDelay(3)}>
-                Give back.
-              </span>
-            </h1>
-
-            <p
-              className="animate-hero mt-6 max-w-xl text-[1.0625rem] leading-relaxed text-white/80 md:text-[1.1875rem]"
-              style={heroDelay(4)}
-            >
-              Discover unforgettable journeys, connect with fellow travellers, and make a meaningful
-              impact along the way.
-            </p>
-          </div>
-
-          <div className="animate-hero mt-10 md:mt-12" style={heroDelay(5)}>
-            <SearchBar />
-          </div>
-
-          {/* The three ways people arrive. */}
-          <div
-            className="animate-hero mt-6 flex gap-2 overflow-x-auto pb-1 no-scrollbar md:mt-7"
-            style={heroDelay(6)}
-          >
-            {CATEGORIES.map((category) => {
-              const Glyph = Icon[category.icon];
-              return (
-                <Link
-                  key={category.href}
-                  href={category.href}
-                  className="inline-flex shrink-0 items-center gap-2 rounded-[var(--radius-pill)] bg-white px-4 py-2.5 text-[0.8125rem] font-bold text-acacia-600 shadow-sm transition-transform duration-200 hover:-translate-y-0.5"
-                >
-                  <span className={category.tone}>
-                    <Glyph size={15} />
-                  </span>
-                  {category.label}
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* The foot of the hero — Enhakkore's mark holds the top of the page,
-              this holds the bottom, and the two are never a pair of badges. */}
-          <div className="animate-hero mt-8 md:mt-10" style={heroDelay(7)}>
-            <HeroPartnerMark />
-          </div>
-
-        </div>
-      </section>
-
-      <TrustStrip />
-
-      {/* The Arusha departure — run by Enhakkore with WSC, so it sits on its
-          own rather than inside the operator trip rail. */}
-      <FeaturedPackage />
-
-      {/* ------------------------------------------------------------------ */}
-      {/* 2. What there is to join                                            */}
-      {/* ------------------------------------------------------------------ */}
-      <section className="section">
-        <div className="shell">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <Eyebrow>Featured trips</Eyebrow>
-              <h2 className="mt-3 text-h2">Journeys worth clearing your calendar for</h2>
-            </div>
-            <ButtonLink href="/trips" variant="secondary" size="sm">
-              View all
-              <Icon.arrow />
-            </ButtonLink>
-          </div>
-
-          {/* Trips on the left, the community work level with them on the
-              right — the same row, because they are the same undertaking. */}
-          <div className="mt-9 grid gap-6 lg:grid-cols-[1fr_22rem] lg:gap-8">
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {UPCOMING_TRIPS.map((trip, index) => (
-                <PackageCard key={trip.slug} trip={trip} priority={index === 0} />
-              ))}
-              {featuredTrips.slice(0, 1).map((trip) => (
-                <TripCard key={trip.id} trip={trip} />
-              ))}
-            </div>
-
-            <PurposeCard />
+    <PublicShell>
+      {/* Hero */}
+      <section className="relative isolate overflow-hidden bg-acacia-900">
+        <HeroMedia poster={hero.imageUrl} alt="" videos={hero.videoEnabled ? HERO_VIDEOS : []} />
+        <div className="absolute inset-0 -z-0 bg-gradient-to-r from-acacia-900/90 via-acacia-900/55 to-acacia-900/10" />
+        <div className="shell relative z-10 flex min-h-[78vh] flex-col justify-end pb-14 pt-24 md:min-h-[86vh] md:pb-20">
+          <p className="kicker !text-clay-400 animate-hero">{hero.eyebrow}</p>
+          <h1 className="display-xl mt-5 max-w-4xl text-white animate-hero" style={{ animationDelay: '120ms' }}>
+            {hero.title}
+          </h1>
+          <p className="mt-6 max-w-2xl text-[1.0625rem] leading-relaxed text-white/85 md:text-lg animate-hero" style={{ animationDelay: '240ms' }}>
+            {hero.subtitle}
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row animate-hero" style={{ animationDelay: '360ms' }}>
+            <Link href={hero.primaryHref} className="inline-flex h-14 items-center justify-center rounded-full bg-clay-400 px-8 text-[0.9375rem] font-bold text-acacia-700 shadow-lg transition hover:bg-clay-500 hover:text-white">
+              {hero.primaryLabel}
+            </Link>
+            <Link href={hero.secondaryHref} className="inline-flex h-14 items-center justify-center rounded-full border border-white/40 px-8 text-[0.9375rem] font-semibold text-white backdrop-blur hover:bg-white/10">
+              {hero.secondaryLabel}
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* 3. The thing that makes this different                              */}
-      {/* ------------------------------------------------------------------ */}
-      <section className="section bg-sand">
-        <div className="shell">
-          <div className="grid gap-12 lg:grid-cols-2 lg:items-center lg:gap-20">
-            <div>
-              <Eyebrow>Travel with purpose</Eyebrow>
-              <h2 className="mt-3 text-h1 text-balance">
-                Every journey can create a ripple beyond the traveller.
-              </h2>
-              <div className="prose-body mt-6 text-[1rem]">
-                <p>
-                  Travel already moves money into the places people visit. Enhakkore makes a part of that
-                  deliberate: at checkout you can add a contribution to a project you choose, in the region
-                  you are travelling to.
-                </p>
-                <p>
-                  Each project states what it is for, what it costs, how much has been raised and what has
-                  actually been done so far. You can follow it after you get home.
-                </p>
+      {homeBanners.map((banner) => (
+        <section key={banner.id} className="shell pt-10">
+          <div className="flex flex-col gap-4 overflow-hidden rounded-[1.4rem] bg-[color:var(--color-cream)] sm:flex-row sm:items-center">
+            {banner.imageUrl && (
+              <div className="relative aspect-[16/9] sm:aspect-auto sm:h-40 sm:w-64 sm:shrink-0">
+                <SmartImage src={banner.imageUrl} alt="" fill sizes="256px" className="object-cover" />
               </div>
-
-              <div className="mt-8 flex flex-wrap gap-3">
-                <ButtonLink href="/impact" variant="impact">
-                  Explore impact projects
-                  <Icon.arrow />
-                </ButtonLink>
-                <ButtonLink href="/impact/dashboard" variant="secondary">
-                  See the numbers
-                </ButtonLink>
-              </div>
-            </div>
-
-            <div className="grid gap-5 sm:grid-cols-2">
-              {impactProjects.slice(0, 2).map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
-            </div>
-          </div>
-
-          {impactProjects.length > 2 && (
-            <div className="mt-12 grid gap-6 md:grid-cols-3 lg:hidden">
-              {impactProjects.slice(2, 3).map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* 4. How the whole thing works                                        */}
-      {/* ------------------------------------------------------------------ */}
-      <section className="section">
-        <div className="shell">
-          <SectionHead
-            eyebrow="How it works"
-            title="Discover → Join → Connect → Travel → Give back"
-            description="One path from the first search to the update that arrives months after you get home."
-            action={
-              <ButtonLink href="/how-it-works" variant="secondary">
-                In more detail
-              </ButtonLink>
-            }
-          />
-
-          <ol className="mt-12 grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-line bg-line sm:grid-cols-2 lg:grid-cols-5">
-            {STEPS.map((step) => (
-              <li key={step.number} className="bg-white p-6 lg:p-7">
-                <span className="text-[0.6875rem] font-bold tracking-[0.16em] text-acacia-600">
-                  {step.number}
-                </span>
-                <h3 className="mt-3 text-[1.0625rem] font-bold tracking-tight">{step.title}</h3>
-                <p className="mt-2 text-[0.875rem] leading-relaxed text-ink-muted">{step.body}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* 5. Why trust it                                                     */}
-      {/* ------------------------------------------------------------------ */}
-      <section className="section-tight">
-        <div className="shell">
-          <SectionHead eyebrow="Why Enhakkore" title="Built to be worth trusting" />
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {REASONS.map((reason) => {
-              const ReasonIcon = reason.icon;
-              return (
-                <Card key={reason.title} className="p-6">
-                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-[0.75rem] bg-acacia-50 text-acacia-700">
-                    <ReasonIcon size={21} />
-                  </span>
-                  <h3 className="mt-5 text-[1rem] font-bold tracking-tight">{reason.title}</h3>
-                  <p className="mt-2 text-[0.875rem] leading-relaxed text-ink-muted">{reason.body}</p>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* 6. Groups filling now                                               */}
-      {/* ------------------------------------------------------------------ */}
-      {upcomingTrips.length > 0 && (
-        <section className="section bg-sand">
-          <div className="shell">
-            <SectionHead
-              eyebrow="Upcoming group trips"
-              title="These are filling now"
-              description="Group departures with seats still open. Join one and you are in its traveller group the same day."
-              action={
-                <ButtonLink href="/trips?availableOnly=true&type=GROUP" variant="secondary">
-                  All group departures
-                </ButtonLink>
-              }
-            />
-            <div className="mt-10 grid gap-4 md:grid-cols-2">
-              {upcomingTrips.map((trip) => (
-                <DepartureCard key={trip.id} trip={trip} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ------------------------------------------------------------------ */}
-      {/* 7. What the platform adds up to                                     */}
-      {/* ------------------------------------------------------------------ */}
-      {/* Hidden while every figure comes from the seed. A number labelled as a
-          demonstration is still a number a visitor reads as an achievement. */}
-      {counters && !counters.isDemoData && (
-        <section className="section-tight">
-          <div className="shell">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <Eyebrow>Impact by the community</Eyebrow>
-                <h2 className="mt-3 text-h2">What travellers have made possible</h2>
-              </div>
-              {counters.isDemoData && <DemoBadge label="Demonstration figures" />}
-            </div>
-
-            {counters.isDemoData && (
-              <p className="mt-4 max-w-3xl text-[0.875rem] leading-relaxed text-ink-muted">
-                These figures come from the demonstration database used while the platform is being built.
-                They are not a record of money raised or work completed, and they will be replaced by real,
-                auditable totals before launch.
-              </p>
             )}
-
-            <dl className="mt-8 grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                { label: 'Travellers involved', value: counters.travellersInvolved.toLocaleString('en-GB') },
-                { label: 'Projects supported', value: counters.projectsSupported.toLocaleString('en-GB') },
-                { label: 'Communities reached', value: counters.communitiesReached.toLocaleString('en-GB') },
-                { label: 'Total contributions', value: price(counters.totalContributions, true) },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-white p-6 md:p-7">
-                  <dt className="text-eyebrow uppercase text-ink-muted">{stat.label}</dt>
-                  <dd className="mt-3 text-[2rem] font-bold leading-none tracking-tight text-ink md:text-[2.25rem]">
-                    {stat.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            <div className="flex flex-1 flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <p className="font-display text-2xl text-acacia-700">{banner.message}</p>
+              {banner.linkUrl && <Link href={banner.linkUrl} className="inline-flex h-11 shrink-0 items-center rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">{banner.linkLabel || 'Find out more'}</Link>}
+            </div>
           </div>
         </section>
-      )}
+      ))}
 
-      {/* ------------------------------------------------------------------ */}
-      {/* 8. People who went                                                  */}
-      {/* ------------------------------------------------------------------ */}
-      <StoriesSection />
-
-      {/* ------------------------------------------------------------------ */}
-      {/* 9. Operators                                                        */}
-      {/* ------------------------------------------------------------------ */}
-      <section className="section-tight">
-        <div className="shell">
-          <Card className="overflow-hidden">
-            <div className="grid lg:grid-cols-[1.3fr_1fr]">
-              <div className="p-8 md:p-12">
-                <Eyebrow>For tour operators</Eyebrow>
-                <h2 className="mt-3 text-h2 text-balance">
-                  Run trips? Put them in front of travellers who are already looking.
-                </h2>
-                <p className="mt-4 max-w-lg text-[0.9375rem] leading-relaxed text-ink-muted">
-                  List your own departures, manage bookings and talk to your travellers in one place.
-                  Enhakkore takes a commission on confirmed bookings — no listing fee, no subscription,
-                  and nothing charged on a traveller’s impact contribution.
-                </p>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <ButtonLink href="/operators">
-                    How it works for operators
-                    <Icon.arrow />
-                  </ButtonLink>
-                  <ButtonLink href="/join?type=organizer" variant="secondary">
-                    Create an operator account
-                  </ButtonLink>
-                </div>
-              </div>
-              <div className="media relative min-h-64 lg:min-h-full">
-                <Image
-                  src="https://images.unsplash.com/photo-1521651201144-634f700b36ef?auto=format&fit=crop&w=1200&h=1200&q=80"
-                  alt="An elephant and calf crossing open savannah"
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 40vw"
-                  className="object-cover"
-                />
-              </div>
-            </div>
-          </Card>
-        </div>
-      </section>
-
-      <HowStrip />
-
-      {/* ------------------------------------------------------------------ */}
-      {/* 10. Travel that goes beyond the journey — Enhakkore and WSC         */}
-      {/* ------------------------------------------------------------------ */}
-      <ImpactPartnership />
-
-      {/* ------------------------------------------------------------------ */}
-      {/* 11. Go                                                              */}
-      {/* ------------------------------------------------------------------ */}
-      <section className="relative overflow-hidden">
-        <div className="relative">
-          <Image
-            src="https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=2000&h=1000&q=80"
-            alt="A single acacia silhouetted against a sunset sky"
-            fill
-            sizes="100vw"
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-[#04121e]/68" />
-          <div className="shell relative py-24 text-center md:py-32">
-            <h2 className="mx-auto max-w-3xl text-[2.25rem] font-extrabold leading-[1.05] tracking-[-0.03em] text-white text-balance md:text-[3.25rem]">
-              Your next journey can mean more.
-            </h2>
-            <p className="mx-auto mt-5 max-w-xl text-[1.0625rem] leading-relaxed text-white/75">
-              Find somewhere to go, meet the people going with you, and leave something behind that lasts
-              longer than the trip.
-            </p>
-            <div className="mt-9 flex flex-wrap justify-center gap-3">
-              <ButtonLink href="/trips" variant="inverted" size="lg">
-                Explore trips
-                <Icon.arrow />
-              </ButtonLink>
-              <ButtonLink
-                href="/impact"
-                size="lg"
-                className="border border-white/30 bg-transparent text-white hover:bg-white/10"
-                variant="ghost"
-              >
-                Support a project
-              </ButtonLink>
-            </div>
-          </div>
-        </div>
-      </section>
+      {settings.homepage.sections
+        .filter((section) => section.enabled)
+        .map((section) => (
+          <HomeSection key={section.key} sectionKey={section.key} title={section.title} subtitle={section.subtitle} home={home} site={site} catalogue={catalogue} />
+        ))}
     </PublicShell>
   );
 }
 
-/* -------------------------------------------------------------------------- */
-
-/**
- * Traveller stories.
- *
- * These quotes are the demonstration reviews from the seeded database, shown
- * with a demo label. They are not testimonials from real customers, and the
- * label says so rather than leaving the reader to assume.
- */
-async function StoriesSection() {
-  const reviews = await apiGet<{ items: { id: string; rating: number; title: string | null; body: string; author: { id: string; name: string; country: string | null } }[] }>(
-    '/trips/mikumi-adventure/reviews?pageSize=3',
-  );
-
-  const stories = reviews?.items ?? [];
-  if (stories.length === 0) return null;
-
-  return (
-    <section className="section bg-ink text-white">
-      <div className="shell">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-2xl">
-            <p className="text-eyebrow uppercase text-white/45">Stories</p>
-            <h2 className="mt-3 text-h2 text-white text-balance">
-              The part people talk about afterwards is usually the people.
-            </h2>
+function HomeSection({
+  sectionKey,
+  title,
+  subtitle,
+  home,
+  site,
+  catalogue,
+}: {
+  sectionKey: HomepageSectionKey;
+  title: string;
+  subtitle: string;
+  home: HomeData | null;
+  site: Site;
+  catalogue: Catalogue;
+}) {
+  const { settings } = site;
+  switch (sectionKey) {
+    case 'search': {
+      const activityCategories = catalogue.categories.filter((category) => category.kind === 'ACTIVITY' && category.featured).slice(0, 8);
+      return (
+        <section className="shell -mt-0 py-12 md:py-16">
+          <div className="rounded-[1.6rem] border border-line bg-white p-5 shadow-[var(--shadow-raised)] md:p-8">
+            <p className="font-display text-2xl text-acacia-700 md:text-3xl">{title}</p>
+            <form action="/search" className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <input name="q" placeholder="Search activities, places, events, trips, cities…" className="field h-14 text-base" />
+              <button className="h-14 shrink-0 rounded-[var(--radius-field)] bg-acacia-600 px-8 font-bold text-white hover:bg-acacia-500">Search</button>
+            </form>
+            <div className="no-scrollbar -mx-5 mt-5 flex gap-2 overflow-x-auto px-5 md:mx-0 md:flex-wrap md:px-0">
+              {activityCategories.map((category) => (
+                <Link key={category.slug} href={`/activities?category=${category.slug}`} className="chip">
+                  <span aria-hidden>{category.icon}</span> {category.name}
+                </Link>
+              ))}
+              <Link href="/discover" className="chip">🏖️ Places</Link>
+              <Link href="/events" className="chip">🎉 Events</Link>
+              <Link href="/travel" className="chip">🧭 Trips</Link>
+            </div>
           </div>
-          <DemoBadge label="Demo reviews" className="border-white/25 bg-white/10 text-white/70" />
-        </div>
-
-        <div className="mt-12 grid gap-6 lg:grid-cols-3">
-          {stories.map((story) => (
-            <figure key={story.id} className="flex flex-col rounded-[var(--radius-card)] border border-white/12 bg-white/[0.04] p-7">
-              <Stars rating={story.rating} />
-              {story.title && (
-                <figcaption className="mt-4 text-[1.0625rem] font-bold leading-snug tracking-tight text-white">
-                  {story.title}
-                </figcaption>
+        </section>
+      );
+    }
+    case 'weekend': {
+      const weekend = home?.weekend;
+      const items = weekend ? [...weekend.events.map((item) => ({ item, kind: 'event' })), ...weekend.activities.map((item) => ({ item, kind: 'activity' })), ...weekend.experiences.map((item) => ({ item, kind: 'experience' }))] : [];
+      return (
+        <section className="bg-[color:var(--color-cream)]">
+          <div className="shell py-14 md:py-20">
+            <SectionTitle
+              kicker={`Weekend Radar · ${home?.launch.cityName ?? settings.launch.cityName}`}
+              title={title}
+              subtitle={weekend ? `${formatInZone(weekend.start, weekend.zone, 'weekday')} – ${formatInZone(weekend.end, weekend.zone, 'weekday')}` : subtitle}
+              action={<More href={`/weekend?city=${settings.launch.citySlug}`} label="Weekend Radar" />}
+            />
+            {items.length ? (
+              <CardGrid>
+                {items.slice(0, 6).map(({ item, kind }) =>
+                  kind === 'event' ? <EventCard key={item.id} item={item} /> : kind === 'activity' ? <ActivityCard key={item.id} item={item} /> : <ExperienceCard key={item.id} item={item} />,
+                )}
+              </CardGrid>
+            ) : (
+              <div className="flex flex-col gap-4 rounded-[1.2rem] border border-dashed border-line-strong bg-white p-6 md:flex-row md:items-center md:justify-between">
+                <p className="text-ink-soft">Nothing is listed for this weekend yet. Be the one who starts something.</p>
+                <div className="flex gap-2">
+                  <Link href="/activities/host" className="inline-flex h-11 items-center rounded-full bg-clay-400 px-5 text-sm font-bold text-acacia-700">Host an activity</Link>
+                  <Link href="/activities" className="inline-flex h-11 items-center rounded-full border border-line-strong bg-white px-5 text-sm font-semibold">Upcoming</Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      );
+    }
+    case 'activities': {
+      const groups = ['Sports', 'Fitness & outdoors', 'Console gaming', 'Online & mobile gaming'];
+      return (
+        <section className="shell py-14 md:py-20">
+          <SectionTitle kicker="Enhakkore Activities" title={title} subtitle={subtitle} action={<More href="/activities" />} />
+          <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {groups.map((group) => {
+              const items = catalogue.categories.filter((category) => category.kind === 'ACTIVITY' && category.group === group);
+              if (!items.length) return null;
+              return (
+                <div key={group} className="rounded-[1.1rem] border border-line bg-white p-4">
+                  <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-clay-600">{group}</p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {items.slice(0, 6).map((category) => (
+                      <Link key={category.slug} href={`/activities?category=${category.slug}`} className={`rounded-full px-2.5 py-1 text-[0.8125rem] font-semibold ${category.featured ? 'bg-acacia-600 text-white' : 'bg-[color:var(--color-cream)] text-acacia-700'}`}>
+                        {category.icon} {category.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {home?.activities.length ? (
+            <CardGrid>{home.activities.slice(0, 6).map((item) => <ActivityCard key={item.id} item={item} />)}</CardGrid>
+          ) : null}
+          <div className="mt-8 flex flex-col items-start gap-4 rounded-[1.4rem] bg-acacia-600 p-6 text-white md:flex-row md:items-center md:justify-between md:p-8">
+            <div>
+              <p className="font-display text-2xl">Got a game, a run or a gaming night in mind?</p>
+              <p className="mt-1 text-white/75">Submitting an activity is free. Every activity is reviewed before it is published.</p>
+            </div>
+            <Link href="/activities/host" className="inline-flex h-12 shrink-0 items-center rounded-full bg-clay-400 px-6 font-bold text-acacia-700">Host an activity</Link>
+          </div>
+        </section>
+      );
+    }
+    case 'people':
+      return (
+        <section className="bg-acacia-700 text-white">
+          <div className="shell grid gap-8 py-14 md:grid-cols-[1.3fr_1fr] md:items-center md:py-20">
+            <div>
+              <p className="kicker !text-clay-400">Enhakkore Connect</p>
+              <h2 className="display-lg mt-3">{title}</h2>
+              <p className="mt-4 max-w-xl text-white/75">{subtitle}</p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link href="/connect" className="inline-flex h-12 items-center rounded-full bg-clay-400 px-6 font-bold text-acacia-700">Find people</Link>
+                <Link href="/join" className="inline-flex h-12 items-center rounded-full border border-white/30 px-6 font-semibold">Join free</Link>
+              </div>
+            </div>
+            <ul className="grid grid-cols-2 gap-3 text-sm">
+              {['Basketball partners', 'Running buddies', 'FC & PlayStation', 'PUBG Mobile squads', 'Travel companions', 'Weekend explorers'].map((label) => (
+                <li key={label} className="rounded-xl bg-white/5 px-4 py-3 font-semibold ring-1 ring-white/10">{label}</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      );
+    case 'places':
+      return (
+        <section className="shell py-14 md:py-20">
+          <SectionTitle kicker="Enhakkore Discover" title={title} subtitle={subtitle} action={<More href="/discover" />} />
+          {home?.places.length ? (
+            <CardGrid>{home.places.slice(0, 6).map((item) => <PlaceCard key={item.id} item={item} />)}</CardGrid>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              {catalogue.categories.filter((category) => category.kind === 'PLACE' && category.featured).map((category) => (
+                <Link key={category.slug} href={`/discover?category=${category.slug}`} className="card-lift rounded-[1.1rem] border border-line bg-white p-4 text-center">
+                  <p className="text-2xl">{category.icon}</p>
+                  <p className="mt-1 text-sm font-semibold text-acacia-700">{category.name}</p>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+      );
+    case 'trips':
+      return (
+        <section className="shell py-14 md:py-20">
+          <SectionTitle kicker="Enhakkore Travel" title={title} subtitle={subtitle} action={<More href="/travel" />} />
+          {home?.trips.length ? (
+            <CardGrid>{home.trips.slice(0, 3).map((trip) => <TripCard key={trip.slug} trip={trip} />)}</CardGrid>
+          ) : (
+            <p className="text-ink-muted">The next trip is being planned.</p>
+          )}
+          {home?.pastTrips.length ? (
+            <div className="mt-8">
+              <p className="text-sm font-semibold text-ink-muted">Where we have been</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {home.pastTrips.map((trip) => <Link key={trip.slug} href={`/travel/${trip.slug}`} className="chip">{trip.title}</Link>)}
+              </div>
+            </div>
+          ) : null}
+        </section>
+      );
+    case 'events':
+      return home?.events.length ? (
+        <section className="bg-[color:var(--color-cream)]">
+          <div className="shell py-14 md:py-20">
+            <SectionTitle kicker="Enhakkore Events" title={title} subtitle={subtitle} action={<More href="/events" />} />
+            <CardGrid>{home.events.slice(0, 3).map((item) => <EventCard key={item.id} item={item} />)}</CardGrid>
+          </div>
+        </section>
+      ) : null;
+    case 'experiences':
+      return home?.experiences.length ? (
+        <section className="shell py-14 md:py-20">
+          <SectionTitle kicker="Enhakkore Experiences" title={title} subtitle={subtitle} action={<More href="/experiences" />} />
+          <CardGrid>{home.experiences.slice(0, 3).map((item) => <ExperienceCard key={item.id} item={item} />)}</CardGrid>
+        </section>
+      ) : null;
+    case 'catering':
+      return (
+        <section className="shell py-14 md:py-20">
+          <div className="grid overflow-hidden rounded-[1.6rem] bg-[color:var(--color-cream)] md:grid-cols-2">
+            <div className="p-8 md:p-12">
+              <p className="kicker">Catering & lunchboxes</p>
+              <h2 className="display-md mt-3 text-acacia-700">{title}</h2>
+              <p className="mt-3 text-ink-soft">{subtitle}</p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link href="/catering" className="inline-flex h-12 items-center rounded-full bg-acacia-600 px-6 font-bold text-white">See catering</Link>
+                <a href={waHref(settings, 'catering')} target="_blank" rel="noreferrer noopener" className="inline-flex h-12 items-center gap-2 rounded-full border border-line-strong bg-white px-5 font-semibold"><SocialIcon platform="whatsapp" size={18} /> Order</a>
+              </div>
+            </div>
+            <div className="relative min-h-[220px]">
+              <SmartImage src={home?.catering.find((item) => item.coverImage)?.coverImage ?? '/packages/arusha/chemka-1.webp'} alt="" fill sizes="(max-width:768px) 100vw, 50vw" className="object-cover" />
+            </div>
+          </div>
+        </section>
+      );
+    case 'globe': {
+      const markers = catalogue.countries.filter((country) => (country.total > 0 || country.featured) && country.latitude !== null).map((country) => ({ lat: country.latitude!, lng: country.longitude!, label: country.name, href: `/destinations/${country.slug}` }));
+      return (
+        <section className="shell grid gap-10 py-14 md:grid-cols-[1fr_1fr] md:items-center md:py-20">
+          <div className="mx-auto w-full max-w-[26rem]">
+            <Globe markers={markers} />
+          </div>
+          <div>
+            <p className="kicker">International</p>
+            <h2 className="display-lg mt-3 text-acacia-700">{title}</h2>
+            <p className="mt-4 text-ink-soft">{subtitle} We start in {settings.launch.cityName} and add places as listings are confirmed — wherever you are, you can explore what is genuinely there.</p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {catalogue.countries.filter((country) => country.total > 0 || country.featured).slice(0, 8).map((country) => <Link key={country.code} href={`/destinations/${country.slug}`} className="chip">{country.name}</Link>)}
+              <Link href="/destinations" className="chip chip-active">All destinations</Link>
+            </div>
+          </div>
+        </section>
+      );
+    }
+    case 'stories':
+      return home?.stories.length || home?.whatsNew.length ? (
+        <section className="shell py-14 md:py-20">
+          <div className="grid gap-12 lg:grid-cols-[1.5fr_1fr]">
+            <div>
+              <SectionTitle kicker="Community stories" title={title} action={<More href="/community" />} />
+              {home.stories.length ? (
+                <div className="grid gap-5 sm:grid-cols-2">
+                  {home.stories.slice(0, 2).map((story) => <ListingCard key={story.id} href={`/stories/${story.slug}`} image={story.coverImage} kicker={`By ${story.authorName}`} title={String(story.title)} meta={[(story.excerpt as string) ?? null]} />)}
+                </div>
+              ) : (
+                <Link href="/stories/new" className="chip">Share the first story</Link>
               )}
-              <blockquote className="mt-3 flex-1 text-[0.9375rem] leading-relaxed text-white/65">
-                {story.body.length > 220 ? `${story.body.slice(0, 220).trimEnd()}…` : story.body}
-              </blockquote>
-              <Divider className="my-5 border-white/12" />
-              <p className="text-[0.8125rem] text-white/55">
-                <span className="font-semibold text-white/85">{story.author.name}</span>
-                {story.author.country && <> · {story.author.country}</>}
-              </p>
-            </figure>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
+            </div>
+            <div>
+              <SectionTitle kicker="What’s new" title="Recently added" />
+              <ul className="divide-y divide-line rounded-[1.1rem] border border-line bg-white">
+                {home.whatsNew.map((item) => (
+                  <li key={item.href}>
+                    <Link href={item.href} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-sand">
+                      <span className="min-w-0">
+                        <span className="block text-[0.6875rem] font-bold uppercase tracking-wider text-clay-600">{item.kind}</span>
+                        <span className="block truncate font-semibold text-ink">{item.title}</span>
+                      </span>
+                      <span className="text-ink-faint">→</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+      ) : null;
+    case 'impact':
+      return (
+        <section className="bg-[color:var(--color-cream)]">
+          <div className="shell py-14 md:py-20">
+            <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:items-center">
+              <div>
+                <WscLogo src={settings.brand.wscLogoUrl} height={68} />
+                <p className="kicker mt-6">Enhakkore Impact</p>
+                <h2 className="display-lg mt-3 text-acacia-700">{title}</h2>
+                <p className="mt-4 text-ink-soft">{subtitle} {settings.impact.wscIntro}</p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link href="/impact" className="inline-flex h-12 items-center rounded-full bg-acacia-600 px-6 font-bold text-white">Our impact</Link>
+                  <Link href="/donate" className="inline-flex h-12 items-center rounded-full bg-safari-500 px-6 font-bold text-white">Donate</Link>
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {(home?.impact ?? []).slice(0, 2).map((project) => (
+                  <ListingCard key={project.slug} href={`/impact/${project.slug}`} image={project.heroImage} kicker={project.status === 'COMPLETED' ? 'Completed' : 'Project'} title={project.title} meta={[project.location]} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    case 'updates':
+      return (
+        <section className="shell py-14 md:py-20">
+          <div className="rounded-[1.6rem] border border-line bg-white p-8 text-center md:p-12">
+            <p className="kicker justify-center">Community updates</p>
+            <h2 className="display-md mt-3 text-acacia-700">{title}</h2>
+            <p className="mx-auto mt-3 max-w-xl text-ink-soft">{subtitle}</p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              {settings.social.map((link) => (
+                <a key={link.url} href={link.url} target="_blank" rel="noreferrer noopener" className="inline-flex h-12 items-center gap-2 rounded-full bg-acacia-600 px-5 font-semibold text-white">
+                  <SocialIcon platform={link.platform} size={18} /> {link.label}
+                </a>
+              ))}
+              <a href={waHref(settings, 'general')} target="_blank" rel="noreferrer noopener" className="inline-flex h-12 items-center gap-2 rounded-full bg-[#1f9d55] px-5 font-semibold text-white">
+                <SocialIcon platform="whatsapp" size={18} /> WhatsApp
+              </a>
+            </div>
+          </div>
+        </section>
+      );
+    default:
+      return null;
+  }
 }

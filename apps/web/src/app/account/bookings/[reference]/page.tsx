@@ -6,7 +6,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import type { BookingDto } from '@enhakkore/shared';
 import { BOOKING_STATUS_LABELS } from '@enhakkore/shared';
-import { DashboardShell, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
+import { DashboardShell, MEMBER_ROLES, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
 import { ProjectMini } from '@/components/impact/ProjectCard';
 import {
   Alert,
@@ -361,7 +361,7 @@ function PriceRow({
 
 export default function BookingPage() {
   return (
-    <DashboardShell nav={TRAVELLER_NAV} allow={['TRAVELER', 'ADMIN', 'ORGANIZER']}>
+    <DashboardShell nav={TRAVELLER_NAV} allow={MEMBER_ROLES}>
       <Suspense fallback={<Skeleton className="h-96 w-full" />}>
         <BookingContent />
       </Suspense>

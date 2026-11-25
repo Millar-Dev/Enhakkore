@@ -94,6 +94,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = useCallback(() => {
+    // End the session on the server too, so the token stops working everywhere.
+    if (getToken()) void api.post('/auth/logout').catch(() => undefined);
     setToken(null);
     setUser(null);
     setOrganizer(null);
@@ -116,7 +118,7 @@ export function useSession(): SessionState {
 
 /** Where an account type lands after signing in. */
 export function homeFor(role: Role): string {
-  if (role === 'ADMIN') return '/admin';
+  if (role === 'ADMIN' || role === 'STAFF') return '/admin';
   if (role === 'ORGANIZER') return '/organizer';
-  return '/account/trips';
+  return '/account';
 }

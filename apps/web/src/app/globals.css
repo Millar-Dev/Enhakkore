@@ -91,6 +91,10 @@
   --color-danger-soft: #fef3f2;
 
   /* --- Type -------------------------------------------------------------- */
+  /* Display: an elegant serif for headings, the "established brand" voice. */
+  --font-serif: var(--font-cormorant), 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --color-cream: #f8f4ec;
+  --color-cream-deep: #efe7d8;
   --font-sans: var(--font-jakarta), 'Plus Jakarta Sans', -apple-system,
     BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
@@ -386,5 +390,105 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+
+/* ==========================================================================
+   Editorial layer — the international, premium voice.
+   Serif display headings over a clean sans body; cream grounds; gold hairlines.
+   ========================================================================== */
+
+@layer components {
+  .font-display {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .display-xl {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: clamp(2.6rem, 7vw, 5.25rem);
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+  }
+  .display-lg {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: clamp(2.1rem, 4.6vw, 3.5rem);
+    line-height: 1.04;
+    letter-spacing: -0.015em;
+  }
+  .display-md {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: clamp(1.7rem, 3vw, 2.4rem);
+    line-height: 1.1;
+  }
+  .kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-clay-600);
+  }
+  .kicker::before {
+    content: '';
+    width: 1.75rem;
+    height: 1px;
+    background: var(--color-clay-400);
+  }
+  .card-lift {
+    transition: transform 0.35s var(--ease-out-soft), box-shadow 0.35s var(--ease-out-soft);
+  }
+  .card-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-raised);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 2.5rem;
+    padding: 0 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-line-strong);
+    background: #fff;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-ink);
+    white-space: nowrap;
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+  }
+  .chip:hover {
+    border-color: var(--color-acacia-600);
+  }
+  .chip[aria-current='true'],
+  .chip-active {
+    background: var(--color-acacia-600);
+    border-color: var(--color-acacia-600);
+    color: #fff;
+  }
+  .field {
+    height: 2.75rem;
+    width: 100%;
+    border-radius: var(--radius-field);
+    border: 1px solid var(--color-line-strong);
+    background: #fff;
+    padding: 0 0.875rem;
+    font-size: 0.9375rem;
+    color: var(--color-ink);
+  }
+  textarea.field {
+    height: auto;
+    min-height: 6rem;
+    padding: 0.75rem 0.875rem;
+  }
+  .field:focus {
+    outline: 2px solid var(--color-acacia-600);
+    outline-offset: 0;
   }
 }

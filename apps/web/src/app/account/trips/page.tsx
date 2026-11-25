@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { BookingDto, Paginated } from '@enhakkore/shared';
 import { BOOKING_STATUS_LABELS } from '@enhakkore/shared';
-import { DashboardShell, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
+import { DashboardShell, MEMBER_ROLES, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
 import {
   Badge,
   ButtonLink,
@@ -47,7 +47,7 @@ export default function MyTripsPage() {
   }, [scope]);
 
   return (
-    <DashboardShell nav={TRAVELLER_NAV} allow={['TRAVELER', 'ORGANIZER', 'ADMIN']} title="My trips">
+    <DashboardShell nav={TRAVELLER_NAV} allow={MEMBER_ROLES} title="My trips">
       <div className="mb-7 flex gap-2">
         {SCOPES.map((item) => (
           <button

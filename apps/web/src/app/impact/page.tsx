@@ -1,327 +1,105 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
-import type { ImpactProjectSummary, Money, Paginated } from '@enhakkore/shared';
-import { IMPACT_CATEGORIES, IMPACT_CATEGORY_LABELS } from '@enhakkore/shared';
+import { IMPACT_CATEGORY_LABELS, type ImpactCategory } from '@enhakkore/shared';
 import { PublicShell } from '@/components/layout/PublicShell';
-import { ProjectCard } from '@/components/impact/ProjectCard';
-import { PartnerCard, PartnershipLockup } from '@/components/brand/Partner';
-import { GivingCounter } from '@/components/impact/GivingCounter';
-import { MKURANGA } from '@/content/mkuranga';
-import {
-  ButtonLink,
-  Card,
-  DemoBadge,
-  EmptyState,
-  Eyebrow,
-  Icon,
-  SectionHead,
-  cx,
-} from '@/components/ui';
-import { apiGet, query } from '@/lib/api';
-import { price } from '@/lib/format';
-import { realProjects } from '@/lib/demo';
+import { CardGrid, Empty, ListingCard, SectionTitle } from '@/components/public/Cards';
+import type { Project } from '@/components/public/impact';
+import { SmartImage } from '@/components/public/SmartImage';
+import { WscLogo } from '@/components/site/BrandLogo';
+import { SocialIcon } from '@/components/site/SocialIcon';
+import { apiGet } from '@/lib/api';
+import { getSite, waHref } from '@/lib/site';
 
-export const metadata: Metadata = {
-  title: 'Impact',
-  description:
-    'Support verified projects and see how your contribution creates meaningful change — goal, amount raised, and a dated record of what was done.',
-};
+export const metadata: Metadata = { title: 'Impact', description: 'Community projects and outreach carried out with WSC — We Save Children.' };
+export const revalidate = 60;
 
-export const revalidate = 120;
-
-interface ImpactSummary {
-  totalContributions: Money;
-  contributionCount: number;
-  travellersInvolved: number;
-  projectsSupported: number;
-  projectsCompleted: number;
-  communitiesReached: number;
-  countries: number;
-  byCategory: Record<string, number>;
-  isDemoData: boolean;
-}
-
-const PILLARS = [
-  {
-    title: 'A named project, not a pool',
-    body: 'Every contribution goes to one project you can open, read and follow. There is no general fund that money disappears into.',
-  },
-  {
-    title: 'The goal is public',
-    body: 'Each project states what it costs and how much has been raised. The percentage you see is calculated from those two numbers, not written by hand.',
-  },
-  {
-    title: 'Progress is dated',
-    body: 'Updates carry a date and describe what actually happened — including the parts that went slower than planned.',
-  },
-  {
-    title: 'No commission on contributions',
-    body: 'Enhakkore earns from booking commission. Contributions pass through in full.',
-  },
-];
-
-export default async function ImpactPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const params = await searchParams;
-  const category = typeof params.category === 'string' ? params.category : undefined;
-
-  const [projects, summary] = await Promise.all([
-    apiGet<Paginated<ImpactProjectSummary>>(`/impact/projects${query({ category, pageSize: 12 })}`),
-    apiGet<ImpactSummary>('/impact/summary'),
-  ]);
-
-  // Demonstration projects are not shown. Our own completed outreach is
-  // featured above; this grid fills as real projects are added.
-  const items = realProjects(projects?.items);
+export default async function ImpactPage() {
+  const [{ settings }, projects] = await Promise.all([getSite(), apiGet<Project[]>('/public/impact', 60)]);
+  const list = projects ?? [];
+  const active = list.filter((project) => project.status !== 'COMPLETED');
+  const completed = list.filter((project) => project.status === 'COMPLETED');
+  const featured = completed[0] ?? list[0];
 
   return (
-    <PublicShell transparentHeader>
-      {/* Hero */}
-      <section className="relative flex min-h-[32rem] items-end overflow-hidden pb-14 pt-40">
-        <Image
-          src="https://images.unsplash.com/photo-1538300342682-cf57afb97285?auto=format&fit=crop&w=2400&h=1400&q=85"
-          alt="Clean water running into open hands"
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#04121e] via-[#04121e]/60 to-[#04121e]/30" />
-
-        <div className="shell relative">
-          <Eyebrow className="text-white/55">Impact</Eyebrow>
-          <h1 className="mt-4 max-w-3xl text-[2.5rem] font-extrabold leading-[1.03] tracking-[-0.035em] text-white text-balance md:text-[3.75rem]">
-            Travel can change more than you.
-          </h1>
-          <p className="mt-5 max-w-xl text-[1.0625rem] leading-relaxed text-white/78">
-            Support projects with a stated goal, a public total and a dated record of what has been done —
-            then follow what happens next.
-          </p>
-
-          <PartnershipLockup size="sm" tone="light" className="mt-8" />
-        </div>
-      </section>
-
-      {/* Giving — who has given and how much, before any other number. Hidden
-          while the only figures available come from the demonstration seed:
-          a labelled fake total is still a fake total. */}
-      {summary && !summary.isDemoData && (
-        <section className="bg-sand">
-          <div className="shell py-10 md:py-12">
-            <GivingCounter
-              donors={summary.travellersInvolved}
-              contributions={summary.contributionCount}
-              total={summary.totalContributions}
-              isDemoData={summary.isDemoData}
-            />
+    <PublicShell>
+      <section className="relative overflow-hidden bg-[color:var(--color-cream)]">
+        <div className="shell grid gap-10 py-14 md:py-20 lg:grid-cols-[1.2fr_1fr] lg:items-center">
+          <div>
+            <p className="kicker">Enhakkore Impact</p>
+            <h1 className="display-xl mt-4 text-acacia-700">Create impact, together</h1>
+            <p className="mt-5 max-w-xl text-[1.0625rem] leading-relaxed text-ink-soft">
+              Community outreach and projects with the people who travel with us. Recorded as they happened — with real photographs, and without invented figures.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link href="/donate" className="inline-flex h-12 items-center rounded-full bg-safari-500 px-6 font-bold text-white hover:bg-safari-600">Donate</Link>
+              <a href={waHref(settings, 'general')} target="_blank" rel="noreferrer noopener" className="inline-flex h-12 items-center rounded-full border border-acacia-600/30 bg-white px-6 font-semibold text-acacia-600">Volunteer or partner with us</a>
+            </div>
           </div>
-        </section>
-      )}
-
-      {/* Numbers — hidden while they are the seed's rather than anyone's. */}
-      {summary && !summary.isDemoData && (
-        <section className="border-b border-line bg-white">
-          <div className="shell py-10 md:py-12">
-            {summary.isDemoData && (
-              <div className="mb-6 flex flex-wrap items-center gap-3">
-                <DemoBadge label="Demonstration figures" />
-                <p className="text-[0.8125rem] text-ink-muted">
-                  Generated by the development seed. Not a record of money raised or work completed.
-                </p>
-              </div>
-            )}
-
-            <dl className="grid grid-cols-2 gap-8 md:grid-cols-4">
-              {[
-                { label: 'Total contributions', value: price(summary.totalContributions, true), tone: 'impact' },
-                { label: 'Travellers involved', value: summary.travellersInvolved.toLocaleString('en-GB') },
-                { label: 'Projects supported', value: summary.projectsSupported.toLocaleString('en-GB') },
-                { label: 'Communities reached', value: summary.communitiesReached.toLocaleString('en-GB') },
-              ].map((stat) => (
-                <div key={stat.label}>
-                  <dt className="text-eyebrow uppercase text-ink-muted">{stat.label}</dt>
-                  <dd
-                    className={cx(
-                      'mt-2.5 text-[1.75rem] font-bold leading-none tracking-tight md:text-[2.25rem]',
-                      stat.tone === 'impact' ? 'text-clay-600' : 'text-ink',
-                    )}
-                  >
-                    {stat.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </section>
-      )}
-
-      {/* Projects */}
-      <section className="section">
-        <div className="shell">
-          <SectionHead
-            eyebrow="Projects"
-            title="Where contributions go"
-            description="Each project is run locally, with a committee or partner responsible for delivery on the ground."
-          />
-
-          {/* Category filter */}
-          <div className="mt-8 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-            <CategoryChip href="/impact" label="All projects" active={!category} />
-            {IMPACT_CATEGORIES.map((item) => (
-              <CategoryChip
-                key={item}
-                href={`/impact?category=${item}`}
-                label={IMPACT_CATEGORY_LABELS[item]}
-                active={category === item}
-              />
-            ))}
-          </div>
-
-          {items.length === 0 ? (
-            <EmptyState
-              className="mt-10"
-              icon={<Icon.ripple size={34} />}
-              title="No projects in this category yet"
-              description="We publish a project only once it has a named location, a committee or partner responsible for it, and a costed plan. Try another category in the meantime."
-              action={<ButtonLink href="/impact">See all projects</ButtonLink>}
-            />
-          ) : (
-            <div className="mt-10 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-              {items.map((project, index) => (
-                <ProjectCard key={project.id} project={project} priority={index < 3} />
-              ))}
+          {featured && (
+            <div className="relative aspect-[4/3] overflow-hidden rounded-[1.6rem] shadow-[var(--shadow-float)]">
+              <SmartImage src={featured.heroImage} alt={featured.title} fill priority sizes="(max-width:1024px) 100vw, 45vw" className="object-cover" />
             </div>
           )}
         </div>
       </section>
 
-      {/* Trust */}
-      <section className="section bg-sand">
-        <div className="shell">
-          <SectionHead
-            eyebrow="How this works"
-            title="Why you can check this rather than take our word for it"
-            description="Charity asks for trust. The least a platform can do is make that trust checkable."
-          />
-
-          {/* Our own completed outreach, before the explanation of how the
-              platform's projects work. It is the one piece of impact on this
-              site that has actually happened. */}
-          <Link
-            href={`/impact/${MKURANGA.slug}`}
-            className="group mt-10 block overflow-hidden rounded-[var(--radius-card)] border border-line bg-white transition-transform duration-300 hover:-translate-y-1"
-          >
-            <div className="grid sm:grid-cols-[18rem_1fr]">
-              <div className="relative aspect-[4/3] sm:aspect-auto">
-                <Image
-                  src={MKURANGA.cover.src}
-                  alt={MKURANGA.cover.alt}
-                  fill
-                  sizes="(max-width: 640px) 100vw, 18rem"
-                  loading="lazy"
-                  className="object-cover"
-                />
-              </div>
-              <div className="p-6 md:p-7">
-                <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-acacia-700">
-                  {MKURANGA.status} · {MKURANGA.dateLabel}
-                </p>
-                <h3 className="mt-2 text-[1.25rem] font-bold tracking-tight">{MKURANGA.title}</h3>
-                <p className="mt-2 text-[0.9375rem] leading-relaxed text-ink-muted">{MKURANGA.summary}</p>
-                <span className="mt-4 inline-flex items-center gap-2 text-[0.875rem] font-semibold text-acacia-700">
-                  See the day
-                  <Icon.arrow />
-                </span>
-              </div>
-            </div>
-          </Link>
-
-          <PartnerCard className="mt-6">
-            No child should grow up in poverty. Contributions reach the named project they were given
-            to, and Enhakkore takes no commission on them.
-          </PartnerCard>
-
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {PILLARS.map((pillar, index) => (
-              <Card key={pillar.title} className="p-6">
-                <span className="text-[0.6875rem] font-bold tracking-[0.16em] text-clay-600">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <h3 className="mt-3 text-[1rem] font-bold leading-snug tracking-tight">{pillar.title}</h3>
-                <p className="mt-2 text-[0.875rem] leading-relaxed text-ink-muted">{pillar.body}</p>
-              </Card>
-            ))}
+      {/* WSC — presented as its own organisation working with Enhakkore. */}
+      <section className="shell py-14 md:py-20">
+        <div className="grid gap-8 rounded-[1.6rem] border border-line bg-white p-7 md:grid-cols-[auto_1fr] md:items-center md:p-10">
+          <WscLogo src={settings.brand.wscLogoUrl} height={96} />
+          <div>
+            <p className="kicker">Our impact partner</p>
+            <h2 className="display-md mt-3 text-acacia-700">We Save Children (WSC)</h2>
+            <p className="mt-3 max-w-2xl text-[1rem] leading-relaxed text-ink-soft">{settings.impact.wscIntro}</p>
+            <a href="https://www.instagram.com/_wsc2022" target="_blank" rel="noreferrer noopener" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-acacia-600">
+              <SocialIcon platform="instagram" size={16} /> WSC on Instagram (@_wsc2022)
+            </a>
           </div>
-
-          <Card className="mt-8 border-dashed p-6">
-            <h3 className="text-[0.9375rem] font-bold tracking-tight">Where this build honestly stands</h3>
-            <p className="mt-2 max-w-3xl text-[0.875rem] leading-relaxed text-ink-muted">
-              The projects on this page are demonstration records created for development. No funds have
-              been raised or disbursed, no implementing partner has been contracted, and no independent
-              audit has taken place. The structure — goals, totals, allocation, dated updates — is real and
-              is what live projects will be held to.
-            </p>
-          </Card>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="section-tight">
-        <div className="shell">
-          <Card className="overflow-hidden">
-            <div className="grid lg:grid-cols-[1.2fr_1fr]">
-              <div className="p-8 md:p-12">
-                <Eyebrow className="text-clay-600">Travel with purpose</Eyebrow>
-                <h2 className="mt-3 text-h2 text-balance">
-                  The simplest way to give is on a trip you were taking anyway.
-                </h2>
-                <p className="mt-4 max-w-lg text-[0.9375rem] leading-relaxed text-ink-muted">
-                  Add a contribution at checkout — 5,000, 10,000, 20,000 TZS or an amount you choose. It
-                  goes to the project you pick, and you get the updates.
-                </p>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <ButtonLink href="/trips">
-                    Find a trip
-                    <Icon.arrow />
-                  </ButtonLink>
-                  <ButtonLink href="/impact/dashboard" variant="secondary">
-                    Impact dashboard
-                  </ButtonLink>
-                </div>
-              </div>
-              <div className="media relative min-h-56 lg:min-h-full">
-                <Image
-                  src="https://images.unsplash.com/photo-1517154421773-0529f29ea451?auto=format&fit=crop&w=1200&h=1200&q=80"
-                  alt="A busy street scene"
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 40vw"
-                  className="object-cover"
-                />
-              </div>
-            </div>
-          </Card>
+      {active.length > 0 && (
+        <section className="shell pb-14">
+          <SectionTitle kicker="Now" title="Current projects" />
+          <CardGrid>
+            {active.map((project) => (
+              <ListingCard key={project.slug} href={`/impact/${project.slug}`} image={project.heroImage} kicker={IMPACT_CATEGORY_LABELS[project.category as ImpactCategory] ?? 'Community'} title={project.title} meta={[project.location, project.summary]} />
+            ))}
+          </CardGrid>
+        </section>
+      )}
+
+      <section className="bg-[color:var(--color-cream)]">
+        <div className="shell py-14 md:py-20">
+          <SectionTitle kicker="Completed" title="What we have done" />
+          {completed.length ? (
+            <CardGrid>
+              {completed.map((project) => (
+                <ListingCard key={project.slug} href={`/impact/${project.slug}`} image={project.heroImage} kicker={project.location} title={project.title} meta={[project.summary]} badges={[{ label: 'Completed', tone: 'green' }]} />
+              ))}
+            </CardGrid>
+          ) : (
+            <Empty title="Projects will appear here" body="Completed outreach is recorded here with its photographs once it has happened." />
+          )}
         </div>
+      </section>
+
+      <section className="shell py-14 md:py-20">
+        <div className="grid gap-6 md:grid-cols-3">
+          {[
+            ['Donate', 'Give to a project, or to our outreach in general. Donations are recorded separately from travel income.', '/donate', 'Donate'],
+            ['Volunteer', 'Join an outreach day, help prepare, or bring a skill. Message us and we will tell you what is coming up.', waHref(settings, 'general'), 'Message us'],
+            ['Partner', 'Businesses and organisations can support specific projects. Talk to us about what would help most.', waHref(settings, 'general'), 'Talk to us'],
+          ].map(([title, body, href, label]) => (
+            <div key={title} className="rounded-[1.2rem] border border-line bg-white p-6">
+              <p className="font-display text-2xl text-acacia-700">{title}</p>
+              <p className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">{body}</p>
+              <a href={href} {...(href.startsWith('http') ? { target: '_blank', rel: 'noreferrer noopener' } : {})} className="mt-4 inline-flex font-semibold text-acacia-600 underline underline-offset-4">{label}</a>
+            </div>
+          ))}
+        </div>
+        <p className="mt-8 text-center text-sm text-ink-muted">Not every Enhakkore trip supports a charity project. Where one does, its page says so.</p>
       </section>
     </PublicShell>
-  );
-}
-
-function CategoryChip({ href, label, active }: { href: string; label: string; active: boolean }) {
-  return (
-    <Link
-      href={href}
-      className={cx(
-        'inline-flex h-11 shrink-0 items-center rounded-[var(--radius-pill)] border px-4 text-[0.875rem] font-semibold transition-all',
-        active
-          ? 'border-clay-500 bg-clay-500 text-white'
-          : 'border-line-strong bg-white text-ink-soft hover:border-clay-400 hover:text-ink',
-      )}
-    >
-      {label}
-    </Link>
   );
 }

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { BookingDto } from '@enhakkore/shared';
-import { DashboardShell, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
+import { DashboardShell, MEMBER_ROLES, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
 import { Alert, Button, ButtonLink, Card, Icon, Skeleton, cx } from '@/components/ui';
 import { Input, Textarea } from '@/components/ui/form';
 import { ApiError, api } from '@/lib/api';
@@ -79,7 +79,7 @@ export default function WriteReviewPage() {
   }
 
   return (
-    <DashboardShell nav={TRAVELLER_NAV} allow={['TRAVELER', 'ORGANIZER', 'ADMIN']}>
+    <DashboardShell nav={TRAVELLER_NAV} allow={MEMBER_ROLES}>
       <div className="mx-auto max-w-2xl">
         {done ? (
           <Card className="p-8 text-center md:p-12">

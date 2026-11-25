@@ -143,11 +143,13 @@ export function DashboardShell({
 }
 
 export const TRAVELLER_NAV: NavItem[] = [
-  { href: '/account/trips', label: 'My trips' },
-  { href: '/account/groups', label: 'Groups' },
-  { href: '/account/impact', label: 'Impact' },
-  { href: '/account/saved', label: 'Saved' },
-  { href: '/account', label: 'Profile', exact: true },
+  { href: '/account', label: 'Overview', exact: true },
+  { href: '/account/applications', label: 'Trip applications' },
+  { href: '/account/groups', label: 'Trip groups' },
+  { href: '/account/hosting', label: 'Hosting' },
+  { href: '/account/saved', label: 'Wishlist' },
+  { href: '/connect/requests', label: 'Connections' },
+  { href: '/account/profile', label: 'Profile' },
 ];
 
 export const ORGANIZER_NAV: NavItem[] = [
@@ -168,3 +170,6 @@ export const ADMIN_NAV: NavItem[] = [
   { href: '/admin/users', label: 'Users' },
   { href: '/admin/requests', label: 'Requests' },
 ];
+
+/** Every account type that has a personal area. */
+export const MEMBER_ROLES: Role[] = ['TRAVELER', 'ORGANIZER', 'ADMIN', 'STAFF'];

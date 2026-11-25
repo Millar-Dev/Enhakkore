@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { DonationDto, TravellerStats } from '@enhakkore/shared';
-import { DashboardShell, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
+import { DashboardShell, MEMBER_ROLES, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
 import { ProjectMini } from '@/components/impact/ProjectCard';
 import { ButtonLink, Card, EmptyState, Icon, Skeleton, StatTile } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -58,7 +58,7 @@ export default function MyImpactPage() {
   const projects = Object.values(byProject).sort((a, b) => b.total - a.total);
 
   return (
-    <DashboardShell nav={TRAVELLER_NAV} allow={['TRAVELER', 'ORGANIZER', 'ADMIN']} title="Your impact">
+    <DashboardShell nav={TRAVELLER_NAV} allow={MEMBER_ROLES} title="Your impact">
       <p className="-mt-4 mb-8 max-w-2xl text-[0.9375rem] leading-relaxed text-ink-muted">
         Everything you have contributed, and where it went. You will get a notification whenever one of
         these projects publishes an update.

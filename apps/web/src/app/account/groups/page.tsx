@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { ConversationDto } from '@enhakkore/shared';
-import { DashboardShell, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
+import { DashboardShell, MEMBER_ROLES, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
 import { Badge, ButtonLink, Card, EmptyState, Icon, Skeleton } from '@/components/ui';
 import { api } from '@/lib/api';
 import { dateRange, daysUntil, timeAgo } from '@/lib/format';
@@ -28,7 +28,7 @@ export default function GroupsPage() {
   }, []);
 
   return (
-    <DashboardShell nav={TRAVELLER_NAV} allow={['TRAVELER', 'ORGANIZER', 'ADMIN']} title="Trip groups">
+    <DashboardShell nav={TRAVELLER_NAV} allow={MEMBER_ROLES} title="Trip groups">
       <p className="-mt-4 mb-8 max-w-2xl text-[0.9375rem] leading-relaxed text-ink-muted">
         Every departure you join has its own private group. Ask questions, sort out logistics, and get to
         know the people you will be travelling with before you meet them.
