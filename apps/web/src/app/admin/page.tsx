@@ -2,197 +2,106 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import type { PlatformStats } from '@enhakkore/shared';
-import { DashboardShell, ADMIN_NAV } from '@/components/layout/DashboardShell';
-import { Alert, Card, DemoBadge, Icon, Skeleton, StatTile, cx } from '@/components/ui';
+import { AdminShell, Panel, btn } from '@/components/admin/AdminShell';
+import { sums } from '@/components/admin/ResourceExtras';
 import { api } from '@/lib/api';
-import { price } from '@/lib/format';
+import { can } from '@/lib/admin';
+import { useSession } from '@/lib/session';
 
-interface Queue {
-  organizers: number;
-  trips: number;
-  requests: number;
-  failedPayments: number;
-}
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
+/** The owner's morning view: what needs attention, what is live, and this month's money. */
 export default function AdminOverview() {
-  const [stats, setStats] = useState<PlatformStats | null>(null);
-  const [queue, setQueue] = useState<Queue | null>(null);
-
+  const { user } = useSession();
+  const [data, setData] = useState<any>(null);
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const [statsResult, queueResult] = await Promise.all([
-          api.get<PlatformStats>('/admin/stats'),
-          api.get<Queue>('/admin/queue'),
-        ]);
-        if (cancelled) return;
-        setStats(statsResult);
-        setQueue(queueResult);
-      } catch {
-        /* the shell renders; tiles show placeholders */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (user) api.get('/cc/overview').then(setData).catch(() => undefined);
+  }, [user]);
 
-  const queueItems = [
-    {
-      label: 'Organizers awaiting verification',
-      count: queue?.organizers ?? 0,
-      href: '/admin/organizers?status=PENDING',
-      urgent: true,
-    },
-    {
-      label: 'Trips awaiting review',
-      count: queue?.trips ?? 0,
-      href: '/admin/trips?status=PENDING_REVIEW',
-      urgent: true,
-    },
-    { label: 'New custom trip requests', count: queue?.requests ?? 0, href: '/admin/requests' },
-    { label: 'Failed payments', count: queue?.failedPayments ?? 0, href: '/admin/payments?status=FAILED' },
-  ];
+  const tile = (label: string, value: number | string | undefined, href: string, permission: string, highlight = false) =>
+    can(user, permission) ? (
+      <Link key={label} href={href} className={`rounded-2xl border p-4 transition hover:border-acacia-600 ${highlight && Number(value) > 0 ? 'border-clay-400 bg-clay-50' : 'border-line bg-white'}`}>
+        <p className="text-xs font-semibold text-ink-muted">{label}</p>
+        <p className="mt-1 font-display text-3xl text-acacia-700">{value ?? '…'}</p>
+      </Link>
+    ) : null;
 
+  const c = data?.counts ?? {};
   return (
-    <DashboardShell nav={ADMIN_NAV} allow={['ADMIN']} title="Platform overview" wide>
-      {stats?.isDemoData && (
-        <Alert tone="neutral" className="mb-8">
-          <span className="inline-flex items-center gap-2">
-            <DemoBadge />
-            The database contains seeded demonstration content. Every figure below includes it.
-          </span>
-        </Alert>
-      )}
-
-      {/* Work queue leads — this is what an admin opens the console to do. */}
-      <h2 className="mb-4 text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-muted">
-        Needs your attention
-      </h2>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {queueItems.map((item) => (
-          <Link key={item.href} href={item.href}>
-            <Card
-              className={cx(
-                'flex h-full items-center justify-between gap-4 p-5 transition-all hover:shadow-[var(--shadow-card)]',
-                item.count > 0 && item.urgent && 'border-clay-100 bg-clay-50/40',
-              )}
-            >
-              <div className="min-w-0">
-                <p className="text-[0.875rem] font-semibold leading-snug">{item.label}</p>
-              </div>
-              <span
-                className={cx(
-                  'shrink-0 text-[1.75rem] font-bold leading-none tracking-tight',
-                  item.count > 0 ? (item.urgent ? 'text-clay-600' : 'text-ink') : 'text-ink-faint',
-                )}
-              >
-                {queue ? item.count : '—'}
-              </span>
-            </Card>
-          </Link>
-        ))}
-      </div>
-
-      {/* Platform */}
-      <h2 className="mb-4 mt-10 text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-muted">
-        Platform
-      </h2>
-      {!stats ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[0, 1, 2, 3].map((index) => (
-            <Skeleton key={index} className="h-28" />
+    <AdminShell title={`Welcome${user ? `, ${user.name.split(' ')[0]}` : ''}`}>
+      {data?.alerts?.length > 0 && (
+        <div className="mb-5 grid gap-2">
+          {data.alerts.map((alert: any) => (
+            <Link key={alert.message} href={alert.href} className="rounded-xl border border-[#f2e2c0] bg-[#fdf8ec] p-3 text-sm text-warning">⚠ {alert.message}</Link>
           ))}
         </div>
-      ) : (
+      )}
+
+      <Panel title="Quick actions" className="mb-5">
+        <div className="flex flex-wrap gap-2">
+          {can(user, 'activities.create') && <Link className={btn.gold} href="/admin/r/activities/new">+ Activity</Link>}
+          {can(user, 'events.create') && <Link className={btn.secondary} href="/admin/r/events/new">+ Event</Link>}
+          {can(user, 'trips.create') && <Link className={btn.secondary} href="/admin/r/trips/new">+ Trip</Link>}
+          {can(user, 'places.create') && <Link className={btn.secondary} href="/admin/r/places/new">+ Place</Link>}
+          {can(user, 'finance.create') && <Link className={btn.secondary} href="/admin/finance?add=INCOME">+ Income</Link>}
+          {can(user, 'finance.create') && <Link className={btn.secondary} href="/admin/finance?add=EXPENSE">+ Expense</Link>}
+          {can(user, 'media.create') && <Link className={btn.secondary} href="/admin/media">Upload photos</Link>}
+        </div>
+      </Panel>
+
+      <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-ink-muted">Needs attention</h2>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {tile('New enquiries', c.newEnquiries, '/admin/enquiries', 'enquiries.view', true)}
+        {tile('Activity submissions to review', c.pendingActivities, '/admin/r/activities?status=PENDING_REVIEW', 'activities.view', true)}
+        {tile('Trip applications open', c.openApplications, '/admin/applications', 'bookings.view', true)}
+        {tile('Unpaid event registrations', c.unpaidRegistrations, '/admin/registrations?status=PENDING_PAYMENT', 'events.view', true)}
+        {tile('Donations to verify', c.unverifiedDonations, '/admin/donations?status=PENDING', 'donations.view', true)}
+        {tile('Stories to review', c.pendingStories, '/admin/r/stories', 'stories.view', true)}
+        {tile('Reviews to check', c.pendingReviews, '/admin/moderation', 'reviews.view', true)}
+        {tile('Open safety reports', c.openReports, '/admin/moderation', 'reviews.view', true)}
+      </div>
+
+      <h2 className="mb-3 mt-7 text-sm font-bold uppercase tracking-wider text-ink-muted">On the website</h2>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {tile('Registered members', c.members, '/admin/members', 'members.view')}
+        {tile('Live activities', c.liveActivities, '/admin/r/activities?status=PUBLISHED', 'activities.view')}
+        {tile('All activities', c.activities, '/admin/r/activities', 'activities.view')}
+        {tile('Upcoming departures', c.upcomingDepartures, '/admin/r/trips', 'trips.view')}
+        {tile('Confirmed trip bookings', c.confirmedBookings, '/admin/applications?status=CONFIRMED', 'bookings.view')}
+        {tile('Upcoming events', c.upcomingEvents, '/admin/r/events', 'events.view')}
+        {tile('Published places', c.places, '/admin/r/places', 'places.view')}
+        {can(user, 'settings.view') && (
+          <div className="rounded-2xl border border-line bg-white p-4">
+            <p className="text-xs font-semibold text-ink-muted">Website visitors</p>
+            {data?.visitors?.dashboardUrl ? <a className="mt-2 inline-block text-sm font-semibold text-acacia-600 underline" href={data.visitors.dashboardUrl} target="_blank" rel="noreferrer">Open analytics ↗</a> : <p className="mt-1 text-xs text-ink-muted">Analytics is not connected yet. See the handover notes.</p>}
+          </div>
+        )}
+      </div>
+
+      {(data?.money?.income || data?.money?.donations) && (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatTile
-              label="Total users"
-              value={stats.totalUsers.toLocaleString('en-GB')}
-              hint={`${stats.totalTravellers.toLocaleString('en-GB')} travellers`}
-            />
-            <StatTile
-              label="Active organizers"
-              value={stats.activeOrganizers}
-              hint={stats.pendingOrganizers > 0 ? `${stats.pendingOrganizers} pending review` : 'none pending'}
-            />
-            <StatTile
-              label="Published trips"
-              value={stats.publishedTrips}
-              hint={stats.pendingTrips > 0 ? `${stats.pendingTrips} awaiting review` : 'none pending'}
-            />
-            <StatTile label="Bookings" value={stats.totalBookings.toLocaleString('en-GB')} />
+          <h2 className="mb-3 mt-7 text-sm font-bold uppercase tracking-wider text-ink-muted">This month (verified)</h2>
+          <div className="grid gap-3 md:grid-cols-3">
+            {data.money.income && <Link href="/admin/finance" className="rounded-2xl border border-line bg-white p-4"><p className="text-xs text-ink-muted">Income</p><p className="mt-1 text-lg font-bold text-safari-700">{sums(Object.fromEntries(data.money.income.map((row: any) => [row.currency, row.amount])))}</p></Link>}
+            {data.money.expenses && <Link href="/admin/finance" className="rounded-2xl border border-line bg-white p-4"><p className="text-xs text-ink-muted">Expenses & refunds</p><p className="mt-1 text-lg font-bold text-danger">{sums(Object.fromEntries(data.money.expenses.map((row: any) => [row.currency, row.amount])))}</p></Link>}
+            {data.money.donations && <Link href="/admin/donations" className="rounded-2xl border border-line bg-white p-4"><p className="text-xs text-ink-muted">Donations (kept separate)</p><p className="mt-1 text-lg font-bold text-acacia-700">{sums(Object.fromEntries(data.money.donations.map((row: any) => [row.currency, row.amount])))}</p></Link>}
           </div>
-
-          <h2 className="mb-4 mt-10 text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-muted">
-            Money
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatTile
-              label="Gross booking value"
-              value={price(stats.grossBookingValue, true)}
-              hint="confirmed and completed bookings"
-            />
-            <StatTile
-              label="Platform revenue"
-              value={price(stats.platformRevenue, true)}
-              tone="brand"
-              hint="commission earned"
-            />
-            <StatTile
-              label="Impact contributions"
-              value={price(stats.impactContributions, true)}
-              tone="impact"
-              hint="no commission taken"
-            />
-            <StatTile
-              label="Communities reached"
-              value={stats.communitiesReached}
-              hint={`across ${stats.projectsSupported} projects`}
-            />
-          </div>
-
-          {/* Commission model, stated where it is being measured. */}
-          <Card className="mt-8 p-6">
-            <h3 className="text-[0.9375rem] font-bold tracking-tight">How revenue is calculated</h3>
-            <p className="mt-2 max-w-3xl text-[0.875rem] leading-relaxed text-ink-muted">
-              Platform revenue is commission on the travel value of confirmed bookings, at each
-              organizer&rsquo;s negotiated rate (10% by default). Impact contributions are excluded from the
-              commission base entirely and pass through to projects in full. Cancelled and refunded bookings
-              reverse their commission rather than being deleted, so historical reporting stays correct.
-            </p>
-          </Card>
+          <p className="mt-2 text-xs text-ink-muted">Each currency is shown on its own; amounts in different currencies are never added together.</p>
         </>
       )}
 
-      {/* Shortcuts */}
-      <h2 className="mb-4 mt-10 text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-muted">
-        Manage
-      </h2>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { href: '/admin/organizers', label: 'Organizers', body: 'Verify, reject, suspend and set commission rates.', icon: Icon.shield },
-          { href: '/admin/trips', label: 'Trips', body: 'Review submitted listings and feature the best ones.', icon: Icon.compass },
-          { href: '/admin/impact', label: 'Impact projects', body: 'Create projects and publish progress updates.', icon: Icon.ripple },
-          { href: '/admin/payments', label: 'Payments', body: 'Transactions, failures, refunds and commission.', icon: Icon.ticket },
-        ].map((item) => {
-          const ItemIcon = item.icon;
-          return (
-            <Link key={item.href} href={item.href}>
-              <Card className="h-full p-5 transition-all hover:shadow-[var(--shadow-card)]">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-[0.625rem] bg-sand text-ink-soft">
-                  <ItemIcon size={19} />
-                </span>
-                <h3 className="mt-4 text-[0.9375rem] font-bold tracking-tight">{item.label}</h3>
-                <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-muted">{item.body}</p>
-              </Card>
-            </Link>
-          );
-        })}
-      </div>
-    </DashboardShell>
+      {data?.recent?.length > 0 && (
+        <Panel title="Recent changes" className="mt-7">
+          <ul className="divide-y divide-line text-sm">
+            {data.recent.map((entry: any) => (
+              <li key={entry.id} className="py-2.5">
+                <p className="text-ink">{entry.summary}</p>
+                <p className="text-xs text-ink-muted">{entry.actorName} · {new Date(entry.createdAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
+    </AdminShell>
   );
 }

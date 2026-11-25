@@ -123,7 +123,9 @@ function SignInForm() {
         </Link>
       </p>
 
-      {/* Demo access. Remove this block when real accounts exist. */}
+      {/* Demo access — local development only. On the live site these accounts
+          cannot sign in, and their shared password is never shown. */}
+      {process.env.NODE_ENV !== 'production' && (
       <Card className="mt-10 bg-sand/60 p-5">
         <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-muted">
           Demonstration accounts
@@ -153,6 +155,7 @@ function SignInForm() {
           ))}
         </ul>
       </Card>
+      )}
     </div>
   );
 }
