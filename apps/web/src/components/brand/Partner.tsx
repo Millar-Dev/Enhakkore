@@ -22,7 +22,7 @@ export const PARTNER = {
   tagline: 'No child deserves to grow up in poverty',
   logo: '/partners/wsc.webp',
   /** The same mark in cream, for dark surfaces. Not a tint — a second artwork. */
-  logoLight: '/partners/wsc-light.webp',
+  logoLight: '/partners/wsc.webp',
   /** Set this once WSC have a page to link to. */
   href: null as string | null,
 };
@@ -31,7 +31,7 @@ export const BRAND = {
   name: 'Enhakkore Travel & Impact',
   logo: '/partners/enhakkore-wordmark.webp',
   /** The emblem in cream, for dark surfaces. */
-  logoLight: '/partners/enhakkore-mark-light.webp',
+  logoLight: '/partners/enhakkore-wordmark.webp',
 };
 
 /** Rendered heights, in pixels, for each lockup size. */

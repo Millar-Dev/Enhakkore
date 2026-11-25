@@ -362,3 +362,31 @@ describe('settings, history and sessions', () => {
     assert.equal(stored.infoSource, 'BUSINESS_SUBMITTED', 'nor vouch for its own details');
   });
 });
+
+describe('Connect', () => {
+  test('members find each other, connect, and a block hides them completely', async () => {
+    const a = await api.register('conna');
+    const b = await api.register('connb');
+    await prisma.user.update({ where: { id: b.id }, data: { city: 'Dar es Salaam', interests: JSON.stringify(['Basketball']) } });
+    const found = await api.request('GET', '/community/members?interest=Basketball&city=Dar', { token: a.token });
+    const card = found.body.find((member: { id: string }) => member.id === b.id);
+    assert.ok(card, 'found by interest and city');
+    assert.equal(card.email, undefined, 'no email on a member card');
+    assert.equal(card.phone, undefined, 'no phone on a member card');
+
+    const request = await api.request('POST', '/community/connections', { token: a.token, body: { userId: b.id } });
+    assert.equal(request.body.status, 'PENDING');
+    const incoming = await api.request('GET', '/community/connections', { token: b.token });
+    assert.equal(incoming.body.incoming.length, 1);
+    await api.request('POST', `/community/connections/${request.body.id}/respond`, { token: b.token, body: { accept: true } });
+    assert.equal((await api.request('GET', '/community/connections', { token: a.token })).body.connected.length, 1);
+
+    await api.request('POST', '/community/blocks', { token: b.token, body: { userId: a.id } });
+    assert.equal((await api.request('GET', `/community/members/${b.id}`, { token: a.token })).status, 404);
+    assert.equal((await api.request('GET', '/community/connections', { token: a.token })).body.connected.length, 0);
+  });
+
+  test('member search needs a signed-in account', async () => {
+    assert.equal((await api.request('GET', '/community/members')).status, 401);
+  });
+});

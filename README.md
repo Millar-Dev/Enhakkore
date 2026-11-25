@@ -1,5 +1,12 @@
 # ENHAKKORE — Travel & Impact
 
+> **Owner's guide:** [docs/HANDOVER.md](docs/HANDOVER.md) — what is built, what
+> still needs your accounts, and how to run everything from the control centre
+> at `/admin`. The platform now covers Enhakkore Travel, Discover, Experiences,
+> Events, community Activities, Connect, Impact (with WSC) and Catering, all
+> editable without code. Demonstration accounts cannot sign in on the live site;
+> create the owner account with `OWNER_EMAIL` / `OWNER_PASSWORD` (see the guide).
+
 **Travel together. Experience more. Give back.**
 
 A travel marketplace and social-impact platform. Travellers discover trips, join

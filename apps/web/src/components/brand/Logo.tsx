@@ -17,9 +17,9 @@ import type { CSSProperties } from 'react';
  * /partners/enhakkore-wordmark.webp and is used where there is room for it.
  */
 
-const MARK = '/partners/enhakkore-mark-dark.webp';
+const MARK = '/partners/enhakkore-mark.webp';
 /** The same mark in cream, for dark surfaces. Not a tint — a second artwork. */
-const MARK_LIGHT = '/partners/enhakkore-mark-light.webp';
+const MARK_LIGHT = '/partners/enhakkore-mark.webp';
 /** Intrinsic proportions of the cropped emblem. */
 const MARK_RATIO = 300 / 155;
 
@@ -84,49 +84,26 @@ const SIZES = {
   },
 } as const;
 
-export function Logo({
-  variant = 'full',
-  withDescriptor = false,
-  size = 'md',
-  className = '',
-  inverted = false,
-}: LogoProps) {
-  const scale = SIZES[size];
-
-  if (variant === 'mark') {
-    return (
-      <span className={`inline-flex ${className}`}>
-        <EnhakkoreMark size={scale.mark} title="Enhakkore" light={inverted} />
-      </span>
-    );
-  }
-
-  return (
-    <span className={`inline-flex items-center ${scale.gap} ${className}`}>
-      <EnhakkoreMark size={scale.mark} title="Enhakkore" light={inverted} className="shrink-0" />
-      <span className="flex min-w-0 flex-col leading-none">
-        <span
-          className={`${scale.word} flex items-center whitespace-nowrap font-bold ${
-            inverted ? 'text-white' : 'text-ink'
-          }`}
-        >
-          ENHAKKORE
-          <span
-            aria-hidden
-            className={`mx-[0.45em] inline-block h-[1em] w-px ${inverted ? 'bg-white/35' : 'bg-line-strong'}`}
-          />
-          <span className={inverted ? 'text-white/80' : 'text-ink-muted'}>WSC</span>
-        </span>
-        {withDescriptor && (
-          <span
-            className={`${scale.descriptor} mt-1 font-semibold tracking-[0.28em] ${
-              inverted ? 'text-white/65' : 'text-ink-muted'
-            }`}
-          >
-            TRAVEL &amp; IMPACT
-          </span>
-        )}
-      </span>
-    </span>
+/**
+ * The original Enhakkore logo, exactly as supplied — used everywhere the
+ * site shows the brand. Navy artwork, so on a dark ground (`inverted`) it sits
+ * on a small cream plate rather than being recoloured.
+ */
+export function Logo({ size = 'md', className = '', inverted = false }: LogoProps) {
+  const height = size === 'sm' ? 40 : size === 'md' ? 52 : 84;
+  const image = (
+    <Image
+      src="/partners/enhakkore-wordmark.webp"
+      alt="Enhakkore Travel & Impact"
+      width={Math.round((height * 640) / 500)}
+      height={height}
+      priority
+      style={{ height, width: 'auto' }}
+    />
+  );
+  return inverted ? (
+    <span className={`inline-flex rounded-lg bg-[#f8f4ec] p-1 ${className}`}>{image}</span>
+  ) : (
+    <span className={`inline-flex ${className}`}>{image}</span>
   );
 }

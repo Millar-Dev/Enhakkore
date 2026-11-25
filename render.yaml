@@ -27,14 +27,23 @@ services:
         value: 7d
       - key: PAYMENT_PROVIDER
         value: mock
-      # true seeds demonstration content into an EMPTY database once. Set to
-      # false before the platform takes real bookings.
+      # Demonstration content is never loaded into the live database. (An
+      # existing database is never re-seeded either way.)
       - key: SEED_DEMO_DATA
-        value: "true"
+        value: "false"
       - key: JWT_SECRET
         generateValue: true
-      # Set these two in the dashboard — never commit them.
+      # Set these in the dashboard — never commit them.
       - key: DATABASE_URL
         sync: false
       - key: CORS_ORIGIN
+        sync: false
+      # The owner's sign-in for the control centre. On the next deploy the
+      # bootstrap creates this account if no real owner exists yet. Use a long,
+      # unique password (12+ characters); it is only ever stored as a hash.
+      - key: OWNER_EMAIL
+        sync: false
+      - key: OWNER_PASSWORD
+        sync: false
+      - key: OWNER_NAME
         sync: false

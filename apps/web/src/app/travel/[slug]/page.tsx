@@ -90,8 +90,9 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
       <section className="shell grid gap-10 py-10 md:py-14 lg:grid-cols-[1.5fr_1fr]">
         <div className="space-y-10">
           <div className="flex flex-wrap items-center gap-2"><SaveButton itemType="TRIP" itemId={trip.id} /></div>
-          <p className="font-display text-[1.65rem] leading-snug text-acacia-700">{trip.summary}</p>
-          {trip.description !== trip.summary && <Prose text={trip.description} />}
+          <p className="font-display text-[1.4rem] leading-snug text-acacia-700 md:text-[1.65rem]">{trip.summary}</p>
+          {/* The description often opens with the summary; show only what it adds. */}
+          <Prose text={trip.description.startsWith(trip.summary) ? trip.description.slice(trip.summary.length).trim() : trip.description} />
 
           <Facts items={[
             { label: 'Departs from', value: trip.departureCity },
