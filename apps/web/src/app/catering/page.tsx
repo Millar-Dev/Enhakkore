@@ -89,7 +89,25 @@ export default async function CateringPage() {
             <p className="mt-3 text-ink-soft">Lunchboxes for a road trip, catering for a group, or a chef for your stay. Include your dates, the number of people, where you will be, and any dietary requirements or special requests.</p>
           </div>
           <div className="rounded-[1.2rem] border border-line bg-white p-5">
-            <EnquiryForm type="CATERING" heading="Catering request" withDates withPeople extraFields={[{ name: 'location', label: 'Location', placeholder: 'Where should we deliver or cook?' }, { name: 'dietary', label: 'Dietary requirements', placeholder: 'Vegetarian, halal, allergies…' }]} messagePlaceholder="Lunchboxes, group meals or a private chef — what do you have in mind?" whatsappHref={waHref(settings, 'catering')} />
+            <EnquiryForm type="CATERING" heading="Lunchboxes or group catering" withDates withPeople extraFields={[{ name: 'occasion', label: 'Trip, excursion or event', placeholder: 'e.g. safari day trip, team outing' }, { name: 'location', label: 'Pick-up or delivery location', placeholder: 'Where should we deliver?' }, { name: 'dietary', label: 'Dietary requirements', placeholder: 'Vegetarian, halal, allergies…' }]} messagePlaceholder="How many lunchboxes or meals, and any special requests?" whatsappHref={waHref(settings, 'catering')} />
+          </div>
+        </div>
+      </section>
+
+      <section id="private-chef" className="shell py-14">
+        <div className="grid gap-8 lg:grid-cols-2">
+          <div>
+            <p className="kicker">On request</p>
+            <h2 className="display-md mt-3 text-acacia-700">Private chef</h2>
+            <p className="mt-3 text-ink-soft">
+              Available exceptionally, on request: a chef who prepares meals at your accommodation or chosen location, for a day or for several days. Whether we can do it — and the menu, location, duration and price — is confirmed with you individually before anything is agreed.
+            </p>
+            <a href={waHref(settings, 'privateChef')} target="_blank" rel="noreferrer noopener" className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-[#1f9d55] px-5 text-sm font-bold text-white">
+              <SocialIcon platform="whatsapp" size={18} /> Ask on WhatsApp
+            </a>
+          </div>
+          <div className="rounded-[1.2rem] border border-line bg-white p-5">
+            <EnquiryForm type="PRIVATE_CHEF" heading="Private chef request" withDates withPeople extraFields={[{ name: 'location', label: 'Accommodation or location', placeholder: 'Where would the chef cook?' }, { name: 'meals', label: 'Meals per day', placeholder: 'e.g. breakfast and dinner' }, { name: 'dietary', label: 'Dietary requirements', placeholder: 'Vegetarian, halal, allergies…' }]} messagePlaceholder="Tell us about your stay and the kind of food you would like." whatsappHref={waHref(settings, 'privateChef')} />
           </div>
         </div>
       </section>

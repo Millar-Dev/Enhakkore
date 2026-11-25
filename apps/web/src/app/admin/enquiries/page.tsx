@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ENQUIRY_TYPE_LABELS, ENQUIRY_STATUSES } from '@enhakkore/shared';
+import { ENQUIRY_TYPES, ENQUIRY_TYPE_LABELS, ENQUIRY_STATUSES } from '@enhakkore/shared';
 import { AdminShell, Panel, StatusPill, btn } from '@/components/admin/AdminShell';
 import { api } from '@/lib/api';
 import { useApi } from '@/lib/useApi';
@@ -12,7 +12,8 @@ import { useApi } from '@/lib/useApi';
 export default function EnquiriesPage() {
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
-  const { data, reload } = useApi<{ items: any[]; statusCounts: Record<string, number> }>(`/cc/enquiries?pageSize=100${status ? `&status=${status}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`);
+  const [type, setType] = useState('');
+  const { data, reload } = useApi<{ items: any[]; statusCounts: Record<string, number> }>(`/cc/enquiries?pageSize=100${status ? `&status=${status}` : ''}${type ? `&type=${type}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`);
   const [open, setOpen] = useState<string | null>(null);
 
   const update = async (id: string, body: Record<string, unknown>) => {
@@ -27,7 +28,13 @@ export default function EnquiriesPage() {
         {ENQUIRY_STATUSES.map((item) => <button key={item} className={`chip ${status === item ? 'chip-active' : ''}`} onClick={() => setStatus(item)}>{item.replace('_', ' ').toLowerCase()} {data?.statusCounts[item] ? `(${data.statusCounts[item]})` : ''}</button>)}
         <button className={`chip ${status === 'all' ? 'chip-active' : ''}`} onClick={() => setStatus('all')}>All</button>
       </div>
-      <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Search name, phone, reference…" className="field mb-4" />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row">
+        <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Search name, phone, reference…" className="field" />
+        <select value={type} onChange={(event) => setType(event.target.value)} className="field sm:w-60" aria-label="Type of enquiry">
+          <option value="">All types</option>
+          {ENQUIRY_TYPES.map((value) => <option key={value} value={value}>{ENQUIRY_TYPE_LABELS[value]}</option>)}
+        </select>
+      </div>
       <Panel className="!p-0">
         {!data ? <p className="p-5 text-sm text-ink-muted">Loading…</p> : data.items.length === 0 ? <p className="p-5 text-sm text-ink-muted">No enquiries here.</p> : (
           <ul className="divide-y divide-line">

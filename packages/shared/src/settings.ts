@@ -256,6 +256,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
       { label: 'Travel', href: '/travel' },
       { label: 'Discover', href: '/discover' },
       { label: 'Experiences', href: '/experiences' },
+      { label: 'Catering', href: '/catering' },
       { label: 'Events', href: '/events' },
       { label: 'Activities', href: '/activities' },
       { label: 'Connect', href: '/connect' },

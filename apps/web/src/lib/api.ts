@@ -13,12 +13,15 @@
  * the most common mistake when pasting this into a hosting dashboard.
  */
 function normaliseApiUrl(raw: string | undefined): string {
-  const base = (raw ?? 'http://localhost:4000').trim().replace(/\/+$/, '');
+  // An empty or relative value (a hosting variable left blank) cannot be
+  // fetched from the server, so it is treated as not set.
+  const given = (raw ?? '').trim();
+  const base = (/^https?:\/\//i.test(given) ? given : 'http://localhost:4000').replace(/\/+$/, '');
   return base.endsWith('/api') ? base : `${base}/api`;
 }
 
 export const API_URL = normaliseApiUrl(process.env.NEXT_PUBLIC_API_URL);
-export const REALTIME_URL = process.env.NEXT_PUBLIC_REALTIME_URL ?? API_URL.replace(/\/api$/, '');
+export const REALTIME_URL = process.env.NEXT_PUBLIC_REALTIME_URL || API_URL.replace(/\/api$/, '');
 
 const TOKEN_KEY = 'enhakkore.token';
 
@@ -122,7 +125,10 @@ export const api = {
  */
 export async function apiGet<T>(path: string, revalidate: number | false = 60): Promise<T | null> {
   try {
-    return await request<T>(path, { method: 'GET', revalidate, token: null });
+    // A sleeping API (Render's free plan takes up to a minute to wake) must
+    // never hold a page — or a whole build — hostage. After 8 seconds the page
+    // renders its own fallback and is regenerated on a later visit.
+    return await request<T>(path, { method: 'GET', revalidate, token: null, signal: AbortSignal.timeout(8000) });
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     console.error(`[web] API read failed: ${path}`, error instanceof Error ? error.message : error);
