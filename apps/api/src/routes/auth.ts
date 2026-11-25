@@ -2,11 +2,12 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
-import { DEFAULT_COMMISSION_RATE, type Role } from '@enhakkore/shared';
+import { DEFAULT_COMMISSION_RATE } from '@enhakkore/shared';
 import { ApiError, route } from '../lib/http';
 import { uniqueSlug } from '../lib/ids';
 import { prisma } from '../lib/prisma';
-import { requireAuth, signToken } from '../middleware/auth';
+import { issueSession, requireAuth } from '../middleware/auth';
+import { recordLogin, sessionPayload } from '../services/sessions';
 import { toOrganizerSummary, toPublicUser } from '../serializers';
 import { env } from '../env';
 import {
@@ -87,7 +88,7 @@ authRouter.post(
     });
 
     res.status(201).json({
-      token: signToken(user.id, user.role as 'TRAVELER' | 'ORGANIZER'),
+      token: await issueSession(user, req),
       user: toPublicUser(user),
       organizer: user.organizer ? toOrganizerSummary(user.organizer) : null,
     });
@@ -116,17 +117,23 @@ authRouter.post(
     const valid = await bcrypt.compare(input.password, hash);
 
     if (!user || !valid) {
+      await recordLogin(req, input.email, user?.id ?? null, false, user ? 'bad_password' : 'unknown_account');
       throw ApiError.unauthorized('That email and password do not match.');
     }
+    // The development seed's accounts share a published password. On the live
+    // site they must never open a session, whatever is in the database.
+    if (user.isDemo && env.isProduction && process.env.ALLOW_DEMO_LOGIN !== 'true') {
+      await recordLogin(req, input.email, user.id, false, 'demo_account');
+      throw ApiError.forbidden('Demonstration accounts are switched off on the live site.');
+    }
     if (user.status === 'SUSPENDED') {
-      throw ApiError.forbidden('This account is suspended. Contact support@enhakkore.com.');
+      await recordLogin(req, input.email, user.id, false, 'suspended');
+      throw ApiError.forbidden('This account is suspended. Contact Enhakkore on WhatsApp if you think this is a mistake.');
     }
 
-    res.json({
-      token: signToken(user.id, user.role as 'TRAVELER' | 'ORGANIZER' | 'ADMIN'),
-      user: toPublicUser(user),
-      organizer: user.organizer ? toOrganizerSummary(user.organizer) : null,
-    });
+    await recordLogin(req, input.email, user.id, true, 'ok');
+    const token = await issueSession(user, req);
+    res.json({ token, ...(await sessionPayload(user.id)) });
   }),
 );
 
@@ -134,14 +141,7 @@ authRouter.get(
   '/session',
   requireAuth,
   route(async (req, res) => {
-    const user = await prisma.user.findUniqueOrThrow({
-      where: { id: req.auth!.id },
-      include: { organizer: true },
-    });
-    res.json({
-      user: toPublicUser(user),
-      organizer: user.organizer ? toOrganizerSummary(user.organizer) : null,
-    });
+    res.json(await sessionPayload(req.auth!.id));
   }),
 );
 
@@ -167,7 +167,7 @@ authRouter.post(
     }
 
     const updated = await recordPasswordChange(user.id, input.newPassword);
-    res.json({ ok: true, token: signToken(updated.id, updated.role as Role) });
+    res.json({ ok: true, token: await issueSession(updated, req) });
   }),
 );
 
@@ -257,9 +257,22 @@ authRouter.post(
     });
 
     res.json({
-      token: signToken(user.id, user.role as Role),
+      token: await issueSession(user, req),
       user: toPublicUser(user),
       organizer: user.organizer ? toOrganizerSummary(user.organizer) : null,
     });
+  }),
+);
+
+/** Signs this device out by revoking its session. */
+authRouter.post(
+  '/logout',
+  requireAuth,
+  route(async (req, res) => {
+    await prisma.session.update({
+      where: { id: req.auth!.sessionId },
+      data: { revokedAt: new Date(), revokedBy: req.auth!.id },
+    });
+    res.json({ ok: true });
   }),
 );

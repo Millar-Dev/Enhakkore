@@ -14,6 +14,9 @@ import { organizersRouter } from './organizers';
 import { requestsRouter } from './requests';
 import { tripsRouter } from './trips';
 import { uploadsRouter } from './uploads';
+import { controlCentreRouter } from './cc';
+import { communityRouter } from './community';
+import { publicRouter } from './public';
 
 export const apiRouter = Router();
 
@@ -64,3 +67,6 @@ apiRouter.use('/requests', requestsRouter);
 apiRouter.use('/uploads', uploadsRouter);
 apiRouter.use('/me', meRouter);
 apiRouter.use('/admin', adminRouter);
+apiRouter.use('/public', publicRouter);
+apiRouter.use('/community', communityRouter);
+apiRouter.use('/cc', controlCentreRouter);

@@ -20,6 +20,10 @@ const profileSchema = z.object({
   country: z.string().trim().max(80).optional(),
   city: z.string().trim().max(80).optional(),
   bio: z.string().trim().max(600).optional(),
+  headline: z.string().trim().max(120).optional(),
+  interests: z.array(z.string().trim().min(1).max(40)).max(30).optional(),
+  activityPrefs: z.array(z.string().trim().min(1).max(40)).max(30).optional(),
+  profileVisibility: z.enum(['MEMBERS', 'HIDDEN']).optional(),
 });
 
 meRouter.patch(
@@ -35,6 +39,10 @@ meRouter.patch(
         ...(input.country !== undefined ? { country: input.country } : {}),
         ...(input.city !== undefined ? { city: input.city } : {}),
         ...(input.bio !== undefined ? { bio: input.bio } : {}),
+        ...(input.headline !== undefined ? { headline: input.headline || null } : {}),
+        ...(input.interests ? { interests: JSON.stringify(Array.from(new Set(input.interests))) } : {}),
+        ...(input.activityPrefs ? { activityPrefs: JSON.stringify(Array.from(new Set(input.activityPrefs))) } : {}),
+        ...(input.profileVisibility ? { profileVisibility: input.profileVisibility } : {}),
       },
       include: { organizer: { select: { id: true } } },
     });

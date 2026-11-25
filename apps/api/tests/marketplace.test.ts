@@ -98,7 +98,8 @@ describe('marketplace', () => {
     const result = await api.request('GET', '/impact/projects?pageSize=50');
     assert.ok(result.body.total > 0);
     for (const project of result.body.items) {
-      const expected = Math.round((project.raised.amount / project.goal.amount) * 100);
+      // A project with no fundraising goal (a completed outreach day, say) reports no progress.
+      const expected = project.goal.amount > 0 ? Math.round((project.raised.amount / project.goal.amount) * 100) : 0;
       assert.equal(project.progress, Math.min(100, Math.max(0, expected)), project.slug);
       assert.ok(project.status !== 'DRAFT', 'drafts stay internal');
     }

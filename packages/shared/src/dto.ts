@@ -35,6 +35,16 @@ export interface PublicUser {
   bio: string | null;
   createdAt: string;
   organizerId: string | null;
+  phone?: string | null;
+  headline?: string | null;
+  interests?: string[];
+  activityPrefs?: string[];
+  profileVisibility?: string;
+  /** Admin control centre permissions. Empty for members. */
+  permissions?: string[];
+  adminRoleName?: string | null;
+  /** ALL, or OWN for partner roles limited to their assigned listings. */
+  adminScope?: string;
 }
 
 /** A fellow traveller as shown on a trip page — deliberately minimal. */

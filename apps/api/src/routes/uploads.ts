@@ -5,8 +5,9 @@ import multer from 'multer';
 import { z } from 'zod';
 import { env } from '../env';
 import { ApiError, route } from '../lib/http';
-import { requireAuth } from '../middleware/auth';
+import { can, requireAuth } from '../middleware/auth';
 import {
+  UPLOAD_KINDS,
   UPLOAD_RULES,
   assertAllowed,
   assetBelongsTo,
@@ -32,7 +33,7 @@ const ticketLimiter = rateLimit({
 });
 
 const ticketSchema = z.object({
-  kind: z.enum(['TRIP_IMAGE', 'AVATAR', 'VERIFICATION_DOCUMENT']),
+  kind: z.enum(UPLOAD_KINDS),
   contentType: z.string().trim().min(3).max(100),
   bytes: z.number().int().nonnegative(),
 });
@@ -56,6 +57,13 @@ uploadsRouter.post(
     if (kind === 'VERIFICATION_DOCUMENT' && !req.auth!.organizerId) {
       throw ApiError.forbidden('Only a tour operator account can upload verification documents.');
     }
+    // Library media and receipts are for the team, by permission.
+    if ((kind === 'MEDIA_IMAGE' || kind === 'MEDIA_VIDEO') && !can(req, 'media.create')) {
+      throw ApiError.forbidden('You do not have permission to add to the media library.');
+    }
+    if (kind === 'RECEIPT' && !can(req, 'finance.create') && !can(req, 'donations.create') && !can(req, 'bookings.edit')) {
+      throw ApiError.forbidden('You do not have permission to upload receipts.');
+    }
 
     assertAllowed(kind, input.contentType, input.bytes);
 
@@ -66,7 +74,7 @@ uploadsRouter.post(
 );
 
 const confirmSchema = z.object({
-  kind: z.enum(['TRIP_IMAGE', 'AVATAR', 'VERIFICATION_DOCUMENT']),
+  kind: z.enum(UPLOAD_KINDS),
   assetId: z.string().trim().min(8).max(200),
   version: z.string().trim().max(40),
   signature: z.string().trim().max(200),

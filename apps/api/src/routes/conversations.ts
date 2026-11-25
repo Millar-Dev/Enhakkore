@@ -1,3 +1,4 @@
+import { hasPermission } from '@enhakkore/shared';
 import { Router } from 'express';
 import { z } from 'zod';
 import { ApiError, route } from '../lib/http';
@@ -18,7 +19,10 @@ conversationsRouter.use(requireAuth);
  * confirmed booking or from organizing the trip; admins get read access for
  * moderation but are not implicit posters. Every route below goes through it.
  */
-async function authorize(conversationId: string, viewer: { id: string; role: string; organizerId: string | null }) {
+async function authorize(
+  conversationId: string,
+  viewer: { id: string; role: string; organizerId: string | null; permissions?: string[] },
+) {
   const conversation = await prisma.conversation.findUnique({
     where: { id: conversationId },
     include: {
@@ -30,9 +34,13 @@ async function authorize(conversationId: string, viewer: { id: string; role: str
   if (!conversation) throw ApiError.notFound('That trip group does not exist.');
 
   const organizerUserId = conversation.departure.trip.organizer.userId;
-  const isOrganizer = viewer.id === organizerUserId;
+  // Enhakkore's own trips are run by the team: whoever may edit trips speaks
+  // for the organiser in those groups.
+  const isEnhakkoreTrip = conversation.departure.trip.organizer.slug === 'enhakkore';
+  const isOrganizer =
+    viewer.id === organizerUserId || (isEnhakkoreTrip && hasPermission(viewer.permissions ?? [], 'trips.edit'));
   const isMember = conversation.members.some((member) => member.userId === viewer.id);
-  const isAdmin = viewer.role === 'ADMIN';
+  const isAdmin = viewer.role === 'ADMIN' || hasPermission(viewer.permissions ?? [], 'trips.view');
 
   if (!isMember && !isOrganizer && !isAdmin) {
     // Deliberately a 404: someone without a booking should not learn that this

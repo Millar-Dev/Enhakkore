@@ -23,6 +23,12 @@ export function errorHandler(error: unknown, _req: Request, res: Response, _next
   }
 
   if (error instanceof ApiError) {
+    // Field-level problems from the admin forms, shaped like a ZodError's.
+    if (error.code === 'validation_error' && error.details && typeof error.details === 'object') {
+      return res.status(error.status).json({
+        error: { code: error.code, message: error.message, fields: error.details },
+      });
+    }
     return res.status(error.status).json({
       error: { code: error.code, message: error.message, details: error.details },
     });
@@ -30,8 +36,21 @@ export function errorHandler(error: unknown, _req: Request, res: Response, _next
 
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     if (error.code === 'P2002') {
+      const target = (error.meta?.target as string[] | string | undefined) ?? '';
+      const field = Array.isArray(target) ? target.join(', ') : String(target);
       return res.status(409).json({
-        error: { code: 'duplicate', message: 'That record already exists.' },
+        error: {
+          code: 'duplicate',
+          message: /slug/.test(field)
+            ? 'Another item already uses that web address. Change the web address and save again.'
+            : 'That record already exists.',
+          ...(/slug/.test(field) ? { fields: { slug: 'Already in use.' } } : {}),
+        },
+      });
+    }
+    if (error.code === 'P2003') {
+      return res.status(409).json({
+        error: { code: 'in_use', message: 'This is still used by other records, so it cannot be removed. Archive it instead.' },
       });
     }
     if (error.code === 'P2025') {

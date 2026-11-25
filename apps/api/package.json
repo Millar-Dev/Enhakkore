@@ -2,7 +2,7 @@
   "name": "@enhakkore/api",
   "version": "0.1.0",
   "private": true,
-  "description": "Enhakkore platform API — marketplace, bookings, trip communities and impact.",
+  "description": "Enhakkore platform API \u2014 marketplace, bookings, trip communities and impact.",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -13,16 +13,17 @@
     "db:push": "npm run datasource && prisma db push --skip-generate && prisma generate",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "npm run datasource && prisma db push --force-reset --skip-generate && prisma generate && tsx prisma/seed.ts",
+    "db:reset": "npm run datasource && prisma db push --force-reset --skip-generate && prisma generate && tsx prisma/seed.ts && tsx prisma/bootstrap.ts",
     "datasource": "node scripts/sync-datasource.js",
-    "db:deploy": "npm run datasource && prisma generate && node scripts/migrate-deploy.js && npm run db:seed:if-empty",
+    "db:deploy": "npm run datasource && prisma generate && node scripts/migrate-deploy.js && npm run db:seed:if-empty && npm run db:bootstrap",
     "remote:push": "node scripts/remote.js push",
     "remote:seed": "node scripts/remote.js seed",
     "remote:studio": "node scripts/remote.js studio",
     "remote:reset": "node scripts/remote.js reset",
     "db:seed:if-empty": "tsx prisma/seed.ts --if-empty",
     "migration:new": "node scripts/migration-new.js",
-    "test": "node scripts/test.js"
+    "test": "node scripts/test.js",
+    "db:bootstrap": "tsx prisma/bootstrap.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

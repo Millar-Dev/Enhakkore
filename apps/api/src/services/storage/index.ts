@@ -21,7 +21,9 @@ import { localStorage } from './local';
  * provider's own signature before the id is written to the database.
  */
 
-export type UploadKind = 'TRIP_IMAGE' | 'AVATAR' | 'VERIFICATION_DOCUMENT';
+export type UploadKind = 'TRIP_IMAGE' | 'AVATAR' | 'VERIFICATION_DOCUMENT' | 'MEDIA_IMAGE' | 'MEDIA_VIDEO' | 'RECEIPT';
+
+export const UPLOAD_KINDS = ['TRIP_IMAGE', 'AVATAR', 'VERIFICATION_DOCUMENT', 'MEDIA_IMAGE', 'MEDIA_VIDEO', 'RECEIPT'] as const;
 
 export interface UploadRule {
   /** Largest file accepted, in bytes. */
@@ -57,7 +59,34 @@ export const UPLOAD_RULES: Record<UploadKind, UploadRule> = {
     folder: 'enhakkore/verification',
     visibility: 'private',
   },
+  /** Photos for the media library — trips, places, events, the homepage. */
+  MEDIA_IMAGE: {
+    maxBytes: 15 * 1024 * 1024,
+    accept: ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif'],
+    folder: 'enhakkore/media',
+    visibility: 'public',
+  },
+  /** Videos for the media library. Cloudinary's free plan accepts up to 100MB per video. */
+  MEDIA_VIDEO: {
+    maxBytes: 100 * 1024 * 1024,
+    accept: ['video/mp4', 'video/webm', 'video/quicktime'],
+    folder: 'enhakkore/video',
+    visibility: 'public',
+  },
+  /** Receipts and payment confirmations. Private: only finance staff can open one. */
+  RECEIPT: {
+    maxBytes: 10 * 1024 * 1024,
+    accept: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+    folder: 'enhakkore/receipts',
+    visibility: 'private',
+  },
 };
+
+/** Cloudinary keeps images and videos apart; private files use `auto`. */
+export function resourceTypeOf(kind: UploadKind): 'image' | 'video' | 'auto' {
+  if (UPLOAD_RULES[kind].visibility === 'private') return 'auto';
+  return kind === 'MEDIA_VIDEO' ? 'video' : 'image';
+}
 
 /** What the browser needs in order to send the file itself. */
 export interface UploadTicket {

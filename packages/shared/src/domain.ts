@@ -6,7 +6,11 @@
  * PostgreSQL later is a schema change only — the values below stay identical.
  */
 
-export const ROLES = ['TRAVELER', 'ORGANIZER', 'ADMIN'] as const;
+/**
+ * ADMIN is the owner: every permission, always. STAFF are team members whose
+ * permissions come from the role the owner assigned them.
+ */
+export const ROLES = ['TRAVELER', 'ORGANIZER', 'ADMIN', 'STAFF'] as const;
 export type Role = (typeof ROLES)[number];
 
 export const USER_STATUSES = ['ACTIVE', 'SUSPENDED', 'PENDING'] as const;

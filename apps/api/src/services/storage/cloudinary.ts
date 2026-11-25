@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import { v2 as cloudinary } from 'cloudinary';
 import { env } from '../../env';
 import { ApiError } from '../../lib/http';
-import { UPLOAD_RULES, type FileStorage, type UploadClaim, type UploadKind, type UploadTicket } from './index';
+import { UPLOAD_RULES, resourceTypeOf, type FileStorage, type UploadClaim, type UploadKind, type UploadTicket } from './index';
 
 /**
  * Cloudinary, used through signed direct uploads.
@@ -37,8 +37,8 @@ function sign(params: Record<string, string | number>, apiSecret: string): strin
  * Images and PDFs are different resource types to Cloudinary. `auto` lets it
  * decide, which is what the documents folder needs since it takes both.
  */
-function resourceType(kind: UploadKind): 'image' | 'auto' {
-  return UPLOAD_RULES[kind].visibility === 'private' ? 'auto' : 'image';
+function resourceType(kind: UploadKind): 'image' | 'video' | 'auto' {
+  return resourceTypeOf(kind);
 }
 
 export function cloudinaryStorage(): FileStorage {
@@ -91,7 +91,16 @@ export function cloudinaryStorage(): FileStorage {
       return {
         assetId: claim.assetId,
         url:
-          rule.visibility === 'public'
+          rule.visibility === 'public' && kind === 'MEDIA_VIDEO'
+            ? cloudinary.url(claim.assetId, {
+                resource_type: 'video',
+                version: claim.version,
+                secure: true,
+                // Re-encoded at a sensible quality so a phone video plays on a slow connection.
+                transformation: [{ width: 1280, crop: 'limit', quality: 'auto' }],
+                format: 'mp4',
+              })
+            : rule.visibility === 'public'
             ? cloudinary.url(claim.assetId, {
                 resource_type: 'image',
                 version: claim.version,
@@ -119,7 +128,7 @@ export function cloudinaryStorage(): FileStorage {
 
     async remove(kind: UploadKind, assetId: string) {
       await cloudinary.uploader.destroy(assetId, {
-        resource_type: 'image',
+        resource_type: kind === 'MEDIA_VIDEO' ? 'video' : 'image',
         type: UPLOAD_RULES[kind].visibility === 'private' ? 'authenticated' : 'upload',
         invalidate: true,
       });

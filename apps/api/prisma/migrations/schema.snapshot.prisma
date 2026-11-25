@@ -24,28 +24,51 @@ datasource db {
 // ---------------------------------------------------------------------------
 
 model User {
-  id           String  @id @default(cuid())
-  email        String  @unique
-  passwordHash String
-  name         String
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String
+  name              String
   /// TRAVELER | ORGANIZER | ADMIN
-  role         String  @default("TRAVELER")
+  role              String    @default("TRAVELER")
   /// ACTIVE | SUSPENDED | PENDING
-  status       String  @default("ACTIVE")
-  avatarUrl    String?
-  phone        String?
-  country      String?
-  city         String?
-  bio          String?
+  status            String    @default("ACTIVE")
+  avatarUrl         String?
+  phone             String?
+  country           String?
+  city              String?
+  bio               String?
   /// Marks records created by the demo seed so the UI can label them honestly.
-  isDemo       Boolean @default(false)
+  isDemo            Boolean   @default(false)
   /// Set whenever the password changes. Session tokens issued before this
   /// moment are rejected, so a reset signs the account out everywhere.
   passwordChangedAt DateTime?
 
+  /// Connect profile. Never holds a home address or a live location.
+  headline          String?
+  /// JSON string arrays.
+  interests         String    @default("[]")
+  activityPrefs     String    @default("[]")
+  /// PUBLIC (any member may find them) | MEMBERS (same) | HIDDEN (not listed)
+  profileVisibility String    @default("MEMBERS")
+  /// Set for staff. Null for members and for the owner (role ADMIN has everything).
+  adminRoleId       String?
+  lastLoginAt       DateTime?
+  /// Why an account was suspended, for the record.
+  statusReason      String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  adminRole            AdminRole?              @relation(fields: [adminRoleId], references: [id], onDelete: SetNull)
+  sessions             Session[]
+  connectionsSent      Connection[]            @relation("ConnectionRequester")
+  connectionsReceived  Connection[]            @relation("ConnectionAddressee")
+  blocksMade           Block[]                 @relation("BlockBlocker")
+  blocksReceived       Block[]                 @relation("BlockBlocked")
+  activityRequests     ActivityParticipant[]
+  savedItems           SavedItem[]
+  pollVotes            PollVote[]
+  placeReviews         PlaceReview[]
   organizer            Organizer?
   passwordResetTokens  PasswordResetToken[]
   bookings             Booking[]
@@ -61,6 +84,7 @@ model User {
 
   @@index([role])
   @@index([status])
+  @@index([country, city])
 }
 
 /// A pending "forgot password" link.
@@ -209,9 +233,9 @@ model Trip {
   description   String
 
   /// GROUP | PRIVATE | SAFARI | BEACH | ADVENTURE | CULTURAL | INTERNATIONAL
-  type  String @default("GROUP")
+  type   String @default("GROUP")
   /// BUDGET | COMFORT | LUXURY
-  style String @default("COMFORT")
+  style  String @default("COMFORT")
   /// DRAFT | PENDING_REVIEW | APPROVED | PUBLISHED | REJECTED | ARCHIVED
   status String @default("DRAFT")
 
@@ -221,12 +245,12 @@ model Trip {
   basePrice      Int
   currency       String @default("TZS")
 
-  heroImage  String
+  heroImage    String
   /// JSON string arrays.
-  gallery    String @default("[]")
-  tags       String @default("[]")
-  includes   String @default("[]")
-  excludes   String @default("[]")
+  gallery      String @default("[]")
+  tags         String @default("[]")
+  includes     String @default("[]")
+  excludes     String @default("[]")
   requirements String @default("[]")
 
   difficulty  String?
@@ -239,6 +263,29 @@ model Trip {
   /// Optional impact project this trip channels contributions toward.
   impactProjectId String?
 
+  /// Enhakkore Travel fields. The trip page reads all of these from here, so
+  /// the owner changes a price or a date without touching code.
+  subtitle            String?
+  countryId           String?
+  cityId              String?
+  destinationLabel    String?
+  departureCity       String?
+  meetingPoint        String?
+  accommodation       String?
+  transport           String?
+  minParticipants     Int?
+  /// JSON array of { label, note, amount, currency } — separate prices, never conversions.
+  priceTiers          String  @default("[]")
+  /// JSON string array of items still being confirmed.
+  toConfirm           String  @default("[]")
+  paymentInstructions String?
+  /// JSON array of { method, kind, number, name }.
+  paymentOptions      String  @default("[]")
+  cancellationPolicy  String?
+  /// JSON array of { src, alt, credit, licence, source }.
+  galleryItems        String  @default("[]")
+  videoUrl            String?
+
   reviewedById String?
   reviewNotes  String?
   submittedAt  DateTime?
@@ -247,6 +294,8 @@ model Trip {
   updatedAt    DateTime  @updatedAt
 
   organizer     Organizer      @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  country       Country?       @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  city          City?          @relation(fields: [cityId], references: [id], onDelete: SetNull)
   destination   Destination    @relation(fields: [destinationId], references: [id])
   impactProject ImpactProject? @relation(fields: [impactProjectId], references: [id])
   reviewedBy    User?          @relation("TripReviewer", fields: [reviewedById], references: [id])
@@ -263,15 +312,19 @@ model Trip {
 }
 
 model ItineraryDay {
-  id        String  @id @default(cuid())
-  tripId    String
-  dayNumber Int
-  title     String
-  summary   String?
+  id            String  @id @default(cuid())
+  tripId        String
+  dayNumber     Int
+  title         String
+  summary       String?
   /// JSON string arrays.
-  activities String @default("[]")
-  meals      String @default("[]")
+  activities    String  @default("[]")
+  meals         String  @default("[]")
   accommodation String?
+  /// "Friday, 18 December"
+  label         String?
+  /// JSON array of { name, detail, provisional }.
+  stops         String  @default("[]")
 
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
@@ -281,16 +334,20 @@ model ItineraryDay {
 /// A dated departure of a trip. Group capacity and seat counts live here, not on
 /// the trip, so one listing can run many times with different sizes and prices.
 model TripDate {
-  id          String   @id @default(cuid())
-  tripId      String
-  startDate   DateTime
-  endDate     DateTime
-  capacity    Int
-  seatsBooked Int      @default(0)
+  id                   String    @id @default(cuid())
+  tripId               String
+  startDate            DateTime
+  endDate              DateTime
+  capacity             Int
+  seatsBooked          Int       @default(0)
   /// Per-departure price override; falls back to Trip.basePrice when null.
-  price       Int?
+  price                Int?
   /// OPEN | ALMOST_FULL | FULL | CLOSED | DEPARTED
-  status      String   @default("OPEN")
+  status               String    @default("OPEN")
+  /// Applications close at the end of this day.
+  bookingDeadline      DateTime?
+  /// For the trip budget: how many people the costs were planned around.
+  expectedParticipants Int?
 
   createdAt DateTime @default(now())
 
@@ -326,9 +383,20 @@ model Booking {
   tripDateId String
   userId     String
 
-  travellers Int    @default(1)
-  /// PENDING_PAYMENT | CONFIRMED | CANCELLED | REFUNDED | COMPLETED
-  status     String @default("PENDING_PAYMENT")
+  travellers   Int       @default(1)
+  /// PENDING_PAYMENT | CONFIRMED | CANCELLED | REFUNDED | COMPLETED, and for
+  /// trips booked by application: APPLIED | DECLINED.
+  status       String    @default("PENDING_PAYMENT")
+  /// CHECKOUT (paid through a gateway) | APPLICATION (reviewed by the team, paid by transfer).
+  channel      String    @default("CHECKOUT")
+  /// Sum of verified payments, minor units. Kept for applications, where money arrives in parts.
+  amountPaid   Int       @default(0)
+  /// The price tier the applicant chose, by label.
+  priceTier    String?
+  contactPhone String?
+  reviewedById String?
+  reviewedAt   DateTime?
+  adminNotes   String?
 
   /// All amounts are integer minor units of `currency`, captured at booking time
   /// so later price changes never rewrite history.
@@ -347,10 +415,10 @@ model Booking {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  trip          Trip               @relation(fields: [tripId], references: [id])
-  departure     TripDate           @relation(fields: [tripDateId], references: [id])
-  impactProject ImpactProject?     @relation(fields: [impactProjectId], references: [id])
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip          Trip                @relation(fields: [tripId], references: [id])
+  departure     TripDate            @relation(fields: [tripDateId], references: [id])
+  impactProject ImpactProject?      @relation(fields: [impactProjectId], references: [id])
   travellerList BookingTraveller[]
   payments      Payment[]
   donations     Donation[]
@@ -360,6 +428,7 @@ model Booking {
   @@index([userId, status])
   @@index([tripId])
   @@index([status])
+  @@index([tripDateId, status])
 }
 
 /// Named travellers on a booking. Kept separate from User so a member can book
@@ -381,24 +450,27 @@ model BookingTraveller {
 /// build only the in-process mock gateway exists, and rows it creates are
 /// marked `simulated` so nothing can be mistaken for a real settlement.
 model Payment {
-  id          String  @id @default(cuid())
-  bookingId   String
+  id           String  @id @default(cuid())
+  bookingId    String
   /// MOCK | MOBILE_MONEY | CARD | BANK_TRANSFER
-  method      String  @default("MOCK")
-  provider    String  @default("mock")
-  providerRef String?
-  amount      Int
-  currency    String  @default("TZS")
+  method       String  @default("MOCK")
+  provider     String  @default("mock")
+  providerRef  String?
+  amount       Int
+  currency     String  @default("TZS")
   /// INITIATED | PENDING | SUCCEEDED | FAILED | REFUNDED
-  status      String  @default("INITIATED")
-  simulated   Boolean @default(true)
-  failureCode String?
+  status       String  @default("INITIATED")
+  simulated    Boolean @default(true)
+  failureCode  String?
   /// JSON blob of the (redacted) provider response for support/debugging.
-  rawResponse String  @default("{}")
+  rawResponse  String  @default("{}")
+  /// For payments recorded by hand: who checked it, and the transfer's own reference.
+  recordedById String?
+  note         String?
 
-  createdAt   DateTime  @default(now())
-  settledAt   DateTime?
-  refundedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  settledAt  DateTime?
+  refundedAt DateTime?
 
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
@@ -523,24 +595,28 @@ model ImpactProject {
 
   /// Integer minor units of `currency`.
   goal             Int
-  raised           Int     @default(0)
-  currency         String  @default("TZS")
-  contributorCount Int     @default(0)
+  raised           Int    @default(0)
+  currency         String @default("TZS")
+  contributorCount Int    @default(0)
   /// Number of people the project is planned to reach. A stated plan, not a
   /// claim of results.
   beneficiaries    Int?
 
-  heroImage String
-  gallery   String @default("[]")
+  heroImage  String
+  gallery    String @default("[]")
   /// JSON array of { label, percent, note } describing how contributions are
   /// earmarked. Planned allocation — not an audited financial statement.
   allocation String @default("[]")
 
   /// Implementing partner. Left null until a real partnership is documented.
-  partnerName String?
-  partnerNote String?
-  featured    Boolean @default(false)
-  isDemo      Boolean @default(false)
+  partnerName      String?
+  partnerNote      String?
+  featured         Boolean @default(false)
+  isDemo           Boolean @default(false)
+  beneficiaryGroup String?
+  /// Off until donations to this project are being verified; totals are hidden while off.
+  showFunding      Boolean @default(false)
+  videoUrl         String?
 
   startedAt   DateTime?
   completedAt DateTime?
@@ -555,26 +631,41 @@ model ImpactProject {
   @@index([category, status])
 }
 
+/// Money given to impact work. Kept entirely apart from the finance ledger:
+/// a donation is never business income.
 model Donation {
-  id        String  @id @default(cuid())
-  projectId String
+  id           String    @id @default(cuid())
+  /// Null for a general donation not tied to one project.
+  projectId    String?
   /// Null for guest contributions.
-  userId    String?
+  userId       String?
   /// Set when the contribution was added during trip checkout.
-  bookingId String?
-  amount    Int
-  currency  String  @default("TZS")
-  /// INITIATED | PENDING | SUCCEEDED | FAILED | REFUNDED
-  status    String  @default("SUCCEEDED")
-  anonymous Boolean @default(false)
-  message   String?
-  donorName String?
+  bookingId    String?
+  amount       Int
+  currency     String    @default("TZS")
+  /// PLEDGED | PENDING | SUCCEEDED | FAILED | REFUNDED. Only SUCCEEDED counts,
+  /// and for a bank transfer that means a person has checked the statement.
+  status       String    @default("SUCCEEDED")
+  anonymous    Boolean   @default(false)
+  message      String?
+  donorName    String?
+  donorPhone   String?
+  donorEmail   String?
+  /// CHECKOUT | BANK_TRANSFER | MOBILE_MONEY | CASH | OTHER
+  method       String    @default("CHECKOUT")
+  reference    String?
+  receivedAt   DateTime?
+  verifiedById String?
+  verifiedAt   DateTime?
+  notes        String?
+  receiptUrl   String?
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
-  project ImpactProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user    User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  booking Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  project ImpactProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  user    User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  booking Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
 
   @@index([projectId, status])
   @@index([userId])
@@ -583,14 +674,14 @@ model Donation {
 /// Progress reports on a project. The transparency promise lives here: goal,
 /// raised, and a dated trail of what actually happened.
 model ImpactUpdate {
-  id        String   @id @default(cuid())
-  projectId String
-  title     String
-  body      String
-  images    String   @default("[]")
+  id          String   @id @default(cuid())
+  projectId   String
+  title       String
+  body        String
+  images      String   @default("[]")
   /// Flags a completed milestone rather than a routine note.
-  milestone Boolean  @default(false)
-  published Boolean  @default(true)
+  milestone   Boolean  @default(false)
+  published   Boolean  @default(true)
   publishedAt DateTime @default(now())
 
   project ImpactProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -655,4 +746,843 @@ model PlatformSetting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Geography and categories — the international catalogue
+// ---------------------------------------------------------------------------
+
+/// Every country is present from the first deploy, so a new market is opened
+/// by publishing listings there, not by asking a developer.
+model Country {
+  id        String  @id @default(cuid())
+  /// ISO 3166-1 alpha-2.
+  code      String  @unique
+  name      String
+  slug      String  @unique
+  region    String?
+  /// ISO 4217 code of the local currency. Informational: each listing names its own.
+  currency  String  @default("USD")
+  timezone  String  @default("UTC")
+  latitude  Float?
+  longitude Float?
+  summary   String?
+  heroImage String?
+  featured  Boolean @default(false)
+  /// DRAFT | PUBLISHED | ARCHIVED
+  status    String  @default("PUBLISHED")
+  sortOrder Int     @default(100)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cities      City[]
+  trips       Trip[]
+  activities  Activity[]
+  places      Place[]
+  experiences Experience[]
+  events      Event[]
+  stories     Story[]
+  deals       Deal[]
+  polls       Poll[]
+  challenges  Challenge[]
+
+  @@index([status])
+}
+
+model City {
+  id        String  @id @default(cuid())
+  countryId String
+  name      String
+  slug      String
+  /// Empty means the country's zone.
+  timezone  String?
+  latitude  Float?
+  longitude Float?
+  summary   String?
+  heroImage String?
+  featured  Boolean @default(false)
+  status    String  @default("PUBLISHED")
+  sortOrder Int     @default(100)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  country     Country      @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  trips       Trip[]
+  activities  Activity[]
+  places      Place[]
+  experiences Experience[]
+  events      Event[]
+  stories     Story[]
+  deals       Deal[]
+  polls       Poll[]
+  challenges  Challenge[]
+
+  @@unique([countryId, slug])
+  @@index([status])
+}
+
+/// Editable categories for every part of the site. `group` gathers related
+/// ones ("Sports", "Console gaming") without a fixed hierarchy.
+model Category {
+  id          String  @id @default(cuid())
+  /// ACTIVITY | PLACE | EXPERIENCE | EVENT | INTEREST
+  kind        String
+  name        String
+  slug        String
+  group       String?
+  description String?
+  icon        String?
+  /// Shown as a main category rather than inside a list.
+  featured    Boolean @default(false)
+  sortOrder   Int     @default(100)
+  status      String  @default("PUBLISHED")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  activities  Activity[]
+  places      Place[]
+  experiences Experience[]
+  events      Event[]
+
+  @@unique([kind, slug])
+  @@index([kind, status])
+}
+
+// ---------------------------------------------------------------------------
+// Activities — organised by the community or by Enhakkore
+// ---------------------------------------------------------------------------
+
+model Activity {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  title       String
+  summary     String?
+  description String
+  categoryId  String?
+  countryId   String?
+  cityId      String?
+
+  /// IN_PERSON | ONLINE
+  mode          String  @default("IN_PERSON")
+  /// A public meeting place. Never a home address.
+  meetingPoint  String?
+  /// Shared only with approved participants.
+  onlineDetails String?
+  platformName  String?
+
+  startsAt   DateTime?
+  endsAt     DateTime?
+  timezone   String    @default("Africa/Dar_es_Salaam")
+  recurrence String?
+
+  capacity     Int?
+  spotsTaken   Int     @default(0)
+  /// ALL | BEGINNER | INTERMEDIATE | ADVANCED
+  level        String  @default("ALL")
+  equipment    String?
+  requirements String?
+  price        Int?
+  currency     String  @default("TZS")
+
+  /// ADMIN | COMMUNITY
+  source          String  @default("ADMIN")
+  organiserName   String
+  organiserPhone  String?
+  organiserUserId String?
+  contactMethod   String?
+
+  /// See ACTIVITY_STATUSES in @enhakkore/shared.
+  status      String  @default("DRAFT")
+  reviewNotes String?
+  coverImage  String?
+  gallery     String  @default("[]")
+  videoUrl    String?
+  featured    Boolean @default(false)
+
+  createdById String?
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  category     Category?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  country      Country?              @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  city         City?                 @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  participants ActivityParticipant[]
+
+  @@index([status, startsAt])
+  @@index([countryId, cityId])
+  @@index([categoryId])
+}
+
+model ActivityParticipant {
+  id         String    @id @default(cuid())
+  activityId String
+  userId     String
+  message    String?
+  /// REQUESTED | APPROVED | WAITLIST | DECLINED | CANCELLED
+  status     String    @default("REQUESTED")
+  decidedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([activityId, userId])
+  @@index([activityId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Discover, experiences, events, catering
+// ---------------------------------------------------------------------------
+
+model Place {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  categoryId  String?
+  summary     String?
+  description String?
+  countryId   String?
+  cityId      String?
+  area        String?
+  address     String?
+  latitude    Float?
+  longitude   Float?
+
+  /// JSON string arrays.
+  facilities   String  @default("[]")
+  amenities    String  @default("[]")
+  /// JSON array of { days, hours }.
+  openingHours String  @default("[]")
+  priceRange   String?
+  offers       String?
+
+  phone    String?
+  whatsapp String?
+  email    String?
+  website  String?
+  /// JSON array of { label, url }.
+  socials  String  @default("[]")
+
+  /// ENQUIRY | EXTERNAL | NONE. No payment is ever taken for a third party.
+  bookingMode String  @default("ENQUIRY")
+  bookingUrl  String?
+  /// PLACE | ROOM | TABLE
+  enquiryKind String  @default("PLACE")
+
+  coverImage String?
+  gallery    String  @default("[]")
+  videoUrl   String?
+
+  /// VERIFIED | BUSINESS_SUBMITTED | UNVERIFIED
+  infoSource     String    @default("UNVERIFIED")
+  lastVerifiedAt DateTime?
+  sponsored      Boolean   @default(false)
+  hiddenGem      Boolean   @default(false)
+  featured       Boolean   @default(false)
+  /// A partner account allowed to edit this listing.
+  managerId      String?
+  status         String    @default("DRAFT")
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  category Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  country  Country?      @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  city     City?         @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  reviews  PlaceReview[]
+  deals    Deal[]
+
+  @@index([status])
+  @@index([countryId, cityId])
+  @@index([categoryId])
+}
+
+/// A member's review of a place. Held for moderation before it shows.
+model PlaceReview {
+  id        String   @id @default(cuid())
+  placeId   String
+  userId    String
+  rating    Int
+  body      String
+  /// PENDING | PUBLISHED | HIDDEN
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+
+  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([placeId, userId])
+  @@index([placeId, status])
+}
+
+model Experience {
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  title           String
+  categoryId      String?
+  summary         String?
+  description     String
+  countryId       String?
+  cityId          String?
+  meetingPoint    String?
+  durationText    String?
+  schedule        String?
+  startsAt        DateTime?
+  timezone        String    @default("Africa/Dar_es_Salaam")
+  price           Int?
+  currency        String    @default("TZS")
+  priceNote       String?
+  inclusions      String    @default("[]")
+  exclusions      String    @default("[]")
+  provider        String    @default("Enhakkore")
+  providerContact String?
+  managerId       String?
+  coverImage      String?
+  gallery         String    @default("[]")
+  videoUrl        String?
+  featured        Boolean   @default(false)
+  status          String    @default("DRAFT")
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  country  Country?  @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  city     City?     @relation(fields: [cityId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([countryId, cityId])
+}
+
+model Event {
+  id                  String    @id @default(cuid())
+  slug                String    @unique
+  title               String
+  categoryId          String?
+  summary             String?
+  description         String
+  /// ENHAKKORE | THIRD_PARTY
+  host                String    @default("ENHAKKORE")
+  hostName            String?
+  countryId           String?
+  cityId              String?
+  venue               String?
+  address             String?
+  startsAt            DateTime
+  endsAt              DateTime?
+  timezone            String    @default("Africa/Dar_es_Salaam")
+  /// ENHAKKORE | EXTERNAL | INFO_ONLY
+  registrationMode    String    @default("ENHAKKORE")
+  externalUrl         String?
+  capacity            Int?
+  paymentInstructions String?
+  ageRestriction      String?
+  dressCode           String?
+  managerId           String?
+  poster              String?
+  gallery             String    @default("[]")
+  videoUrl            String?
+  featured            Boolean   @default(false)
+  status              String    @default("DRAFT")
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  category      Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  country       Country?            @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  city          City?               @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  tickets       EventTicket[]
+  registrations EventRegistration[]
+
+  @@index([status, startsAt])
+  @@index([countryId, cityId])
+}
+
+model EventTicket {
+  id          String  @id @default(cuid())
+  eventId     String
+  name        String
+  description String?
+  price       Int     @default(0)
+  currency    String  @default("TZS")
+  capacity    Int?
+  sold        Int     @default(0)
+  active      Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  event         Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  registrations EventRegistration[]
+
+  @@index([eventId])
+}
+
+/// A place at an event. Seats are claimed when the registration is made and
+/// released if it is cancelled, the same way trip departures work.
+model EventRegistration {
+  id               String    @id @default(cuid())
+  reference        String    @unique
+  eventId          String
+  ticketId         String?
+  userId           String?
+  name             String
+  phone            String
+  email            String?
+  quantity         Int       @default(1)
+  amountDue        Int       @default(0)
+  amountPaid       Int       @default(0)
+  currency         String    @default("TZS")
+  /// PENDING_PAYMENT | CONFIRMED | CANCELLED | REFUNDED
+  status           String    @default("PENDING_PAYMENT")
+  paymentReference String?
+  notes            String?
+  checkedInAt      DateTime?
+  checkedInCount   Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  event  Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticket EventTicket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  @@index([eventId, status])
+}
+
+model CateringPackage {
+  id             String  @id @default(cuid())
+  slug           String  @unique
+  title          String
+  /// LUNCHBOX | GROUP | PRIVATE_CHEF
+  kind           String  @default("LUNCHBOX")
+  summary        String?
+  description    String?
+  /// JSON array of { name, description }.
+  menu           String  @default("[]")
+  dietaryOptions String  @default("[]")
+  price          Int?
+  currency       String  @default("TZS")
+  /// PER_PERSON | PER_GROUP | ON_REQUEST
+  priceUnit      String  @default("PER_PERSON")
+  minPeople      Int?
+  groupDiscounts String?
+  availability   String?
+  serviceAreas   String?
+  leadTime       String?
+  coverImage     String?
+  gallery        String  @default("[]")
+  sortOrder      Int     @default(0)
+  featured       Boolean @default(false)
+  status         String  @default("DRAFT")
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, sortOrder])
+}
+
+// ---------------------------------------------------------------------------
+// Enquiries — every "contact us about this" in one inbox
+// ---------------------------------------------------------------------------
+
+model Enquiry {
+  id            String    @id @default(cuid())
+  reference     String    @unique
+  /// See ENQUIRY_TYPES in @enhakkore/shared.
+  type          String    @default("GENERAL")
+  subjectType   String?
+  subjectId     String?
+  subjectTitle  String?
+  userId        String?
+  name          String
+  phone         String?
+  email         String?
+  startDate     DateTime?
+  endDate       DateTime?
+  people        Int?
+  message       String
+  /// JSON object of extra answers (dietary needs, location…).
+  details       String    @default("{}")
+  /// NEW | CONTACTED | IN_PROGRESS | CONVERTED | CLOSED | SPAM
+  status        String    @default("NEW")
+  internalNotes String?
+  handledById   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status, createdAt])
+  @@index([type])
+}
+
+// ---------------------------------------------------------------------------
+// Community content — stories, deals, polls, challenges, banners
+// ---------------------------------------------------------------------------
+
+model Story {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  excerpt     String?
+  body        String
+  authorName  String
+  userId      String?
+  countryId   String?
+  cityId      String?
+  coverImage  String?
+  gallery     String    @default("[]")
+  /// ADMIN | COMMUNITY
+  source      String    @default("ADMIN")
+  status      String    @default("DRAFT")
+  featured    Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  country Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  city    City?    @relation(fields: [cityId], references: [id], onDelete: SetNull)
+
+  @@index([status, publishedAt])
+}
+
+model Deal {
+  id           String    @id @default(cuid())
+  slug         String    @unique
+  title        String
+  businessName String
+  placeId      String?
+  description  String?
+  terms        String?
+  countryId    String?
+  cityId       String?
+  validFrom    DateTime?
+  validUntil   DateTime?
+  /// Confirmed with the business. Unverified deals are never shown publicly.
+  verified     Boolean   @default(false)
+  coverImage   String?
+  status       String    @default("DRAFT")
+  publishedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  place   Place?   @relation(fields: [placeId], references: [id], onDelete: SetNull)
+  country Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  city    City?    @relation(fields: [cityId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+}
+
+model Poll {
+  id          String    @id @default(cuid())
+  question    String
+  description String?
+  /// JSON string array.
+  options     String    @default("[]")
+  countryId   String?
+  cityId      String?
+  closesAt    DateTime?
+  /// DRAFT | OPEN | CLOSED | ARCHIVED
+  status      String    @default("DRAFT")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  country Country?   @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  city    City?      @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  votes   PollVote[]
+
+  @@index([status])
+}
+
+/// One vote per member per poll, enforced by the database.
+model PollVote {
+  id          String   @id @default(cuid())
+  pollId      String
+  userId      String
+  optionIndex Int
+  createdAt   DateTime @default(now())
+
+  poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+}
+
+model Challenge {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  title         String
+  description   String
+  howToTakePart String?
+  countryId     String?
+  cityId        String?
+  startsAt      DateTime?
+  endsAt        DateTime?
+  coverImage    String?
+  status        String    @default("DRAFT")
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  country Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  city    City?    @relation(fields: [cityId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+}
+
+model Banner {
+  id        String    @id @default(cuid())
+  message   String
+  linkLabel String?
+  linkUrl   String?
+  /// SITE_TOP | HOME
+  placement String    @default("SITE_TOP")
+  /// NAVY | GOLD | CREAM
+  tone      String    @default("NAVY")
+  imageUrl  String?
+  startsAt  DateTime?
+  endsAt    DateTime?
+  status    String    @default("DRAFT")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Media library
+// ---------------------------------------------------------------------------
+
+model MediaAsset {
+  id          String   @id @default(cuid())
+  url         String
+  /// IMAGE | VIDEO
+  kind        String   @default("IMAGE")
+  title       String?
+  alt         String?
+  caption     String?
+  credit      String?
+  folder      String   @default("General")
+  /// Storage id for uploaded files; null for files that ship with the site.
+  assetId     String?
+  bytes       Int?
+  format      String?
+  /// Part of the site's own files (logos, the Mkuranga outreach photographs).
+  /// Cannot be deleted from the dashboard.
+  isSystem    Boolean  @default(false)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([folder])
+  @@index([kind])
+}
+
+// ---------------------------------------------------------------------------
+// Connect — members finding each other
+// ---------------------------------------------------------------------------
+
+model Connection {
+  id          String    @id @default(cuid())
+  requesterId String
+  addresseeId String
+  /// PENDING | ACCEPTED | DECLINED
+  status      String    @default("PENDING")
+  createdAt   DateTime  @default(now())
+  respondedAt DateTime?
+
+  requester User @relation("ConnectionRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee User @relation("ConnectionAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId, status])
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("BlockBlocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("BlockBlocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+}
+
+/// A report about a member or a listing, for the community team.
+model Report {
+  id          String   @id @default(cuid())
+  reporterId  String?
+  /// USER | ACTIVITY | PLACE | EVENT | STORY | REVIEW
+  targetType  String
+  targetId    String
+  reason      String
+  details     String?
+  /// OPEN | REVIEWING | RESOLVED | DISMISSED
+  status      String   @default("OPEN")
+  resolution  String?
+  handledById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+}
+
+/// Wishlist: any listing a member wants to come back to.
+model SavedItem {
+  id        String   @id @default(cuid())
+  userId    String
+  /// TRIP | PLACE | EXPERIENCE | EVENT | ACTIVITY | COUNTRY | CITY
+  itemType  String
+  itemId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemType, itemId])
+}
+
+// ---------------------------------------------------------------------------
+// Staff, sessions and the audit trail
+// ---------------------------------------------------------------------------
+
+model AdminRole {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  /// JSON string array of permissions, e.g. ["finance.*", "trips.view"].
+  permissions String   @default("[]")
+  /// ALL | OWN — OWN limits listings to those assigned to the person.
+  scope       String   @default("ALL")
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users User[]
+}
+
+/// A signed-in session. Every token names its session, so a session can be
+/// revoked — signing someone out everywhere — without waiting for it to expire.
+model Session {
+  id         String    @id @default(cuid())
+  userId     String
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  revokedBy  String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+}
+
+model LoginEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  email     String
+  success   Boolean
+  /// ok | bad_password | unknown_account | suspended | rate_limited
+  reason    String
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([email])
+}
+
+/// Who changed what, and when. Written by the API on every administrative
+/// change; never edited or deleted from the dashboard.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorName  String?
+  /// create | update | delete | status | settings | permissions | payment | export | security | finance | donation
+  action     String
+  entityType String
+  entityId   String?
+  summary    String
+  /// JSON snapshots, secrets removed.
+  before     String?
+  after      String?
+  sensitive  Boolean  @default(false)
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([actorId])
+}
+
+// ---------------------------------------------------------------------------
+// Payment settings and the finance ledger
+// ---------------------------------------------------------------------------
+
+/// How customers and donors pay. Holds only what a customer is shown — an
+/// account name and number — never a password, PIN or API key.
+model PaymentMethod {
+  id                String   @id @default(cuid())
+  name              String
+  /// BANK_TRANSFER | MOBILE_MONEY | CASH | PAYMENT_LINK | OTHER
+  kind              String   @default("BANK_TRANSFER")
+  provider          String?
+  accountName       String?
+  accountNumber     String?
+  extraDetails      String?
+  /// JSON string arrays.
+  currencies        String   @default("[]")
+  scopes            String   @default("[]")
+  instructions      String?
+  referenceFormat   String?
+  verificationSteps String?
+  isDefault         Boolean  @default(false)
+  sortOrder         Int      @default(0)
+  /// ENABLED | DISABLED
+  status            String   @default("ENABLED")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+/// One line in Enhakkore's books. Income, expenses and refunds only —
+/// donations live in their own table and never appear here.
+model FinanceTransaction {
+  id             String    @id @default(cuid())
+  /// INCOME | EXPENSE | REFUND
+  type           String
+  date           DateTime
+  /// Integer minor units of `currency`. Always positive; `type` gives the sign.
+  amount         Int
+  currency       String
+  division       String    @default("OTHER")
+  category       String
+  /// NONE | TRIP_DEPARTURE | EVENT | EXPERIENCE | ACTIVITY | PLACE | CATERING
+  relatedType    String    @default("NONE")
+  relatedId      String?
+  relatedLabel   String?
+  paymentMethod  String?
+  reference      String?
+  counterparty   String?
+  notes          String?
+  /// PENDING | VERIFIED | CANCELLED
+  status         String    @default("PENDING")
+  receiptUrl     String?
+  /// Set when the line was written by a verified booking or registration payment.
+  bookingId      String?
+  registrationId String?
+  paymentId      String?
+  createdById    String?
+  verifiedById   String?
+  verifiedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([date])
+  @@index([type, status])
+  @@index([relatedType, relatedId])
+  @@index([division])
 }

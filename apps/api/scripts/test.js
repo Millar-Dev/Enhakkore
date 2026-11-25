@@ -112,6 +112,7 @@ if (isPostgres) {
   run('creating a fresh database', 'npx', ['prisma', 'db', 'push', '--skip-generate']);
 }
 run('loading the demonstration content', 'npx', ['tsx', 'prisma/seed.ts']);
+run('loading the real starting content', 'npx', ['tsx', 'prisma/bootstrap.ts']);
 
 console.log('\nRunning tests\n');
 // One file at a time: every file shares the same database.

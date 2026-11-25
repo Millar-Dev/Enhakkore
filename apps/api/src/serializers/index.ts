@@ -42,6 +42,11 @@ export function toPublicUser(user: any): PublicUser {
     bio: user.bio ?? null,
     createdAt: iso(user.createdAt),
     organizerId: user.organizer?.id ?? user.organizerId ?? null,
+    phone: user.phone ?? null,
+    headline: user.headline ?? null,
+    interests: parseList(user.interests),
+    activityPrefs: parseList(user.activityPrefs),
+    profileVisibility: user.profileVisibility ?? 'MEMBERS',
   };
 }
 

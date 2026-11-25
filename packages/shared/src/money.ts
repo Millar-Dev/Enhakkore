@@ -31,7 +31,15 @@ export const CURRENCIES: Record<string, CurrencyDefinition> = {
   USD: { code: 'USD', symbol: '$', decimals: 2, label: 'US Dollar', locale: 'en-US' },
   EUR: { code: 'EUR', symbol: '€', decimals: 2, label: 'Euro', locale: 'en-IE' },
   AED: { code: 'AED', symbol: 'AED', decimals: 2, label: 'UAE Dirham', locale: 'en-AE' },
+  GBP: { code: 'GBP', symbol: '£', decimals: 2, label: 'British Pound', locale: 'en-GB' },
+  NGN: { code: 'NGN', symbol: '₦', decimals: 2, label: 'Nigerian Naira', locale: 'en-NG' },
 };
+
+/**
+ * The currencies an administrator can price things in. Order is the order the
+ * picker shows. Amounts in different currencies are never added together.
+ */
+export const SUPPORTED_CURRENCIES = ['TZS', 'USD', 'EUR', 'GBP', 'KES', 'NGN', 'UGX', 'RWF', 'ZAR', 'AED'] as const;
 
 export const DEFAULT_CURRENCY = 'TZS';
 
@@ -45,8 +53,16 @@ export function money(amount: number, currency: string = DEFAULT_CURRENCY): Mone
   return { amount: Math.round(amount), currency };
 }
 
+/**
+ * The definition for a currency code. An unknown code is described honestly as
+ * itself with two decimals — never silently treated as another currency, which
+ * would misstate every amount in it.
+ */
 export function currencyDef(code: string): CurrencyDefinition {
-  return CURRENCIES[code] ?? CURRENCIES[DEFAULT_CURRENCY];
+  const known = CURRENCIES[code];
+  if (known) return known;
+  const safe = (code || DEFAULT_CURRENCY).toUpperCase().slice(0, 3);
+  return { code: safe, symbol: safe, decimals: 2, label: safe, locale: 'en' };
 }
 
 /** Convert a human-entered major-unit value ("450000", "12.50") to minor units. */
