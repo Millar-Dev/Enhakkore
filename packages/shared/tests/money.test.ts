@@ -35,8 +35,14 @@ describe('money', () => {
     assert.equal(toMinor(12.345, 'USD'), 1_235, 'rounded, never left as a fraction of a cent');
   });
 
-  test('an unknown currency falls back instead of crashing a page', () => {
-    assert.equal(formatMoney(money(1_000, 'XYZ')), 'TZS 1,000');
+  test('an unknown currency is shown as itself instead of crashing a page', () => {
+    // Never relabelled as TZS: that would misstate the amount.
+    assert.equal(formatMoney(money(1_000, 'XYZ')), 'XYZ 10.00');
+  });
+
+  test('pounds and naira are supported', () => {
+    assert.equal(formatMoney(money(25_000, 'GBP')), '£250.00');
+    assert.equal(formatMoney(money(500_000, 'NGN')), '₦5,000.00');
   });
 
   test('progress is a whole percentage, clamped to 0–100', () => {
