@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { DemoNotice } from '@/components/public/DemoNotice';
 import { notFound } from 'next/navigation';
 import type { CommunityCard } from '@/components/home/types';
 import { PublicShell } from '@/components/layout/PublicShell';
@@ -48,6 +49,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
             <ShareButton subjectType="COMMUNITY" subjectId={c.id} title={c.name} />
             <TrackView subjectType="COMMUNITY" subjectId={c.id} />
           </div>
+          {c.isDemo && <DemoNotice what="community" />}
           <Prose text={c.description} />
           <div>
             <SectionTitle kicker="Announcements" title="Latest from the community" />

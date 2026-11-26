@@ -12,6 +12,7 @@ export function CommunityTile({ community }: { community: CommunityCard }) {
       image={community.coverImage}
       kicker={community.category ? `${community.category.icon ?? ''} ${community.category.name}` : 'Community'}
       title={community.name}
+      badges={community.isDemo ? [{ label: 'Demo', tone: 'demo' }] : []}
       meta={[community.summary, `${community.memberCount} member${community.memberCount === 1 ? '' : 's'}`, [community.city?.name, community.country?.name].filter(Boolean).join(', ')]}
     />
   );

@@ -4,13 +4,14 @@ import { TRIP_STAGE_LABELS, formatMoney } from '@enhakkore/shared';
 import { PublicShell } from '@/components/layout/PublicShell';
 import { CopyButton, SaveButton } from '@/components/public/Actions';
 import { ApplyForm } from '@/components/public/ApplyForm';
+import { TripRequest } from '@/components/public/TripRequest';
 import { Facts, Gallery, Prose, VideoBlock } from '@/components/public/Cards';
 import { tripDates } from '@/components/public/listings';
 import { SmartImage } from '@/components/public/SmartImage';
 import { ShareButton, TrackView } from '@/components/public/Track';
 import { SocialIcon } from '@/components/site/SocialIcon';
 import { apiGet } from '@/lib/api';
-import { getSite, waHref } from '@/lib/site';
+import { getSite, waHref, waNumbers } from '@/lib/site';
 
 export const revalidate = 60;
 
@@ -62,6 +63,11 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
   if (!trip) notFound();
   const upcoming = trip.departures.filter((departure) => !departure.past);
   const wa = waHref(settings, 'trip', trip.title);
+  // Which WhatsApp number(s) take trip enquiries — Settings → Contacts → routing.
+  const allNumbers = waNumbers(settings);
+  const route = settings.contact.routing?.TRIP ?? 'all';
+  const routed = /^\d+$/.test(route) && allNumbers[Number(route) - 1] ? [allNumbers[Number(route) - 1]!] : allNumbers;
+  const tripNumbers = routed.map((number) => ({ display: number.display, digits: number.digits }));
   const tripMethods = paymentMethods.filter((method) => method.scopes.includes('TRIPS'));
   const paymentOptions = trip.paymentOptions.filter((option) => option.number);
 
@@ -153,12 +159,14 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
                 <ul className="mt-3 space-y-2 text-[0.9375rem] text-ink-soft">{trip.includes.map((line) => <li key={line} className="flex gap-2"><span className="text-safari-500">✓</span>{line}</li>)}</ul>
               </div>
             )}
-            {trip.excludes.length > 0 && (
-              <div className="rounded-[1.1rem] border border-line p-5">
-                <p className="font-display text-xl text-acacia-700">Not included</p>
+            <div className="rounded-[1.1rem] border border-line p-5">
+              <p className="font-display text-xl text-acacia-700">Not included</p>
+              {trip.excludes.length > 0 ? (
                 <ul className="mt-3 space-y-2 text-[0.9375rem] text-ink-soft">{trip.excludes.map((line) => <li key={line}>— {line}</li>)}</ul>
-              </div>
-            )}
+              ) : (
+                <p className="mt-3 text-[0.9375rem] text-ink-muted">Not listed yet. Anything not under “Included” is not covered — ask the team if you are unsure.</p>
+              )}
+            </div>
           </div>
           {trip.toConfirm.length > 0 && (
             <div className="rounded-[1.1rem] border border-[#f2e2c0] bg-[#fdf8ec] p-5">
@@ -189,13 +197,32 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
               </div>
             )}
             {trip.isPast ? (
-              <p className="text-sm text-ink-soft">This trip has taken place. Message us to hear about the next one.</p>
+              <>
+                <p className="text-sm text-ink-soft">This trip has taken place. Message us to hear about the next one.</p>
+                <a href={wa} target="_blank" rel="noreferrer noopener" className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#1f9d55] text-sm font-bold text-white">
+                  <SocialIcon platform="whatsapp" size={18} /> Ask on WhatsApp
+                </a>
+              </>
             ) : (
-              <ApplyForm slug={trip.slug} title={trip.title} departures={trip.departures} currency={trip.currency} tiers={trip.priceTiers} />
+              <TripRequest
+                tripId={trip.id}
+                tripTitle={trip.title}
+                dates={upcoming.map((departure) => ({ value: departure.startDate, label: tripDates(departure.startDate, departure.endDate) }))}
+                whatsapp={tripNumbers}
+              />
             )}
-            <a href={wa} target="_blank" rel="noreferrer noopener" className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#1f9d55] text-sm font-bold text-white">
-              <SocialIcon platform="whatsapp" size={18} /> Ask on WhatsApp
-            </a>
+          </div>
+          {!trip.isPast && (
+            <details className="rounded-[1.2rem] border border-line bg-white p-5" open={false}>
+              <summary className="cursor-pointer font-display text-xl text-acacia-700">Ready to go? Apply for a place</summary>
+              <p className="mt-2 text-sm text-ink-soft">Members apply for a place on a departure. Once the team confirms your place and payment, you join the trip’s private group.</p>
+              <div className="mt-4"><ApplyForm slug={trip.slug} title={trip.title} departures={trip.departures} currency={trip.currency} tiers={trip.priceTiers} /></div>
+            </details>
+          )}
+          <div className="rounded-[1.2rem] border border-acacia-600/20 bg-acacia-700 p-5 text-white">
+            <p className="font-display text-xl">🔒 Private trip group</p>
+            <p className="mt-1 text-sm text-white/80">Confirmed participants get access to this departure’s private group chat — live messages, the itinerary, documents, photos and announcements from the trip leader. Sign in with your member account to open it once your place is confirmed. Creating an account alone does not give access.</p>
+            <a href="/account/groups" className="mt-3 inline-flex h-9 items-center rounded-full bg-clay-400 px-4 text-sm font-bold text-acacia-700">My trip groups →</a>
           </div>
 
           {!trip.isPast && (paymentOptions.length > 0 || tripMethods.length > 0 || trip.paymentInstructions) && (

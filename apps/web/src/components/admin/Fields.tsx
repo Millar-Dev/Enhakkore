@@ -7,6 +7,7 @@ import { SmartImage } from '@/components/public/SmartImage';
 import { cx } from '@/components/ui';
 import { api } from '@/lib/api';
 import { MediaPicker } from './MediaPicker';
+import { SearchSelect, searchWorldCities } from '@/components/ui/SearchSelect';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -171,18 +172,16 @@ function FieldInput({ field, value, onChange, siblings, parent, errors, path }: 
       );
     case 'country':
       return (
-        <select
-          className="field"
+        <SearchSelect
+          ariaLabel="Country"
+          placeholder="Type a country…"
           value={value ?? ''}
-          onChange={(event) => {
-            onChange(event.target.value);
-            void lookups.loadCities(event.target.value);
+          options={[...lookups.countries.filter((country) => country.featured), ...lookups.countries.filter((country) => !country.featured)].map((country) => ({ value: country.id, label: country.name, hint: country.featured ? '★' : country.code }))}
+          onChange={(next) => {
+            onChange(next);
+            if (next) void lookups.loadCities(next);
           }}
-        >
-          <option value="">Choose a country</option>
-          {lookups.countries.filter((country) => country.featured).map((country) => <option key={`f-${country.id}`} value={country.id}>★ {country.name}</option>)}
-          {lookups.countries.map((country) => <option key={country.id} value={country.id}>{country.name}</option>)}
-        </select>
+        />
       );
     case 'city':
       return <CityInput value={value} onChange={onChange} countryId={siblings.countryId} />;
@@ -308,20 +307,28 @@ function CityInput({ value, onChange, countryId }: { value: string; onChange: (v
   }, [countryId, lookups]);
   if (!countryId) return <p className="rounded-lg bg-sand px-3 py-2.5 text-sm text-ink-muted">Choose the country first</p>;
   const cities = lookups.cities(countryId) ?? [];
+  const code = lookups.countries.find((country) => country.id === countryId)?.code;
   return (
     <div className="grid gap-2">
-      <select
-        className="field"
+      <SearchSelect
+        ariaLabel="City"
+        placeholder="Type a city — any city in the country"
         value={value ?? ''}
-        onChange={(event) => {
-          if (event.target.value === '__new') setAdding(true);
-          else onChange(event.target.value);
+        emptyLabel="No particular city"
+        options={cities.map((city) => ({ value: city.id, label: city.name }))}
+        remote={code ? (q) => searchWorldCities((path) => api.get(path), code, q) : undefined}
+        onChange={async (next) => {
+          if (!next.startsWith('geo:')) return onChange(next);
+          try {
+            const city = await api.post<City>('/community/geo/city', { country: code, geonameId: Number(next.slice(4)) });
+            await lookups.loadCities(countryId, true);
+            onChange(city.id);
+          } catch {
+            setError('Could not add that city.');
+          }
         }}
-      >
-        <option value="">No particular city</option>
-        {cities.map((city) => <option key={city.id} value={city.id}>{city.name}</option>)}
-        <option value="__new">+ Add a new city…</option>
-      </select>
+      />
+      <button type="button" className="w-fit text-xs font-semibold text-acacia-600 underline" onClick={() => setAdding(true)}>City not in the list? Add it by name</button>
       {adding && (
         <div className="flex gap-2">
           <input className="field" value={name} onChange={(event) => setName(event.target.value)} placeholder="City name, e.g. Lagos" autoFocus />

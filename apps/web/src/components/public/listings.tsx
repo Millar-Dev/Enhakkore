@@ -12,7 +12,8 @@ export function ActivityCard({ item }: { item: Listing }) {
     past ? { label: 'Past', tone: 'muted' as const } : null,
     item.source === 'COMMUNITY' ? { label: 'Community', tone: 'cream' as const } : { label: 'Enhakkore', tone: 'navy' as const },
     item.mode === 'ONLINE' ? { label: 'Online', tone: 'gold' as const } : null,
-  ].filter(Boolean) as { label: string; tone: 'muted' | 'cream' | 'navy' | 'gold' }[];
+  ].filter(Boolean) as { label: string; tone: 'muted' | 'cream' | 'navy' | 'gold' | 'demo' }[];
+  if (item.isDemo) badges.unshift({ label: 'Demo', tone: 'demo' });
   const spaces = typeof item.spacesLeft === 'number' && item.status === 'PUBLISHED' ? `${item.spacesLeft} space${item.spacesLeft === 1 ? '' : 's'} left` : null;
   return (
     <ListingCard
@@ -37,7 +38,8 @@ export function PlaceCard({ item }: { item: Listing }) {
     item.sponsored ? { label: 'Sponsored', tone: 'gold' as const } : null,
     item.hiddenGem ? { label: 'Hidden gem', tone: 'navy' as const } : null,
     item.infoSource === 'VERIFIED' ? { label: 'Verified', tone: 'green' as const } : null,
-  ].filter(Boolean) as { label: string; tone: 'gold' | 'navy' | 'green' }[];
+    item.isDemo ? { label: 'Demo', tone: 'demo' as const } : null,
+  ].filter(Boolean) as { label: string; tone: 'gold' | 'navy' | 'green' | 'demo' }[];
   return (
     <ListingCard
       href={`/explore/${item.slug}`}

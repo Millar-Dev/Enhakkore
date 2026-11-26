@@ -31,6 +31,7 @@ export interface UpcomingCard {
   category?: string | null;
   free?: boolean;
   popularity?: number;
+  isDemo?: boolean;
 }
 
 export interface CommunityCard {
@@ -40,6 +41,7 @@ export interface CommunityCard {
   summary: string | null;
   coverImage: string | null;
   memberCount: number;
+  isDemo?: boolean;
   city?: { name: string } | null;
   country?: { name: string } | null;
   category?: { name: string; icon?: string | null } | null;

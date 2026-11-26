@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { DemoNotice } from '@/components/public/DemoNotice';
 import { notFound } from 'next/navigation';
 import { ACTIVITY_MODE_LABELS, EXPERIENCE_LEVEL_LABELS, zoneLabel } from '@enhakkore/shared';
 import { PublicShell } from '@/components/layout/PublicShell';
@@ -47,7 +48,8 @@ export default async function ActivityPage({ params }: { params: Promise<{ slug:
               {item.category?.icon} {item.category?.name ?? 'Activity'}
             </Link>
             <h1 className="display-lg mt-4 text-acacia-700">{String(item.title)}</h1>
-            {item.summary && <p className="mt-4 max-w-2xl text-[1.0625rem] leading-relaxed text-ink-soft">{item.summary}</p>}
+            {item.isDemo ? <DemoNotice what="activity" /> : null}
+          {item.summary && <p className="mt-4 max-w-2xl text-[1.0625rem] leading-relaxed text-ink-soft">{item.summary}</p>}
             <div className="mt-5 flex flex-wrap items-center gap-2 text-sm">
               <span className="rounded-full bg-white px-3 py-1.5 font-semibold text-acacia-700 ring-1 ring-line">
                 {item.source === 'COMMUNITY' ? `Organised by ${item.organiserName}` : 'Organised by Enhakkore'}

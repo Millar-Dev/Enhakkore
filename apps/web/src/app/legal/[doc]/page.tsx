@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { LEGAL_PAGES } from '@enhakkore/shared';
+import { LEGAL_PAGES, LEGAL_VERSION } from '@enhakkore/shared';
 import { PublicShell } from '@/components/layout/PublicShell';
 import { Prose } from '@/components/public/Cards';
 import { getSite } from '@/lib/site';
@@ -27,11 +27,12 @@ export default async function LegalPage({ params }: { params: Promise<{ doc: str
   return (
     <PublicShell>
       <article className="shell max-w-3xl py-14">
-        <Link href="/legal" className="kicker hover:text-acacia-600">Policies</Link>
+        <Link href="/legal" className="kicker hover:text-acacia-600">Policy Centre · {page.group}</Link>
         <h1 className="display-md mt-3 text-acacia-700">{page.title}</h1>
+        <p className="mt-2 text-xs text-ink-muted">Version {LEGAL_VERSION}</p>
         {!settings.legal.reviewed && (
           <p className="mt-6 rounded-xl border border-[#ecd9a8] bg-[#fdf8ec] p-4 text-[0.9375rem] text-ink-soft">
-            <strong>Draft.</strong> This policy is a plain-language draft and has not yet been reviewed by a lawyer. If anything here matters to a decision you are making, please ask the Enhakkore team on WhatsApp.
+            <strong>Draft — awaiting legal review.</strong> This policy is a plain-language draft. It has not been reviewed by a lawyer and needs review under the laws of Tanzania and any other country where Enhakkore operates. If anything here matters to a decision you are making, please ask the Enhakkore team on WhatsApp.
           </p>
         )}
         {text ? (

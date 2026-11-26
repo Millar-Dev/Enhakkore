@@ -25,13 +25,13 @@ export function ListingCard({
   title: string;
   meta?: (string | null | undefined | false)[];
   price?: string | null;
-  badges?: { label: string; tone?: 'gold' | 'navy' | 'cream' | 'muted' | 'green' }[];
+  badges?: { label: string; tone?: 'gold' | 'navy' | 'cream' | 'muted' | 'green' | 'demo' }[];
   tone?: 'default' | 'past';
   className?: string;
 }) {
   return (
     <Link href={href} className={cx('group card-lift block overflow-hidden rounded-[1.1rem] border border-line bg-white', className)}>
-      <div className="relative aspect-[4/3] overflow-hidden bg-[color:var(--color-cream-deep)]">
+      <div className="relative aspect-[4/3] overflow-hidden bg-[color:var(--color-cream-deep)] md:aspect-[16/10]">
         {image ? (
           <Image
             src={image}
@@ -46,12 +46,13 @@ export function ListingCard({
           </div>
         )}
         {badges.length > 0 && (
-          <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+          <div className="absolute left-2 top-2 flex flex-wrap gap-1 md:left-3 md:top-3 md:gap-1.5">
             {badges.map((badge) => (
               <span
                 key={badge.label}
                 className={cx(
-                  'rounded-full px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.06em] shadow-sm',
+                  'rounded-full px-2 py-0.5 text-[0.5625rem] font-bold uppercase tracking-[0.06em] shadow-sm md:px-2.5 md:py-1 md:text-[0.6875rem]',
+                  badge.tone === 'demo' && 'bg-[#7c3aed] text-white',
                   badge.tone === 'gold' && 'bg-clay-400 text-acacia-700',
                   badge.tone === 'navy' && 'bg-acacia-600 text-white',
                   badge.tone === 'green' && 'bg-safari-500 text-white',
@@ -65,24 +66,24 @@ export function ListingCard({
           </div>
         )}
       </div>
-      <div className="p-4 md:p-5">
-        {kicker && <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-clay-600">{kicker}</p>}
-        <h3 className="mt-1.5 font-display text-[1.45rem] leading-tight text-acacia-700">{title}</h3>
-        <div className="mt-2 space-y-0.5 text-[0.875rem] text-ink-muted">
+      <div className="p-2.5 md:p-4">
+        {kicker && <p className="truncate text-[0.5625rem] font-bold uppercase tracking-[0.12em] text-clay-600 md:text-[0.6875rem]">{kicker}</p>}
+        <h3 className="mt-1 line-clamp-2 font-display text-[1.02rem] leading-tight text-acacia-700 md:text-[1.3rem]">{title}</h3>
+        <div className="mt-1 space-y-0.5 text-[0.72rem] text-ink-muted md:mt-1.5 md:text-[0.8125rem]">
           {meta.filter(Boolean).map((line) => (
             <p key={String(line)} className="truncate">
               {line}
             </p>
           ))}
         </div>
-        {price && <p className="mt-3 text-[0.9375rem] font-bold text-acacia-600">{price}</p>}
+        {price && <p className="mt-1.5 text-[0.8125rem] font-bold text-acacia-600 md:mt-2 md:text-[0.9375rem]">{price}</p>}
       </div>
     </Link>
   );
 }
 
 export function CardGrid({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cx('grid gap-5 sm:grid-cols-2 lg:grid-cols-3', className)}>{children}</div>;
+  return <div className={cx('grid grid-cols-2 gap-3 md:gap-5 lg:grid-cols-3', className)}>{children}</div>;
 }
 
 /** Page opening: kicker, serif title, intro, optional photograph. */

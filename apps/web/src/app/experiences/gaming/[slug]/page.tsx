@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { DemoNotice } from '@/components/public/DemoNotice';
 import { notFound } from 'next/navigation';
 import { TOURNAMENT_FORMAT_LABELS, TOURNAMENT_KIND_LABELS, formatInZone } from '@enhakkore/shared';
 import { PublicShell } from '@/components/layout/PublicShell';
@@ -63,6 +64,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
             <ShareButton subjectType="TOURNAMENT" subjectId={t.id} title={t.title} />
             <TrackView subjectType="TOURNAMENT" subjectId={t.id} />
           </div>
+          {t.isDemo && <DemoNotice what="tournament" />}
           {t.summary && <p className="font-display text-2xl text-acacia-700">{t.summary}</p>}
           <Prose text={t.description} />
           <Facts
@@ -115,7 +117,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
         </div>
         <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
           <div className="rounded-[1.2rem] border border-line bg-white p-5 shadow-[var(--shadow-card)]">
-            <TournamentJoin slug={t.slug} format={t.format} teamSize={t.teamSize} open={t.registrationOpen} minAge={t.minAge} />
+            <TournamentJoin slug={t.slug} format={t.format} teamSize={t.teamSize} open={t.registrationOpen && !t.isDemo} minAge={t.minAge} />
           </div>
           <div className="rounded-[1.2rem] border border-line bg-white p-5">
             <p className="font-bold text-acacia-700">Line-up ({data.lineup.length}{t.slots ? ` / ${t.slots}` : ''})</p>

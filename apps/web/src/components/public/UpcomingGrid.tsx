@@ -14,7 +14,7 @@ export function UpcomingGrid({ items, limit }: { items: UpcomingCard[]; limit?: 
           kicker={[item.kind, item.category].filter(Boolean).join(' · ')}
           title={item.title}
           meta={[item.startsAt ? formatInZone(item.startsAt, 'Africa/Dar_es_Salaam', 'datetime') : item.recurrence ?? null, item.where]}
-          badges={item.free ? [{ label: 'Free', tone: 'green' }] : []}
+          badges={[...(item.isDemo ? [{ label: 'Demo', tone: 'demo' as const }] : []), ...(item.free ? [{ label: 'Free', tone: 'green' as const }] : [])]}
         />
       ))}
     </CardGrid>

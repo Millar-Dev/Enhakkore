@@ -34,7 +34,7 @@ const COLUMNS = [
       { href: '/legal/terms', label: 'Terms and conditions' },
       { href: '/legal/community', label: 'Community guidelines' },
       { href: '/legal/cancellation', label: 'Cancellation & refunds' },
-      { href: '/legal', label: 'All policies' },
+      { href: '/legal', label: 'Policy Centre' },
     ],
   },
 ];

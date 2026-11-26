@@ -6,6 +6,8 @@ import { CardGrid, Empty, ListingCard, SectionTitle } from '@/components/public/
 import { cx } from '@/components/ui';
 import { apiGet, query } from '@/lib/api';
 import { pick } from '@/lib/public';
+import { getSite } from '@/lib/site';
+import { SmartImage } from '@/components/public/SmartImage';
 
 export const metadata: Metadata = {
   title: 'Gaming & esports',
@@ -31,6 +33,7 @@ export interface TournamentCard {
   registrationOpen: boolean;
   status: string;
   results: string | null;
+  isDemo?: boolean;
   game: { name: string; slug: string; icon: string | null; group: string | null } | null;
 }
 
@@ -51,7 +54,7 @@ function Card({ item }: { item: TournamentCard }) {
         item.kind === 'ONLINE' ? `Online${item.server ? ` · ${item.server}` : ''}` : item.venue,
         item.slots ? `${item.slotsLeft} of ${item.slots} slots left` : null,
       ]}
-      badges={[{ label: 'Free', tone: 'green' }, ...(item.registrationOpen ? [{ label: 'Registration open', tone: 'gold' as const }] : [])]}
+      badges={[...(item.isDemo ? [{ label: 'Demo', tone: 'demo' as const }] : []), { label: 'Free', tone: 'green' as const }, ...(item.registrationOpen && !item.isDemo ? [{ label: 'Registration open', tone: 'gold' as const }] : [])]}
       tone={item.status === 'COMPLETED' ? 'past' : 'default'}
     />
   );
@@ -59,6 +62,7 @@ function Card({ item }: { item: TournamentCard }) {
 
 export default async function GamingPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = pick(await searchParams, ['q', 'game', 'kind']);
+  const { settings } = await getSite();
   const [current, past] = await Promise.all([
     apiGet<Data>(`/public/tournaments${query(params)}`, 60),
     apiGet<Data>(`/public/tournaments${query({ ...params, when: 'past' })}`, 120),
@@ -71,11 +75,16 @@ export default async function GamingPage({ searchParams }: { searchParams: Promi
 
   return (
     <PublicShell>
-      <section className="bg-[linear-gradient(135deg,#04182a,#0e4269)] text-white">
-        <div className="shell py-12 md:py-16">
+      <section className="relative overflow-hidden bg-acacia-900 text-white">
+        <SmartImage src={settings.gaming.heroImage} alt="" fill priority sizes="100vw" className="object-cover opacity-70" />
+        <div className="absolute inset-0 bg-gradient-to-r from-acacia-900/95 via-acacia-900/60 to-transparent" />
+        <div className="shell relative py-10 md:py-20">
           <p className="kicker !text-clay-400">Experiences · Gaming & esports</p>
-          <h1 className="display-lg mt-3 max-w-3xl">Play, compete, meet your squad</h1>
-          <p className="mt-4 max-w-2xl text-white/80">Online tournaments and PlayStation / console sessions. Every tournament is free to enter at launch — no entry fees are taken.</p>
+          <h1 className="display-lg mt-3 max-w-3xl">{settings.gaming.heroTitle}</h1>
+          <p className="mt-3 max-w-2xl text-white/80">{settings.gaming.heroSubtitle}</p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold">
+            {['Online esports', 'Squad competitions', 'PS & console nights', 'Gaming communities'].map((label) => <span key={label} className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5">{label}</span>)}
+          </div>
           <form action="/experiences/gaming" className="mt-7 flex flex-col gap-2 rounded-[1.2rem] bg-white p-3 sm:flex-row">
             <input name="q" defaultValue={params.q} placeholder="Search a game — e.g. Free Fire" className="field h-12 flex-1 text-ink" aria-label="Search gaming" />
             <button className="h-12 rounded-[var(--radius-field)] bg-clay-400 px-6 font-bold text-acacia-700">Search</button>

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { localToUtc } from '@enhakkore/shared';
 import { ApiError, api } from '@/lib/api';
 import { uploadFile } from '@/lib/upload';
+import { SearchSelect, searchWorldCities } from '@/components/ui/SearchSelect';
 import { useSession } from '@/lib/session';
 
 interface Country {
@@ -25,6 +26,8 @@ export function PublishActivityForm({ categories }: { categories: { id: string; 
   const [countries, setCountries] = useState<Country[]>([]);
   const [countryId, setCountryId] = useState('');
   const [cities, setCities] = useState<{ id: string; name: string; timezone: string | null }[]>([]);
+  const [cityId, setCityId] = useState('');
+  const countryCode = countries.find((row) => row.id === countryId)?.code;
   const [mode, setMode] = useState<'IN_PERSON' | 'ONLINE'>('IN_PERSON');
   const [cover, setCover] = useState<string>('');
   const [uploading, setUploading] = useState(false);
@@ -77,7 +80,7 @@ export function PublishActivityForm({ categories }: { categories: { id: string; 
         event.preventDefault();
         const form = new FormData(event.currentTarget);
         const get = (name: string) => String(form.get(name) ?? '').trim();
-        const zone = zoneFor(get('cityId'));
+        const zone = zoneFor(cityId);
         const toIso = (value: string) => (value ? localToUtc(value, zone)?.toISOString() ?? '' : '');
         setBusy(true);
         setError(null);
@@ -89,7 +92,7 @@ export function PublishActivityForm({ categories }: { categories: { id: string; 
             categoryId: get('categoryId'),
             mode,
             countryId,
-            cityId: get('cityId'),
+            cityId,
             meetingPoint: get('meetingPoint'),
             startsAt: toIso(get('startsAt')),
             endsAt: toIso(get('endsAt')),
@@ -129,16 +132,27 @@ export function PublishActivityForm({ categories }: { categories: { id: string; 
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <L label="Country" error={fields.countryId}>
-          <select className="field" value={countryId} onChange={(event) => setCountryId(event.target.value)} required>
-            <option value="">Choose a country</option>
-            {countries.map((country) => <option key={country.id} value={country.id}>{country.name}</option>)}
-          </select>
+          <SearchSelect ariaLabel="Country" placeholder="Type a country…" value={countryId} options={countries.map((country) => ({ value: country.id, label: country.name }))} onChange={(next) => { setCountryId(next); setCityId(''); }} />
         </L>
         <L label="City">
-          <select name="cityId" className="field" defaultValue="">
-            <option value="">{cities.length ? 'Choose a city' : 'No cities listed yet'}</option>
-            {cities.map((city) => <option key={city.id} value={city.id}>{city.name}</option>)}
-          </select>
+          <SearchSelect
+            ariaLabel="City"
+            placeholder="Type a city…"
+            value={cityId}
+            emptyLabel="No particular city"
+            options={cities.map((city) => ({ value: city.id, label: city.name }))}
+            remote={countryCode ? (q) => searchWorldCities((path) => api.get(path), countryCode, q) : undefined}
+            onChange={async (next) => {
+              if (!next.startsWith('geo:')) return setCityId(next);
+              try {
+                const city = await api.post<{ id: string; name: string; timezone: string | null }>('/community/geo/city', { country: countryCode, geonameId: Number(next.slice(4)) });
+                setCities((current) => [...current.filter((item) => item.id !== city.id), city]);
+                setCityId(city.id);
+              } catch {
+                setError('Could not use that city — try another.');
+              }
+            }}
+          />
         </L>
         {mode === 'IN_PERSON' && <L label="Meeting place (public place, never a home address)"><input name="meetingPoint" className="field" maxLength={200} /></L>}
         <L label="Starts (local time)" error={fields.startsAt}><input name="startsAt" type="datetime-local" className="field" required /></L>

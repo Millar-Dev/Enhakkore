@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { DemoNotice } from '@/components/public/DemoNotice';
 import { notFound } from 'next/navigation';
 import { INFO_SOURCE_LABELS } from '@enhakkore/shared';
 import { PublicShell } from '@/components/layout/PublicShell';
@@ -83,6 +84,7 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
             <ShareButton subjectType="PLACE" subjectId={place.id} title={String(place.name)} />
             <TrackView subjectType="PLACE" subjectId={place.id} />
           </div>
+          {place.isDemo ? <DemoNotice what="listing" /> : null}
           {source !== 'VERIFIED' && (
             <p className="rounded-xl bg-[color:var(--color-cream)] p-4 text-sm leading-relaxed text-ink-soft">
               {source === 'BUSINESS_SUBMITTED'

@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { HubData } from '@/components/home/types';
-import { CommunityTile, sectionHref } from '@/components/public/experience';
 import { PublicShell } from '@/components/layout/PublicShell';
-import { CardGrid, Empty, SectionTitle } from '@/components/public/Cards';
+import { CardGrid, Empty, ListingCard, SectionTitle } from '@/components/public/Cards';
+import { CommunityTile, sectionHref } from '@/components/public/experience';
 import { ExperienceCard } from '@/components/public/listings';
+import { SmartImage } from '@/components/public/SmartImage';
 import { UpcomingGrid } from '@/components/public/UpcomingGrid';
 import { apiGet, query } from '@/lib/api';
 import { getCatalogue, pick } from '@/lib/public';
+import { getSite } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Experiences',
@@ -15,95 +17,173 @@ export const metadata: Metadata = {
 };
 export const revalidate = 60;
 
+/** Photographs where Enhakkore has its own; otherwise a coloured tile. */
+const TILE_IMAGES: Record<string, string> = {
+  GAMING: '/media/gaming/gaming-hero.jpg',
+  ARTS: '/packages/arusha/cultural-heritage-centre.webp',
+  OUTDOOR: '/packages/arusha/napuru-waterfalls.webp',
+};
+const TILE_COLOURS: Record<string, string> = {
+  PARTIES: 'from-[#3a1d5c] to-[#0a1a2e]',
+  COMMUNITIES: 'from-[#0f4a76] to-[#0a1a2e]',
+  SPORTS: 'from-[#1f6b3a] to-[#0a1a2e]',
+  LEARNING: 'from-[#7a5a14] to-[#0a1a2e]',
+  OTHER: 'from-[#28406b] to-[#0a1a2e]',
+};
+
 export default async function ExperiencesHub({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const params = pick(await searchParams, ['q', 'country', 'city']);
-  const [hub, catalogue] = await Promise.all([apiGet<HubData>(`/public/experiences-hub${query(params)}`, 60), getCatalogue()]);
+  const params = pick(await searchParams, ['q', 'country', 'city', 'filters']);
+  const [hub, catalogue, { settings }] = await Promise.all([apiGet<HubData>(`/public/experiences-hub${query({ q: params.q, country: params.country, city: params.city })}`, 60), getCatalogue(), getSite()]);
   const country = catalogue.countries.find((item) => item.code.toLowerCase() === params.country?.toLowerCase() || item.slug === params.country);
+  const showFilters = params.filters === '1' || !!params.country || !!params.city;
+  const upcoming = hub?.upcoming ?? [];
+  const gaming = upcoming.filter((item) => item.kind === 'Gaming').slice(0, 4);
+  const recurring = upcoming.filter((item) => item.recurrence).slice(0, 4);
 
   return (
     <PublicShell>
-      <section className="bg-acacia-700 text-white">
-        <div className="shell py-12 md:py-16">
-          <p className="kicker !text-clay-400">Experiences</p>
-          <h1 className="display-lg mt-3 max-w-3xl">Events, activities and communities</h1>
-          <p className="mt-4 max-w-2xl text-white/80">Parties, sport, gaming, art, the outdoors and more — organised by Enhakkore and by members, reviewed before they are published. Browsing and joining is free.</p>
-          <form action="/experiences" className="mt-7 grid gap-2 rounded-[1.2rem] bg-white p-3 text-ink sm:grid-cols-[2fr_1fr_1fr_auto]">
-            <input name="q" defaultValue={params.q} placeholder="Search — e.g. “Free Fire”, “basketball”, “jogging”" className="field h-12" aria-label="Search experiences" />
-            <select name="country" defaultValue={country?.code ?? ''} className="field h-12" aria-label="Country">
-              <option value="">Everywhere</option>
-              {catalogue.countries.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
-            </select>
-            <select name="city" defaultValue={params.city ?? ''} className="field h-12" aria-label="City">
-              <option value="">Any city</option>
-              {(country?.cities ?? catalogue.countries.flatMap((item) => item.cities)).map((city) => <option key={city.slug} value={city.slug}>{city.name}</option>)}
-            </select>
-            <button className="h-12 rounded-[var(--radius-field)] bg-clay-400 px-6 font-bold text-acacia-700 hover:bg-clay-500 hover:text-white">Search</button>
+      {/* 1–2. Compact hero with search */}
+      <section className="relative overflow-hidden bg-acacia-700 text-white">
+        <SmartImage src={settings.gaming.heroImage} alt="" fill priority sizes="100vw" className="object-cover opacity-35" />
+        <div className="absolute inset-0 bg-gradient-to-r from-acacia-900/95 via-acacia-900/70 to-acacia-900/30" />
+        <div className="shell relative py-7 md:py-12">
+          <span className="rounded-full bg-clay-400 px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-wider text-acacia-700">Experiences</span>
+          <h1 className="mt-3 max-w-2xl font-display text-[2rem] leading-[1.05] md:text-[3.2rem]">Discover. Join. Create. Experience more.</h1>
+          <p className="mt-2 max-w-xl text-sm text-white/75 md:text-base">Events, activities, communities and gaming — in your city and beyond.</p>
+          <form action="/experiences" className="mt-5 flex max-w-2xl items-center gap-1 rounded-full bg-white p-1 pl-4 text-ink shadow-xl">
+            <input name="q" defaultValue={params.q} placeholder="Search experiences — e.g. Free Fire, basketball" className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none" aria-label="Search experiences" />
+            {country && <input type="hidden" name="country" value={country.code} />}
+            <Link href={`/experiences?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), filters: showFilters ? '0' : '1' }).toString()}`} className="hidden shrink-0 rounded-full px-3 py-2 text-xs font-semibold text-acacia-600 sm:block">📍 {country?.name ?? 'Anywhere'}</Link>
+            <button className="h-10 shrink-0 rounded-full bg-acacia-600 px-4 text-sm font-bold text-white" aria-label="Search">Search</button>
           </form>
+          <div className="mt-2 flex gap-3 text-xs">
+            <Link href={`/experiences?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), filters: showFilters ? '0' : '1' }).toString()}`} className="font-semibold text-clay-400 underline-offset-4 hover:underline">{showFilters ? 'Hide filters' : 'Filters'}</Link>
+            {(params.q || params.country || params.city) && <Link href="/experiences" className="text-white/70 underline">Clear</Link>}
+          </div>
+          {showFilters && (
+            <form action="/experiences" className="mt-3 grid max-w-2xl grid-cols-2 gap-2 rounded-2xl bg-white/10 p-2 backdrop-blur">
+              {params.q && <input type="hidden" name="q" value={params.q} />}
+              <input type="hidden" name="filters" value="1" />
+              <select name="country" defaultValue={country?.code ?? ''} className="field h-10 text-ink" aria-label="Country">
+                <option value="">Any country</option>
+                {catalogue.countries.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
+              </select>
+              <select name="city" defaultValue={params.city ?? ''} className="field h-10 text-ink" aria-label="City">
+                <option value="">Any city</option>
+                {(country?.cities ?? catalogue.countries.flatMap((item) => item.cities)).map((city) => <option key={city.slug} value={city.slug}>{city.name}</option>)}
+              </select>
+              <button className="col-span-2 h-10 rounded-full bg-clay-400 text-sm font-bold text-acacia-700">Apply</button>
+            </form>
+          )}
         </div>
       </section>
 
-      <section className="shell py-10 md:py-14">
-        <div className="grid gap-4 md:grid-cols-3">
+      {/* 3. Three journeys */}
+      <section className="shell -mt-0 py-4 md:py-8">
+        <div className="grid gap-2.5 md:grid-cols-3 md:gap-4">
           {[
-            { href: '#upcoming', title: 'Discover experiences', body: 'Browse what is on, register, join communities and save what you like. Free.', cta: 'See what’s on' },
-            { href: '/experiences/plan', title: 'Plan an event', body: 'A birthday, a launch, a wedding, a team day — tell us what you need and our team will get back to you. Sending a request is free.', cta: 'Start planning' },
-            { href: '/experiences/publish', title: 'Publish an event or activity', body: 'Run a meetup, a game night or a weekly jog? Submit it — the team reviews it before it goes live.', cta: 'Publish yours' },
+            { href: '#upcoming', title: 'Discover experiences', line: 'Find events, activities and communities', icon: '🔍', tone: 'bg-acacia-600 text-white' },
+            { href: '/experiences/plan', title: 'Plan an event', line: 'Help with venue, catering and setup', icon: '🗓️', tone: 'bg-clay-400 text-acacia-700' },
+            { href: '/experiences/publish', title: 'Publish an event or activity', line: 'List your own — reviewed by our team', icon: '➕', tone: 'bg-acacia-900 text-white border border-clay-400/50' },
           ].map((card) => (
-            <Link key={card.title} href={card.href} className="card-lift rounded-[1.3rem] border border-line bg-white p-6">
-              <p className="font-display text-2xl text-acacia-700">{card.title}</p>
-              <p className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">{card.body}</p>
-              <span className="mt-4 inline-block text-sm font-bold text-clay-600">{card.cta} →</span>
+            <Link key={card.title} href={card.href} className={`card-lift flex items-center gap-3 rounded-2xl p-3.5 ${card.tone}`}>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-black/15 text-lg" aria-hidden>{card.icon}</span>
+              <span className="min-w-0">
+                <span className="block font-display text-[1.15rem] leading-tight">{card.title} →</span>
+                <span className="block truncate text-xs opacity-80">{card.line}</span>
+              </span>
             </Link>
           ))}
         </div>
+      </section>
 
-        <div className="mt-14">
-          <SectionTitle kicker="Browse" title="Browse by category" />
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {(hub?.sections ?? []).map((section) => (
-              <Link key={section.key} href={sectionHref(section.key)} className="card-lift rounded-[1.1rem] border border-line bg-white p-4">
-                <span className="text-2xl" aria-hidden>{section.icon}</span>
-                <p className="mt-2 font-semibold leading-tight text-acacia-700">{section.label}</p>
-                <p className="mt-1 text-xs text-ink-muted">{section.count ? `${section.count} listed` : section.blurb}</p>
-              </Link>
-            ))}
-          </div>
+      {/* 4. Categories */}
+      <section className="shell pb-4 md:pb-8">
+        <div className="mb-3 flex items-end justify-between">
+          <h2 className="font-display text-[1.45rem] text-acacia-700 md:text-[2rem]">Browse by category</h2>
         </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:gap-3">
+          {(hub?.sections ?? []).map((section) => (
+            <Link key={section.key} href={sectionHref(section.key)} className={`group relative flex h-[4.5rem] items-center gap-2.5 overflow-hidden rounded-xl bg-gradient-to-br px-3 text-white md:h-24 ${TILE_COLOURS[section.key] ?? 'from-acacia-600 to-acacia-900'}`}>
+              {TILE_IMAGES[section.key] && (
+                <>
+                  <SmartImage src={TILE_IMAGES[section.key]!} alt="" fill sizes="25vw" className="object-cover opacity-60 transition-transform duration-500 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-acacia-900/90 to-acacia-900/30" />
+                </>
+              )}
+              <span className="relative text-2xl md:text-3xl" aria-hidden>{section.icon}</span>
+              <span className="relative font-semibold leading-tight">{section.label}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
 
-        <div id="upcoming" className="mt-14 scroll-mt-28">
-          <SectionTitle kicker="Upcoming" title={params.q ? `Upcoming: “${params.q}”` : 'Upcoming experiences'} />
-          {hub?.upcoming.length ? (
-            <UpcomingGrid items={hub.upcoming} />
+      {/* 5. Upcoming */}
+      <section id="upcoming" className="shell scroll-mt-24 py-4 md:py-8">
+        <SectionTitle kicker="Upcoming" title={params.q ? `Upcoming: “${params.q}”` : 'Upcoming experiences'} />
+        {upcoming.length ? (
+          <UpcomingGrid items={upcoming} limit={9} />
+        ) : (
+          <Empty title="Nothing matches yet" body="New activities, events and tournaments appear here as soon as they are published." action={<Link href="/experiences/publish" className="inline-flex h-11 items-center rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">Publish an activity</Link>} />
+        )}
+      </section>
+
+      {/* 6. Popular */}
+      {hub?.popular.length ? (
+        <section className="shell py-4 md:py-8">
+          <SectionTitle kicker="Popular" title="Popular and most visited" subtitle="Ranked by members’ real views, saves and sign-ups — never by payment." />
+          <UpcomingGrid items={hub.popular} />
+        </section>
+      ) : null}
+
+      {/* 7. Gaming hub */}
+      <section className="relative overflow-hidden bg-acacia-900 text-white">
+        <SmartImage src={settings.gaming.heroImage} alt="" fill sizes="100vw" className="object-cover opacity-30" />
+        <div className="shell relative py-7 md:py-12">
+          <div className="mb-4 flex items-end justify-between">
+            <div>
+              <p className="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-clay-400">Gaming & esports hub</p>
+              <h2 className="font-display text-[1.6rem] md:text-[2.2rem]">Tournaments, squads & console nights</h2>
+            </div>
+            <Link href="/experiences/gaming" className="shrink-0 text-sm font-semibold text-clay-400">Open hub →</Link>
+          </div>
+          {gaming.length ? (
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {gaming.map((item) => (
+                <ListingCard key={item.id} href={item.href} image={item.image} kicker={item.category} title={item.title} meta={[item.where]} badges={[...(item.isDemo ? [{ label: 'Demo', tone: 'demo' as const }] : []), { label: 'Free', tone: 'green' as const }]} />
+              ))}
+            </div>
           ) : (
-            <Empty
-              title={params.q || params.country ? 'Nothing matches yet' : 'Nothing scheduled yet'}
-              body="New activities, events and tournaments appear here as soon as they are published. You can also publish your own."
-              action={<Link href="/experiences/publish" className="inline-flex h-11 items-center rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">Publish an activity</Link>}
-            />
+            <p className="text-white/70">Tournaments are announced here — all free to enter at launch.</p>
           )}
         </div>
-
-        {hub?.popular.length ? (
-          <div className="mt-14">
-            <SectionTitle kicker="Popular" title="Popular and most visited" subtitle="Ranked by real members’ views, saves and registrations — not by who paid." />
-            <UpcomingGrid items={hub.popular} />
-          </div>
-        ) : null}
-
-        {hub?.communities.length ? (
-          <div className="mt-14">
-            <SectionTitle kicker="Communities" title="Find your community" action={<Link href="/experiences/communities" className="chip w-fit">All communities →</Link>} />
-            <CardGrid>{hub.communities.map((community) => <CommunityTile key={community.id} community={community} />)}</CardGrid>
-          </div>
-        ) : null}
-
-        {hub?.guided.length ? (
-          <div className="mt-14">
-            <SectionTitle kicker="Guided" title="Guided experiences and tours" action={<Link href="/experiences/guided" className="chip w-fit">See all →</Link>} />
-            <CardGrid>{hub.guided.map((item) => <ExperienceCard key={item.id} item={item} />)}</CardGrid>
-          </div>
-        ) : null}
       </section>
+
+      {/* 8. Communities and recurring activities */}
+      {(hub?.communities.length || recurring.length) ? (
+        <section className="shell py-6 md:py-10">
+          {recurring.length > 0 && (
+            <div className="mb-8">
+              <SectionTitle kicker="Every week" title="Recurring activities" />
+              <UpcomingGrid items={recurring} />
+            </div>
+          )}
+          {hub?.communities.length ? (
+            <div>
+              <SectionTitle kicker="Communities" title="Find your community" action={<Link href="/experiences/communities" className="chip w-fit">All communities →</Link>} />
+              <CardGrid>{hub.communities.map((community) => <CommunityTile key={community.id} community={community} />)}</CardGrid>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {/* 9. Guided experiences */}
+      {hub?.guided.length ? (
+        <section className="shell pb-10">
+          <SectionTitle kicker="Guided" title="Guided experiences and tours" action={<Link href="/experiences/guided" className="chip w-fit">See all →</Link>} />
+          <CardGrid>{hub.guided.map((item) => <ExperienceCard key={item.id} item={item} />)}</CardGrid>
+        </section>
+      ) : null}
     </PublicShell>
   );
 }

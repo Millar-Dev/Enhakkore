@@ -45,6 +45,10 @@ export function ResourceList({ resource }: { resource: ResourceDef }) {
   const [status, setStatus] = useState('all');
   const [sort, setSort] = useState(`${resource.defaultSort.field}:${resource.defaultSort.dir}`);
   const [page, setPage] = useState(1);
+  const [demoOnly, setDemoOnly] = useState<'all' | 'demo' | 'real'>('all');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [notice, setNotice] = useState<string | null>(null);
+  const hasDemo = resource.fields.some((field) => field.name === 'isDemo');
 
   // Links like “Activity submissions to review” open the list on a status.
   useEffect(() => {
@@ -54,9 +58,31 @@ export function ResourceList({ resource }: { resource: ResourceDef }) {
 
   const load = useCallback(() => {
     const [field, dir] = sort.split(':');
-    const params = new URLSearchParams({ page: String(page), pageSize: '25', sort: field!, dir: dir!, ...(q ? { q } : {}), ...(status !== 'all' && resource.statusField ? { [resource.statusField]: status } : {}) });
+    const params = new URLSearchParams({ page: String(page), pageSize: '25', sort: field!, dir: dir!, ...(q ? { q } : {}), ...(status !== 'all' && resource.statusField ? { [resource.statusField]: status } : {}), ...(demoOnly !== 'all' ? { isDemo: demoOnly === 'demo' ? 'true' : 'false' } : {}) });
     api.get<ListResult>(`/cc/r/${resource.key}?${params}`).then(setData).catch((caught) => setError(caught instanceof ApiError ? caught.message : 'Could not load.'));
-  }, [resource, q, status, sort, page]);
+  }, [resource, q, status, sort, page, demoOnly]);
+
+  const bulk = async (action: 'publish' | 'unpublish' | 'archive' | 'delete', allDemo = false) => {
+    const count = allDemo ? 'every DEMO record' : `${selected.size} selected`;
+    if (!window.confirm(`${action[0]!.toUpperCase()}${action.slice(1)} ${count}?${action === 'delete' ? ' This cannot be undone.' : ''}`)) return;
+    try {
+      const result = await api.post<{ done: number; skipped: { title: string; reason: string }[] }>(
+        `/cc/r/${resource.key}/bulk${action === 'delete' ? '?confirm=yes' : ''}`,
+        allDemo ? { action, allDemo: true } : { action, ids: [...selected] },
+      );
+      setNotice(`${result.done} changed.${result.skipped.length ? ` Skipped: ${result.skipped.map((row) => `${row.title} (${row.reason})`).join('; ')}` : ''}`);
+      setSelected(new Set());
+      load();
+    } catch (caught) {
+      setNotice(caught instanceof ApiError ? caught.message : 'Could not apply that.');
+    }
+  };
+  const toggle = (id: string) => setSelected((current) => {
+    const next = new Set(current);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+  });
 
   useEffect(() => {
     const timer = setTimeout(load, q ? 250 : 0);
@@ -96,6 +122,26 @@ export function ResourceList({ resource }: { resource: ResourceDef }) {
         </select>
       </div>
 
+      {hasDemo && (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {(['all', 'real', 'demo'] as const).map((value) => (
+            <button key={value} onClick={() => { setDemoOnly(value); setPage(1); }} className={`chip ${demoOnly === value ? 'chip-active' : ''}`}>{value === 'all' ? 'Real and demo' : value === 'real' ? 'Real only' : 'DEMO only'}</button>
+          ))}
+          {can(user, `${resource.permission}.edit`) && <button className="chip" onClick={() => bulk('archive', true)}>Archive all DEMO</button>}
+          {can(user, `${resource.permission}.delete`) && <button className="chip text-danger" onClick={() => bulk('delete', true)}>Delete all DEMO</button>}
+        </div>
+      )}
+      {selected.size > 0 && (
+        <div className="sticky top-16 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-white p-2 text-xs shadow-sm">
+          <strong className="px-1">{selected.size} selected</strong>
+          {resource.publishStatus && <button className="chip" onClick={() => bulk('publish')}>Publish</button>}
+          {resource.unpublishStatus && <button className="chip" onClick={() => bulk('unpublish')}>Unpublish</button>}
+          {resource.archiveStatus && <button className="chip" onClick={() => bulk('archive')}>Archive</button>}
+          {!resource.protectDelete && <button className="chip text-danger" onClick={() => bulk('delete')}>Delete</button>}
+          <button className="ml-auto text-ink-muted underline" onClick={() => setSelected(new Set())}>Clear</button>
+        </div>
+      )}
+      {notice && <p className="rounded-lg bg-white p-3 text-sm">{notice}</p>}
       {error && <p className="rounded-lg bg-danger-soft p-3 text-sm text-danger">{error}</p>}
       <Panel className="!p-0">
         {!data ? (
@@ -105,15 +151,21 @@ export function ResourceList({ resource }: { resource: ResourceDef }) {
         ) : (
           <ul className="divide-y divide-line">
             {data.items.map((row) => (
-              <li key={row.id}>
-                <Link href={`/admin/r/${resource.key}/${row.id}`} className="flex items-center gap-3 p-3 hover:bg-[#faf8f3] md:p-4">
+              <li key={row.id} className="flex items-center">
+                <label className="flex h-full items-center pl-3 md:pl-4" aria-label="Select">
+                  <input type="checkbox" checked={selected.has(row.id)} onChange={() => toggle(row.id)} className="h-4 w-4 accent-acacia-600" />
+                </label>
+                <Link href={`/admin/r/${resource.key}/${row.id}`} className="flex min-w-0 flex-1 items-center gap-3 p-3 hover:bg-[#faf8f3] md:p-4">
                   {resource.imageField && (
                     <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[color:var(--color-cream-deep)]">
                       {row[resource.imageField] && <SmartImage src={row[resource.imageField]} alt="" fill sizes="56px" className="object-cover" />}
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-ink">{String(row[resource.titleField] ?? '(untitled)')}</p>
+                    <p className="truncate font-semibold text-ink">
+                      {row.isDemo && <span className="mr-1.5 rounded bg-[#7c3aed] px-1.5 py-0.5 text-[0.625rem] font-bold uppercase text-white">Demo</span>}
+                      {String(row[resource.titleField] ?? '(untitled)')}
+                    </p>
                     <p className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-muted">
                       {resource.columns
                         .filter((key) => key !== resource.titleField && key !== resource.statusField)

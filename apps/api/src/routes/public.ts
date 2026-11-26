@@ -143,6 +143,8 @@ publicRouter.get(
               slug: true,
               featured: true,
               timezone: true,
+              latitude: true,
+              longitude: true,
               _count: {
                 select: {
                   activities: { where: LIVE.activity },
