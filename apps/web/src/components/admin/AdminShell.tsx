@@ -24,7 +24,7 @@ export function AdminShell({ title, actions, children, permission }: { title?: s
   const [query, setQuery] = useState('');
 
   useEffect(() => {
-    if (status === 'anonymous') router.replace(`/signin?next=${encodeURIComponent(pathname)}`);
+    if (status === 'anonymous') router.replace(`/admin/login?next=${encodeURIComponent(pathname)}`);
   }, [status, router, pathname]);
   useEffect(() => setOpen(false), [pathname]);
 

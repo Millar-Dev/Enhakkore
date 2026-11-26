@@ -10,6 +10,7 @@ import { issueSession, requireAuth } from '../middleware/auth';
 import { recordLogin, sessionPayload } from '../services/sessions';
 import { audit } from '../services/audit';
 import { decryptSecret, encryptSecret, generateSecret, otpauthUrl, verifyTotp } from '../lib/totp';
+import { timingSafeEqual, createHash } from 'node:crypto';
 import { toOrganizerSummary, toPublicUser } from '../serializers';
 import { env } from '../env';
 import {
@@ -354,5 +355,70 @@ authRouter.get(
   route(async (req, res) => {
     const user = await prisma.user.findUniqueOrThrow({ where: { id: req.auth!.id }, select: { totpEnabled: true } });
     res.json({ enabled: user.totpEnabled });
+  }),
+);
+
+/* --------------------------- One-time founder setup --------------------------- */
+
+const SETUP_MARKER = 'setup.completed';
+const setupToken = () => process.env.SETUP_TOKEN?.trim() ?? '';
+
+/**
+ * The founder's first Super Admin account is created once, through the hidden
+ * page /admin/setup, using a long secret (SETUP_TOKEN) known only to whoever
+ * controls the API's hosting settings. There is no default account and no
+ * public admin registration. The setup is open only while: SETUP_TOKEN is set
+ * (24+ characters), no real Super Admin exists, and it has never completed.
+ * Once it completes it is closed for good, even if the token is left in place.
+ */
+async function setupOpen(): Promise<boolean> {
+  if (setupToken().length < 24) return false;
+  if (await prisma.platformSetting.findUnique({ where: { key: SETUP_MARKER } })) return false;
+  return !(await prisma.user.findFirst({ where: { role: 'ADMIN', isDemo: false } }));
+}
+
+const sameSecret = (a: string, b: string) => {
+  const hash = (value: string) => createHash('sha256').update(value).digest();
+  return timingSafeEqual(hash(a), hash(b));
+};
+
+authRouter.get(
+  '/setup/status',
+  route(async (_req, res) => {
+    res.json({ open: await setupOpen() });
+  }),
+);
+
+const setupSchema = z.object({
+  token: z.string().min(1, 'Enter the setup token.').max(500),
+  name: z.string().trim().min(2, 'Your name, please.').max(80),
+  email: z.string().trim().toLowerCase().email('Enter a valid email address.'),
+  password: z
+    .string()
+    .min(12, 'Use at least 12 characters.')
+    .max(200)
+    .refine((value) => /[A-Za-z]/.test(value) && /\d/.test(value), 'Use letters and numbers.'),
+});
+
+authRouter.post(
+  '/setup',
+  credentialLimiter,
+  route(async (req, res) => {
+    const input = setupSchema.parse(req.body);
+    if (!(await setupOpen())) throw ApiError.forbidden('Setup is closed. Sign in at /admin/login.');
+    if (!sameSecret(input.token, setupToken())) {
+      await recordLogin(req, input.email, null, false, 'bad_setup_token');
+      throw new ApiError(401, 'That setup token is not right.', 'bad_setup_token');
+    }
+    const passwordHash = await bcrypt.hash(input.password, 12);
+    const existing = await prisma.user.findUnique({ where: { email: input.email } });
+    const user = existing
+      ? await prisma.user.update({ where: { id: existing.id }, data: { name: input.name, role: 'ADMIN', adminRoleId: null, isDemo: false, status: 'ACTIVE', passwordHash, passwordChangedAt: new Date(), termsVersion: LEGAL_VERSION, termsAcceptedAt: new Date() } })
+      : await prisma.user.create({ data: { name: input.name, email: input.email, role: 'ADMIN', passwordHash, termsVersion: LEGAL_VERSION, termsAcceptedAt: new Date() } });
+    await prisma.platformSetting.upsert({ where: { key: SETUP_MARKER }, create: { key: SETUP_MARKER, value: new Date().toISOString() }, update: {} });
+    await audit(req, { action: 'security', entityType: 'users', entityId: user.id, summary: 'Founder Super Admin account created through the one-time setup', sensitive: true });
+    await recordLogin(req, input.email, user.id, true, 'setup');
+    const token = await issueSession(user, req);
+    res.status(201).json({ token, ...(await sessionPayload(user.id)) });
   }),
 );

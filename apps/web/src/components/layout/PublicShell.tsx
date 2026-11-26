@@ -72,7 +72,7 @@ export async function PublicShell({
           target="_blank"
           rel="noreferrer noopener"
           aria-label={`Chat with Enhakkore on WhatsApp (${numbers[0]!.display})`}
-          className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-4 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#1f9d55] text-white shadow-[0_10px_30px_-8px_rgba(0,0,0,0.45)] transition hover:scale-105 md:bottom-6 md:right-6"
+          className="fixed bottom-6 right-6 z-40 hidden h-14 w-14 items-center justify-center rounded-full bg-[#1f9d55] text-white shadow-[0_10px_30px_-8px_rgba(0,0,0,0.45)] transition hover:scale-105 md:inline-flex"
         >
           <SocialIcon platform="whatsapp" size={28} />
         </a>

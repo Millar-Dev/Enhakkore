@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Avatar, Icon, cx } from '@/components/ui';
 import { api } from '@/lib/api';
+import { useScrollHide } from '@/lib/useScrollHide';
+import { SearchOverlay } from './SearchOverlay';
 import { homeFor, useSession } from '@/lib/session';
 import { OriginalLogo } from './BrandLogo';
 import { SocialIcon } from './SocialIcon';
@@ -61,7 +63,9 @@ export function Header({ logoUrl, brandName, nav, whatsapp }: HeaderProps) {
       .catch(() => undefined);
   }, [status, pathname]);
   const [open, setOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const hidden = useScrollHide();
 
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
@@ -84,14 +88,15 @@ export function Header({ logoUrl, brandName, nav, whatsapp }: HeaderProps) {
     <>
       <header
         className={cx(
-          'sticky top-0 z-50 border-b bg-[color:var(--color-cream)]/95 backdrop-blur-xl transition-shadow',
+          'sticky top-0 z-50 border-b bg-[color:var(--color-cream)]/95 backdrop-blur-xl transition-[transform,box-shadow] duration-300',
           scrolled ? 'border-line shadow-[0_6px_24px_-18px_rgba(8,43,69,0.45)]' : 'border-transparent',
+          hidden && !open && !searching && '-translate-y-full',
         )}
       >
-        <div className="shell flex h-[4.25rem] items-center justify-between gap-4 md:h-20">
+        <div className="shell flex h-14 items-center justify-between gap-3 md:h-[4.5rem]">
           <Link href="/" aria-label={`${brandName} — home`} className="flex shrink-0 items-center">
-            <OriginalLogo src={logoUrl} height={64} priority className="hidden md:block" />
-            <OriginalLogo src={logoUrl} height={46} priority className="md:hidden" />
+            <OriginalLogo src={logoUrl} height={56} priority className="hidden md:block" />
+            <OriginalLogo src={logoUrl} height={40} priority className="md:hidden" />
           </Link>
 
           <nav className="hidden items-center lg:flex" aria-label="Primary">
@@ -112,11 +117,16 @@ export function Header({ logoUrl, brandName, nav, whatsapp }: HeaderProps) {
           </nav>
 
           <div className="flex items-center gap-1.5">
-            <Link href="/search" aria-label="Search" className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink hover:bg-sand-deep">
+            <button type="button" onClick={() => setSearching(true)} aria-label="Search" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-sand-deep">
               <Icon.search size={19} />
-            </Link>
+            </button>
+            {whatsapp[0] && (
+              <a href={whatsapp[0].href} target="_blank" rel="noreferrer noopener" aria-label="WhatsApp Enhakkore" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#1f9d55] hover:bg-sand-deep md:hidden">
+                <SocialIcon platform="whatsapp" size={20} />
+              </a>
+            )}
             {status === 'authenticated' && (
-              <Link href="/account/notifications" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} className="relative inline-flex h-11 w-11 items-center justify-center rounded-full text-ink hover:bg-sand-deep">
+              <Link href="/account/notifications" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-sand-deep">
                 <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
                   <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
@@ -148,7 +158,7 @@ export function Header({ logoUrl, brandName, nav, whatsapp }: HeaderProps) {
               onClick={() => setOpen((value) => !value)}
               aria-label={open ? 'Close menu' : 'Open menu'}
               aria-expanded={open}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink hover:bg-sand-deep lg:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-sand-deep lg:hidden"
             >
               {open ? (
                 <Icon.close size={20} />
@@ -161,9 +171,10 @@ export function Header({ logoUrl, brandName, nav, whatsapp }: HeaderProps) {
           </div>
         </div>
       </header>
+      {searching && <SearchOverlay onClose={() => setSearching(false)} />}
 
       {open && (
-        <div className="fixed inset-0 top-[4.25rem] z-40 animate-fade overflow-y-auto bg-[color:var(--color-cream)] md:top-20 lg:hidden">
+        <div className="fixed inset-0 top-14 z-40 animate-fade overflow-y-auto bg-[color:var(--color-cream)] md:top-[4.5rem] lg:hidden">
           <div className="shell flex min-h-full flex-col py-6">
             <nav aria-label="Primary mobile" className="grid">
               <Link href="/" className="flex items-center justify-between border-b border-line py-3 font-display text-[1.5rem] text-acacia-700">

@@ -380,3 +380,31 @@ describe('round 3: trips visible, demo content, search, locations, bulk', () => 
     assert.ok(stored.termsVersion && stored.termsAcceptedAt);
   });
 });
+
+describe('one-time founder setup', () => {
+  test('closed without a token, refuses a wrong token, and closes for good after use', async () => {
+    delete process.env.SETUP_TOKEN;
+    assert.equal((await api.request('GET', '/auth/setup/status')).body.open, false);
+    // The demo database already has an admin; set it aside to simulate a fresh launch.
+    const admins = await prisma.user.findMany({ where: { role: 'ADMIN', isDemo: false } });
+    await prisma.user.updateMany({ where: { id: { in: admins.map((a) => a.id) } }, data: { isDemo: true } });
+    await prisma.platformSetting.deleteMany({ where: { key: 'setup.completed' } });
+    process.env.SETUP_TOKEN = 'a-very-long-setup-token-for-tests-123456';
+    assert.equal((await api.request('GET', '/auth/setup/status')).body.open, true);
+    const body = { name: 'Founder', email: `founder-${Date.now()}@test.local`, password: 'FounderPass-2026' };
+    const wrong = await api.request('POST', '/auth/setup', { body: { ...body, token: 'nope' } });
+    assert.equal(wrong.status, 401);
+    const weak = await api.request('POST', '/auth/setup', { body: { ...body, password: 'short', token: process.env.SETUP_TOKEN } });
+    assert.equal(weak.status, 422);
+    const ok = await api.request('POST', '/auth/setup', { body: { ...body, token: process.env.SETUP_TOKEN } });
+    assert.equal(ok.status, 201, JSON.stringify(ok.body));
+    assert.equal(ok.body.user.role, 'ADMIN');
+    assert.equal((await api.request('GET', '/auth/setup/status')).body.open, false, 'closed after use');
+    const again = await api.request('POST', '/auth/setup', { body: { ...body, email: `second-${Date.now()}@test.local`, token: process.env.SETUP_TOKEN } });
+    assert.equal(again.status, 403, 'a second setup is refused even with the token');
+    const login = await api.request('POST', '/auth/login', { body: { email: body.email, password: body.password } });
+    assert.equal(login.status, 200);
+    delete process.env.SETUP_TOKEN;
+    await prisma.user.updateMany({ where: { id: { in: admins.map((a) => a.id) } }, data: { isDemo: false } });
+  });
+});

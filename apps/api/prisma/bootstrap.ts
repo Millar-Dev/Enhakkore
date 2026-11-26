@@ -497,6 +497,8 @@ async function owner() {
   if (!email || !password) return;
   const realOwner = await prisma.user.findFirst({ where: { role: 'ADMIN', isDemo: false } });
   if (realOwner) return;
+  // The one-time setup has already run: never create or reset an owner again.
+  if (await prisma.platformSetting.findUnique({ where: { key: 'setup.completed' } })) return;
   if (password.length < 12) {
     console.warn('› bootstrap: OWNER_PASSWORD must be at least 12 characters — owner not created.');
     return;
@@ -508,6 +510,7 @@ async function owner() {
   } else {
     await prisma.user.create({ data: { email, name: process.env.OWNER_NAME?.trim() || 'Enhakkore owner', role: 'ADMIN', passwordHash } });
   }
+  await prisma.platformSetting.upsert({ where: { key: 'setup.completed' }, create: { key: 'setup.completed', value: new Date().toISOString() }, update: {} });
   console.log(`› bootstrap: owner account ready for ${email}`);
 }
 

@@ -19,7 +19,7 @@ const TABS = [
   { href: '/explore', label: 'Explore', icon: Icon.pin },
   { href: '/experiences', label: 'Experiences', icon: Icon.users },
   { href: '/travel', label: 'Travel', icon: Icon.compass },
-  { href: '/account', label: 'Me', icon: Icon.user, exact: true },
+  { href: "/impact", label: "Impact", icon: Icon.heart },
 ];
 
 // Screens with their own pinned bottom action, or their own navigation.
@@ -45,7 +45,7 @@ export function MobileTabBar() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-acacia-700/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
       aria-label="Main"
     >
       <ul className="grid grid-cols-5">
@@ -58,11 +58,11 @@ export function MobileTabBar() {
                 href={tab.href}
                 aria-current={active ? 'page' : undefined}
                 className={cx(
-                  'flex h-16 flex-col items-center justify-center gap-1 text-[0.625rem] font-semibold tracking-wide transition-colors',
-                  active ? 'text-acacia-700' : 'text-ink-faint',
+                  'flex h-14 flex-col items-center justify-center gap-0.5 text-[0.625rem] font-semibold tracking-wide transition-colors',
+                  active ? 'text-clay-400' : 'text-white/65',
                 )}
               >
-                <TabIcon size={21} />
+                <TabIcon size={19} />
                 {tab.label}
               </Link>
             </li>
@@ -80,5 +80,5 @@ export function MobileTabBar() {
 export function MobileTabBarSpacer() {
   const visible = useTabBarVisible();
   if (!visible) return null;
-  return <div className="h-16 md:hidden" aria-hidden="true" />;
+  return <div className="h-[calc(3.5rem+env(safe-area-inset-bottom))] md:hidden" aria-hidden="true" />;
 }
