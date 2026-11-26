@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { OriginalLogo } from '@/components/site/BrandLogo';
 import { Avatar, cx } from '@/components/ui';
-import { LEGACY, MENU, can, visibleMenu } from '@/lib/admin';
+import { MENU, can, visibleMenu } from '@/lib/admin';
 import { useSession } from '@/lib/session';
 
 /**
@@ -74,18 +74,6 @@ export function AdminShell({ title, actions, children, permission }: { title?: s
           </ul>
         </div>
       ))}
-      {user.role === 'ADMIN' && (
-        <div>
-          <p className="px-3 text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-white/40">Marketplace (older screens)</p>
-          <ul className="mt-2 space-y-0.5">
-            {LEGACY.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className="block rounded-lg px-3 py-2 text-[0.8125rem] text-white/55 hover:text-white">{item.label}</Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </nav>
   );
 

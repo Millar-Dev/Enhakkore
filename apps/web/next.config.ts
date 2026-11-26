@@ -49,6 +49,20 @@ const nextConfig: NextConfig = {
     return [
       { source: '/packages/:slug', destination: '/travel/:slug', permanent: true },
       { source: '/impact/dashboard', destination: '/impact', permanent: true },
+      // The third-party operator marketplace is a later phase. Its old
+      // addresses lead to the launch equivalents.
+      { source: '/trips', destination: '/travel', permanent: false },
+      { source: '/trips/:slug', destination: '/travel', permanent: false },
+      { source: '/book/:id', destination: '/travel', permanent: false },
+      { source: '/safari', destination: '/travel', permanent: false },
+      { source: '/how-it-works', destination: '/travel', permanent: false },
+      { source: '/trust', destination: '/legal/safety', permanent: false },
+      { source: '/operators', destination: '/contact', permanent: false },
+      { source: '/operators/:slug', destination: '/contact', permanent: false },
+      { source: '/organizer', destination: '/account', permanent: false },
+      { source: '/organizer/:path*', destination: '/account', permanent: false },
+      { source: '/account/trips', destination: '/account/applications', permanent: false },
+      { source: '/account/bookings/:ref', destination: '/account/applications', permanent: false },
     ];
   },
   async headers() {

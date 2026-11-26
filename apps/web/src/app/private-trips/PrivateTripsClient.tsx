@@ -92,20 +92,26 @@ function RequestForm() {
     setFields({});
 
     try {
-      await api.post('/requests', {
-        destination: form.destination,
-        startDate: form.startDate || undefined,
-        endDate: form.endDate || undefined,
-        travellers: Number(form.travellers),
-        budget: form.budget ? Number(form.budget.replace(/[^0-9]/g, '')) : undefined,
-        currency: 'TZS',
-        style,
-        accommodation: form.accommodation || undefined,
-        activities,
-        notes: form.notes || undefined,
-        contactName,
-        contactEmail,
-        contactPhone: form.contactPhone || undefined,
+      // Private trip requests land in the same Enquiries inbox as everything
+      // else, marked "Private trip", so the team handles them in one place.
+      const details: Record<string, string> = {
+        Destination: form.destination,
+        Style: style,
+        ...(form.budget ? { Budget: form.budget } : {}),
+        ...(form.accommodation ? { Accommodation: form.accommodation } : {}),
+        ...(activities.length ? { Activities: activities.join(', ') } : {}),
+      };
+      await api.post('/community/enquiries', {
+        type: 'PRIVATE_TRIP',
+        subjectTitle: form.destination,
+        name: contactName,
+        email: contactEmail || '',
+        phone: form.contactPhone || '',
+        startDate: form.startDate || '',
+        endDate: form.endDate || '',
+        people: Number(form.travellers) || null,
+        message: form.notes?.trim() || `Private trip request: ${form.destination}`,
+        details,
       });
       setDone(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });

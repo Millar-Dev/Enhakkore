@@ -23,8 +23,8 @@ export default function NotFound() {
           </p>
 
           <div className="mt-9 flex flex-wrap justify-center gap-3">
-            <ButtonLink href="/trips">
-              Explore trips
+            <ButtonLink href="/travel">
+              See trips
               <Icon.arrow />
             </ButtonLink>
             <ButtonLink href="/" variant="secondary">
@@ -34,11 +34,12 @@ export default function NotFound() {
 
           <nav className="mt-14 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[0.875rem]">
             {[
-              { href: '/trips', label: 'Explore trips' },
-              { href: '/safari', label: 'Safari' },
+              { href: '/travel', label: 'Trips' },
+              { href: '/activities', label: 'Activities' },
+              { href: '/discover', label: 'Discover' },
+              { href: '/events', label: 'Events' },
+              { href: '/catering', label: 'Catering' },
               { href: '/impact', label: 'Impact' },
-              { href: '/private-trips', label: 'Private trips' },
-              { href: '/how-it-works', label: 'How it works' },
             ].map((link) => (
               <Link
                 key={link.href}

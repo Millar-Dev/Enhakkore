@@ -182,7 +182,7 @@ export default function TripGroupPage() {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="min-w-0">
               <Link
-                href={`/trips/${conversation.tripSlug}`}
+                href={`/travel/${conversation.tripSlug}`}
                 className="text-[1.5rem] font-bold leading-tight tracking-tight text-white hover:underline md:text-[2rem]"
               >
                 {conversation.title}
@@ -357,7 +357,7 @@ export default function TripGroupPage() {
                   </div>
                 </dl>
                 <ButtonLink
-                  href={`/trips/${conversation.tripSlug}`}
+                  href={`/travel/${conversation.tripSlug}`}
                   variant="secondary"
                   size="sm"
                   full

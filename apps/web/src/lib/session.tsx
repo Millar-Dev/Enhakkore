@@ -119,6 +119,5 @@ export function useSession(): SessionState {
 /** Where an account type lands after signing in. */
 export function homeFor(role: Role): string {
   if (role === 'ADMIN' || role === 'STAFF') return '/admin';
-  if (role === 'ORGANIZER') return '/organizer';
   return '/account';
 }

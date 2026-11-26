@@ -49,6 +49,11 @@ authRouter.post(
   route(async (req, res) => {
     const input = registerSchema.parse(req.body);
 
+    // The third-party operator marketplace is a later phase. Until it is
+    // switched on, every new account is a member account.
+    if (input.accountType === 'ORGANIZER' && process.env.ENABLE_MARKETPLACE !== 'true') {
+      throw ApiError.forbidden('Operator accounts are not open yet. Contact Enhakkore on WhatsApp to work with us.');
+    }
     if (input.accountType === 'ORGANIZER' && !input.companyName) {
       throw ApiError.badRequest('Enter your company or operating name.');
     }

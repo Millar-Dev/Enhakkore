@@ -152,24 +152,5 @@ export const TRAVELLER_NAV: NavItem[] = [
   { href: '/account/profile', label: 'Profile' },
 ];
 
-export const ORGANIZER_NAV: NavItem[] = [
-  { href: '/organizer', label: 'Dashboard', exact: true },
-  { href: '/organizer/trips', label: 'My trips' },
-  { href: '/organizer/bookings', label: 'Bookings' },
-  { href: '/organizer/messages', label: 'Messages' },
-  { href: '/organizer/verification', label: 'Verification' },
-];
-
-export const ADMIN_NAV: NavItem[] = [
-  { href: '/admin', label: 'Overview', exact: true },
-  { href: '/admin/organizers', label: 'Organizers' },
-  { href: '/admin/trips', label: 'Trips' },
-  { href: '/admin/bookings', label: 'Bookings' },
-  { href: '/admin/payments', label: 'Payments' },
-  { href: '/admin/impact', label: 'Impact' },
-  { href: '/admin/users', label: 'Users' },
-  { href: '/admin/requests', label: 'Requests' },
-];
-
 /** Every account type that has a personal area. */
 export const MEMBER_ROLES: Role[] = ['TRAVELER', 'ORGANIZER', 'ADMIN', 'STAFF'];

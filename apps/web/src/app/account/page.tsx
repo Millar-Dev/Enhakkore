@@ -2,266 +2,83 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import type { BookingDto, Paginated, TravellerStats } from '@enhakkore/shared';
+import { APPLICATION_STATUS_LABELS } from '@enhakkore/shared';
 import { DashboardShell, MEMBER_ROLES, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
-import {
-  Alert,
-  Avatar,
-  Button,
-  ButtonLink,
-  Card,
-  Divider,
-  Icon,
-  Skeleton,
-  StatTile,
-} from '@/components/ui';
-import { Input, Textarea } from '@/components/ui/form';
-import { ImageUpload } from '@/components/uploads/ImageUpload';
-import { ApiError, api } from '@/lib/api';
-import { dateRange, formatDate, price } from '@/lib/format';
+import { Avatar } from '@/components/ui';
+import { api } from '@/lib/api';
 import { useSession } from '@/lib/session';
 
-/**
- * The traveller profile.
- *
- * Built as a travel identity rather than a social profile: where you have been,
- * what is next, and what your contributions have gone to. No follower counts,
- * no feed.
- */
-export default function ProfilePage() {
-  const { user, updateUser } = useSession();
-  const [stats, setStats] = useState<TravellerStats | null>(null);
-  const [upcoming, setUpcoming] = useState<BookingDto[]>([]);
+interface Application {
+  reference: string;
+  status: string;
+  trip: { title: string };
+  departure: { startDate: string };
+}
 
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: '', city: '', country: '', bio: '', phone: '', avatarUrl: '' });
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
+/** A member's home: profile at a glance, open applications, and shortcuts. */
+export default function AccountHome() {
+  const { user } = useSession();
+  const [applications, setApplications] = useState<Application[] | null>(null);
   useEffect(() => {
-    if (!user) return;
-    setForm({
-      name: user.name,
-      city: user.city ?? '',
-      country: user.country ?? '',
-      bio: user.bio ?? '',
-      phone: '',
-      avatarUrl: user.avatarUrl ?? '',
-    });
-  }, [user]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const [statsResult, bookingsResult] = await Promise.all([
-          api.get<TravellerStats>('/me/stats'),
-          api.get<Paginated<BookingDto>>('/bookings?scope=upcoming&pageSize=3'),
-        ]);
-        if (cancelled) return;
-        setStats(statsResult);
-        setUpcoming(bookingsResult.items);
-      } catch {
-        /* the page still renders with the account details it already has */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    api.get<Application[]>('/community/applications').then(setApplications).catch(() => setApplications([]));
   }, []);
 
-  async function save(event: React.FormEvent) {
-    event.preventDefault();
-    setSaving(true);
-    setError(null);
-    setMessage(null);
-    try {
-      const updated = await api.patch<typeof user>('/me', {
-        name: form.name,
-        city: form.city,
-        country: form.country,
-        bio: form.bio,
-        phone: form.phone || undefined,
-        avatarUrl: form.avatarUrl,
-      });
-      if (updated) updateUser(updated);
-      setMessage('Your profile is updated.');
-      setEditing(false);
-    } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'We could not save your changes.');
-    } finally {
-      setSaving(false);
-    }
-  }
+  const tiles = [
+    { href: '/account/applications', title: 'Trip applications', body: 'Follow your applications and see how to pay.' },
+    { href: '/account/groups', title: 'Trip groups', body: 'Chat with the people on your confirmed departures.' },
+    { href: '/account/hosting', title: 'Activities you host', body: 'Approve people who asked to join.' },
+    { href: '/account/saved', title: 'Wishlist', body: 'Trips, places, events and activities you saved.' },
+    { href: '/connect/requests', title: 'Connections', body: 'Requests and the people you are connected with.' },
+    { href: '/account/profile', title: 'Your profile', body: 'Photo, city and interests other members see.' },
+  ];
 
   return (
     <DashboardShell nav={TRAVELLER_NAV} allow={MEMBER_ROLES}>
-      {!user ? (
-        <Skeleton className="h-64 w-full" />
-      ) : (
-        <div className="mx-auto max-w-4xl">
-          {/* Identity */}
-          <Card className="p-6 md:p-8">
-            <div className="flex flex-wrap items-start justify-between gap-6">
-              <div className="flex items-center gap-5">
-                <Avatar name={user.name} src={user.avatarUrl} size="xl" />
-                <div>
-                  <h1 className="text-h2">{user.name}</h1>
-                  <p className="mt-1.5 text-[0.9375rem] text-ink-muted">
-                    {[user.city, user.country].filter(Boolean).join(', ') || 'Add where you are based'}
-                  </p>
-                  <p className="mt-1 text-[0.8125rem] text-ink-faint">
-                    On Enhakkore since {formatDate(user.createdAt, 'long')}
-                  </p>
-                </div>
-              </div>
-              {!editing && (
-                <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-                  Edit profile
-                </Button>
-              )}
+      {user && (
+        <div className="space-y-8">
+          <div className="flex flex-wrap items-center gap-4">
+            <Avatar name={user.name} src={user.avatarUrl} size="xl" />
+            <div>
+              <h1 className="font-display text-3xl text-acacia-700">Hello, {user.name.split(' ')[0]}</h1>
+              <p className="text-sm text-ink-muted">{[user.city, user.country].filter(Boolean).join(', ') || 'Add your city to your profile so people nearby can find you.'}</p>
             </div>
-
-            {user.bio && !editing && (
-              <p className="mt-6 max-w-2xl text-[0.9375rem] leading-relaxed text-ink-soft">{user.bio}</p>
+            {(user.role === 'ADMIN' || user.role === 'STAFF') && (
+              <Link href="/admin" className="ml-auto inline-flex h-11 items-center rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">Open the control centre</Link>
             )}
-
-            {message && (
-              <Alert tone="success" className="mt-6">
-                {message}
-              </Alert>
-            )}
-
-            {editing && (
-              <form onSubmit={save} className="mt-8 space-y-4">
-                {error && <Alert tone="danger">{error}</Alert>}
-                <ImageUpload
-                  label="Profile photo"
-                  kind="AVATAR"
-                  value={form.avatarUrl ? [form.avatarUrl] : []}
-                  onChange={(urls) => setForm({ ...form, avatarUrl: urls[0] ?? '' })}
-                  hint="Shown to fellow travellers in your trip groups. Optional."
-                />
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Input
-                    label="Name"
-                    value={form.name}
-                    onChange={(event) => setForm({ ...form, name: event.target.value })}
-                    required
-                  />
-                  <Input
-                    label="Phone"
-                    value={form.phone}
-                    onChange={(event) => setForm({ ...form, phone: event.target.value })}
-                    placeholder="+255 7XX XXX XXX"
-                    hint="Shared with your organizer only for trips you book."
-                  />
-                  <Input
-                    label="City"
-                    value={form.city}
-                    onChange={(event) => setForm({ ...form, city: event.target.value })}
-                  />
-                  <Input
-                    label="Country"
-                    value={form.country}
-                    onChange={(event) => setForm({ ...form, country: event.target.value })}
-                  />
-                </div>
-                <Textarea
-                  label="About you"
-                  value={form.bio}
-                  onChange={(event) => setForm({ ...form, bio: event.target.value })}
-                  placeholder="A line or two your fellow travellers will see in trip groups."
-                  maxLength={600}
-                />
-                <div className="flex gap-3">
-                  <Button type="submit" disabled={saving}>
-                    {saving ? 'Saving…' : 'Save changes'}
-                  </Button>
-                  <Button type="button" variant="secondary" onClick={() => setEditing(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            )}
-          </Card>
-
-          {/* Travel record */}
-          <h2 className="mt-10 text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-muted">
-            Your travel record
-          </h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatTile label="Trips completed" value={stats?.tripsCompleted ?? '—'} />
-            <StatTile label="Destinations" value={stats?.destinationsVisited ?? '—'} />
-            <StatTile label="Countries" value={stats?.countriesVisited ?? '—'} />
-            <StatTile
-              label="Impact contributed"
-              value={stats ? price(stats.impactContributed, true) : '—'}
-              tone="impact"
-              hint={stats ? `across ${stats.projectsSupported} projects` : undefined}
-            />
           </div>
 
-          {/* Next up */}
-          <div className="mt-10">
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-muted">
-                Coming up
-              </h2>
-              <Link href="/account/trips" className="text-[0.8125rem] font-semibold text-acacia-700 hover:underline">
-                All trips
-              </Link>
-            </div>
-
-            {upcoming.length === 0 ? (
-              <Card className="mt-4 p-8 text-center">
-                <p className="text-[0.9375rem] text-ink-muted">Nothing booked yet.</p>
-                <ButtonLink href="/trips" className="mt-5" size="sm">
-                  Find a trip
-                </ButtonLink>
-              </Card>
+          <section>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-ink-muted">Your trip applications</h2>
+            {applications === null ? (
+              <p className="mt-3 text-sm text-ink-muted">Loading…</p>
+            ) : applications.length === 0 ? (
+              <p className="mt-3 text-sm text-ink-soft">None yet. <Link href="/travel" className="font-semibold text-acacia-600 underline">See upcoming trips</Link>.</p>
             ) : (
-              <div className="mt-4 space-y-3">
-                {upcoming.map((booking) => (
-                  <Card key={booking.id} className="flex flex-wrap items-center justify-between gap-4 p-5">
-                    <div className="min-w-0">
-                      <Link
-                        href={`/account/bookings/${booking.reference}`}
-                        className="text-[0.9375rem] font-bold tracking-tight hover:text-acacia-700"
-                      >
-                        {booking.trip.title}
-                      </Link>
-                      <p className="mt-1 text-[0.8125rem] text-ink-muted">
-                        {dateRange(booking.departure.startDate, booking.departure.endDate)} ·{' '}
-                        {booking.trip.destination.name}
-                      </p>
-                    </div>
-                    {booking.conversationId && (
-                      <ButtonLink href={`/account/groups/${booking.conversationId}`} size="sm" variant="secondary">
-                        <Icon.chat size={14} />
-                        Group
-                      </ButtonLink>
-                    )}
-                  </Card>
+              <ul className="mt-3 grid gap-2">
+                {applications.slice(0, 4).map((application) => (
+                  <li key={application.reference}>
+                    <Link href={`/account/applications/${application.reference}`} className="flex items-center justify-between rounded-xl border border-line bg-white p-4 text-sm">
+                      <span className="font-semibold">{application.trip.title} · {new Date(application.departure.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}</span>
+                      <span className="text-xs font-bold text-acacia-700">{APPLICATION_STATUS_LABELS[application.status] ?? application.status}</span>
+                    </Link>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
-          </div>
+          </section>
 
-          <Divider className="my-10" />
+          <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {tiles.map((tile) => (
+              <Link key={tile.href} href={tile.href} className="card-lift rounded-xl border border-line bg-white p-5">
+                <p className="font-display text-xl text-acacia-700">{tile.title}</p>
+                <p className="mt-1 text-sm text-ink-muted">{tile.body}</p>
+              </Link>
+            ))}
+          </section>
 
-          <div className="flex flex-wrap gap-3">
-            <ButtonLink href="/account/impact" variant="secondary" size="sm">
-              Your impact history
-            </ButtonLink>
-            <ButtonLink href="/account/saved" variant="secondary" size="sm">
-              Saved trips
-            </ButtonLink>
-            <ButtonLink href="/private-trips" variant="secondary" size="sm">
-              Request a custom trip
-            </ButtonLink>
-          </div>
+          <section className="rounded-xl bg-[color:var(--color-cream)] p-5 text-sm text-ink-soft">
+            Looking for something to do? <Link href="/activities" className="font-semibold text-acacia-600 underline">Browse activities</Link>, <Link href="/events" className="font-semibold text-acacia-600 underline">see events</Link> or <Link href="/activities/host" className="font-semibold text-acacia-600 underline">host your own</Link>.
+          </section>
         </div>
       )}
     </DashboardShell>

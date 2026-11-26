@@ -195,6 +195,12 @@ export const DEFAULT_SETTINGS: SiteSettings = {
       url: 'https://www.instagram.com/enhakkore.impact',
     },
     {
+      platform: 'instagram',
+      label: 'WSC — We Save Children',
+      handle: '@_wsc2022',
+      url: 'https://www.instagram.com/_wsc2022',
+    },
+    {
       platform: 'tiktok',
       label: 'Enhakkore Travel',
       handle: '@enhakkore.travel',

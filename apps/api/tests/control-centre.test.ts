@@ -390,3 +390,21 @@ describe('Connect', () => {
     assert.equal((await api.request('GET', '/community/members')).status, 401);
   });
 });
+
+describe('launch scope', () => {
+  test('operator sign-ups are closed until the marketplace phase', async () => {
+    const result = await api.request('POST', '/auth/register', {
+      body: { name: 'Op', email: `op-${Date.now()}@test.local`, password: 'TestPass-123', accountType: 'ORGANIZER', companyName: 'Op Co' },
+    });
+    assert.equal(result.status, 403);
+  });
+
+  test('a private trip request lands in the enquiries inbox', async () => {
+    const sent = await api.request('POST', '/community/enquiries', {
+      body: { type: 'PRIVATE_TRIP', name: 'Planner', phone: '+255700000001', message: 'Family safari in July', subjectTitle: 'Serengeti', details: { Destination: 'Serengeti' } },
+    });
+    assert.equal(sent.status, 201);
+    const inbox = await api.request('GET', '/cc/enquiries?type=PRIVATE_TRIP', { token: owner });
+    assert.ok(inbox.body.items.some((item: { reference: string }) => item.reference === sent.body.reference));
+  });
+});

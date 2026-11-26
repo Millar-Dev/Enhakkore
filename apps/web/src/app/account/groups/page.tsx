@@ -46,7 +46,7 @@ export default function GroupsPage() {
           title="No trip groups yet"
           description="Book a group departure and you are added to its private group straight away — usually within seconds of paying."
           action={
-            <ButtonLink href="/trips?type=GROUP">
+            <ButtonLink href="/travel">
               Browse group trips
               <Icon.arrow />
             </ButtonLink>

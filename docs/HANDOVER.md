@@ -39,8 +39,13 @@ recoloured copies are no longer used anywhere.
 **Contacts.** Both WhatsApp numbers (+255 745 341 440 and +255 794 279 089),
 Instagram (Travel and Impact) and TikTok are shown in the footer, contact page
 and menu, and every WhatsApp button carries a message suited to the page.
-No email, address or Facebook page is shown, because none was supplied —
-you can add them in Settings → Contacts.
+No email, address or Facebook page is shown, because none was supplied for
+the new site — you can add them in Settings → Contacts.
+
+Contacts the **old** website listed, kept here so they are not lost (add any
+you still use in Settings → Contacts): Malaysia +60 11-3936 9848,
+Tanzania +255 672 302 026, and the contact email shown on the old site
+(see `apps/web/src/content/contact.ts` in the git history).
 
 ---
 
@@ -209,6 +214,7 @@ name ("WhatsApp", "prices", "expenses").
 - The older "Ask Enhakkore" question box was removed from public pages because
   it answered from fixed files and could quote out-of-date prices now that
   prices are edited in the control centre.
-- The older tour-operator marketplace screens still exist (owner only, under
-  "Marketplace (older screens)") but are not linked from the public menu.
+- The third-party tour-operator marketplace is a later phase. Its screens were
+  removed from the website and operator sign-up is closed; the database and API
+  keep the groundwork (set `ENABLE_MARKETPLACE=true` on the API to reopen it).
 - The mobile app is not built; the API is ready to serve one.

@@ -82,14 +82,6 @@ export const MENU: MenuGroup[] = [
   },
 ];
 
-/** The older marketplace screens (tour operators), owner only. */
-export const LEGACY: MenuItem[] = [
-  { href: '/admin/organizers', label: 'Tour operators', permission: '*' },
-  { href: '/admin/trips', label: 'Operator trips', permission: '*' },
-  { href: '/admin/bookings', label: 'Checkout bookings', permission: '*' },
-  { href: '/admin/requests', label: 'Custom trip requests', permission: '*' },
-];
-
 export function visibleMenu(user: PublicUser | null | undefined): MenuGroup[] {
   return MENU.map((group) => ({ ...group, items: group.items.filter((item) => !item.permission || can(user, item.permission)) })).filter(
     (group) => group.items.length > 0,

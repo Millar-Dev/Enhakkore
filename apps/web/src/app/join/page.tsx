@@ -17,9 +17,9 @@ function JoinForm() {
   const params = useSearchParams();
   const { register } = useSession();
 
-  const [accountType, setAccountType] = useState<AccountType>(
-    params.get('type') === 'organizer' ? 'ORGANIZER' : 'TRAVELER',
-  );
+  // Every new account is a member account. Operator accounts belong to the
+  // marketplace, which is a later phase.
+  const accountType: AccountType = 'TRAVELER';
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -52,11 +52,10 @@ function JoinForm() {
         password: form.password,
         accountType,
         country: form.country || undefined,
-        companyName: accountType === 'ORGANIZER' ? form.companyName : undefined,
       });
       // New operators go straight to verification — it is the only thing that
       // unblocks everything else for them.
-      router.push(accountType === 'ORGANIZER' ? '/organizer/verification' : homeFor(user.role));
+      router.push(params.get('next') || homeFor(user.role));
     } catch (caught) {
       if (caught instanceof ApiError) {
         setError(caught.message);
@@ -75,42 +74,11 @@ function JoinForm() {
       </Link>
 
       <h1 className="mt-10 text-h1 text-balance">
-        {accountType === 'ORGANIZER' ? 'List your trips' : 'Start your next journey'}
+        Join Enhakkore
       </h1>
       <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink-muted">
-        {accountType === 'ORGANIZER'
-          ? 'Create an operator account, submit your details for verification, and publish your first trip.'
-          : 'Join group departures, request private trips, and follow the projects you support.'}
+        Apply for trips, join activities, find people who share your interests, and save places you love. Free.
       </p>
-
-      {/* Account type is the first decision — it changes everything after it. */}
-      <div className="mt-8 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Account type">
-        {(
-          [
-            { value: 'TRAVELER', title: 'I want to travel', icon: Icon.compass },
-            { value: 'ORGANIZER', title: 'I run trips', icon: Icon.ticket },
-          ] as const
-        ).map((option) => {
-          const OptionIcon = option.icon;
-          const active = accountType === option.value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => setAccountType(option.value)}
-              className={cx(
-                'flex flex-col items-start gap-2.5 rounded-[var(--radius-card)] border p-4 text-left transition-all duration-150',
-                active ? 'border-ink bg-ink/[0.03] ring-1 ring-ink' : 'border-line-strong hover:border-ink',
-              )}
-            >
-              <OptionIcon size={20} className={active ? 'text-acacia-700' : 'text-ink-muted'} />
-              <span className="text-[0.875rem] font-bold leading-tight tracking-tight">{option.title}</span>
-            </button>
-          );
-        })}
-      </div>
 
       <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
         {error && (
@@ -129,17 +97,6 @@ function JoinForm() {
           placeholder="Your name"
         />
 
-        {accountType === 'ORGANIZER' && (
-          <Input
-            label="Company or operating name"
-            required
-            value={form.companyName}
-            onChange={(event) => set('companyName', event.target.value)}
-            error={fields.companyName}
-            placeholder="e.g. Serengeti Collective"
-            hint="This is the name travellers will see on your listings."
-          />
-        )}
 
         <Input
           label="Email"
@@ -194,12 +151,6 @@ function JoinForm() {
         </Button>
       </form>
 
-      {accountType === 'ORGANIZER' && (
-        <Alert tone="neutral" className="mt-5">
-          Operator accounts go through verification before any listing can be published. You can build
-          drafts straight away — the Enhakkore team reviews your documents before they go live.
-        </Alert>
-      )}
 
       <p className="mt-6 text-center text-[0.875rem] text-ink-muted">
         Already have an account?{' '}
