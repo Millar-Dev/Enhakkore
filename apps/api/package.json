@@ -2,7 +2,7 @@
   "name": "@enhakkore/api",
   "version": "0.1.0",
   "private": true,
-  "description": "Enhakkore platform API \u2014 marketplace, bookings, trip communities and impact.",
+  "description": "Enhakkore platform API — marketplace, bookings, trip communities and impact.",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -31,6 +31,7 @@
   "dependencies": {
     "@enhakkore/shared": "*",
     "@prisma/client": "^6.3.1",
+    "all-the-cities": "^3.1.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.11.0",
     "cors": "^2.8.5",

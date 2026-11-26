@@ -52,6 +52,12 @@ export interface SiteSettings {
     emails: { label: string; address: string }[];
     address: string;
     hours: string;
+    /**
+     * Which WhatsApp number receives each kind of enquiry, as "all", "1" or "2"
+     * (the order of the numbers above). Used for automatic notices and for the
+     * WhatsApp buttons on those pages.
+     */
+    routing: Record<string, string>;
   };
   social: SocialLink[];
   /** Prefilled WhatsApp messages. `{title}` is replaced with the page's subject. */
@@ -92,6 +98,12 @@ export interface SiteSettings {
   };
   catering: {
     intro: string;
+  };
+  gaming: {
+    /** The Gaming hub's hero picture. Replace it with your own photo from the media library. */
+    heroImage: string;
+    heroTitle: string;
+    heroSubtitle: string;
   };
 }
 
@@ -169,6 +181,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     emails: [],
     address: '',
     hours: '',
+    routing: { TRIP: 'all', ROOM: 'all', TABLE: 'all', EVENT_PLAN: 'all', PARTNERSHIP: 'all', PRIVATE_TRIP: 'all', CATERING: 'all', PRIVATE_CHEF: 'all', GENERAL: 'all' },
   },
   social: [
     {
@@ -259,6 +272,11 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     wscIntro:
       'WSC — We Save Children — is a charity group working so that no child grows up in poverty. Enhakkore’s impact work is carried out together with WSC. WSC is its own organisation, not a part of Enhakkore.',
   },
+  gaming: {
+    heroImage: '/media/gaming/gaming-hero.jpg',
+    heroTitle: 'Play, compete, meet your squad',
+    heroSubtitle: 'Online tournaments, squad competitions and PlayStation / console sessions. Every tournament is free to enter at launch.',
+  },
   catering: {
     intro:
       'Good journeys deserve good food. Enhakkore prepares packed lunchboxes for road trips, safaris and hikes, caters for groups and events, and — on request — arranges a private chef. Menus, prices and availability are confirmed with you directly.',
@@ -284,6 +302,7 @@ export const SETTINGS_PERMISSION: Record<SettingsGroup, string> = {
   legal: 'settings.edit',
   impact: 'impact.edit',
   catering: 'catering.edit',
+  gaming: 'gaming.edit',
 };
 
 /** A wa.me link with a prefilled message. Digits only; the message is URL-encoded. */

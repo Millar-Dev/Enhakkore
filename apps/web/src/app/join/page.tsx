@@ -52,6 +52,7 @@ function JoinForm() {
         password: form.password,
         accountType,
         country: form.country || undefined,
+        acceptedTerms: true,
       });
       // New operators go straight to verification — it is the only thing that
       // unblocks everything else for them.
@@ -134,14 +135,11 @@ function JoinForm() {
           onChange={(event) => setAgreed(event.target.checked)}
           label={
             <>
-              I agree to the{' '}
-              <Link href="/legal/terms" className="text-acacia-700 underline">
-                terms
-              </Link>{' '}
-              and{' '}
-              <Link href="/legal/privacy" className="text-acacia-700 underline">
-                privacy policy
-              </Link>
+              I accept the{' '}
+              <Link href="/legal/terms" className="text-acacia-700 underline">platform terms</Link>,{' '}
+              <Link href="/legal/member" className="text-acacia-700 underline">member account terms</Link>,{' '}
+              <Link href="/legal/community" className="text-acacia-700 underline">community guidelines</Link> and the{' '}
+              <Link href="/legal/privacy" className="text-acacia-700 underline">privacy policy</Link>
             </>
           }
         />

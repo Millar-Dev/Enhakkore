@@ -316,3 +316,62 @@ resourcesRouter.delete(
     res.json({ ok: true });
   }),
 );
+
+const bulkSchema = z.object({
+  action: z.enum(['publish', 'unpublish', 'archive', 'delete']),
+  ids: z.array(z.string().min(5)).max(500).optional(),
+  /** Apply to every record marked DEMO (instead of `ids`). */
+  allDemo: z.boolean().optional(),
+});
+
+/**
+ * Bulk publish, unpublish, archive or delete — either the selected rows or
+ * every DEMO record of this kind. Each row is checked and logged as if it had
+ * been changed on its own; rows that cannot be deleted are skipped and listed.
+ */
+resourcesRouter.post(
+  '/:resource/bulk',
+  route(async (req, res) => {
+    const resource = resolve(req);
+    const input = bulkSchema.parse(req.body);
+    const needed = input.action === 'delete' ? 'delete' : input.action === 'archive' ? 'edit' : 'publish';
+    assertPermission(req, `${resource.permission}.${needed}`);
+    if (input.action === 'delete' && req.query.confirm !== 'yes') {
+      throw new ApiError(428, 'Deleting cannot be undone. Confirm to continue.', 'confirmation_required');
+    }
+    const hasDemo = resource.fields.some((field) => field.name === 'isDemo');
+    if (input.allDemo && !hasDemo) throw ApiError.badRequest('These records have no DEMO marker.');
+    if (!input.allDemo && !input.ids?.length) throw ApiError.badRequest('Select at least one row.');
+    const where: Row = { ...scopeWhere(req, resource), ...(input.allDemo ? { isDemo: true } : { id: { in: input.ids } }) };
+    const rows: Row[] = await delegate(resource).findMany({ where });
+    const status = input.action === 'publish' ? resource.publishStatus : input.action === 'unpublish' ? resource.unpublishStatus : resource.archiveStatus;
+    if (input.action !== 'delete' && (!resource.statusField || !status)) throw ApiError.badRequest('This kind of record has no such status.');
+    const hooks = hooksFor(resource);
+    const done: string[] = [];
+    const skipped: { id: string; title: string; reason: string }[] = [];
+    for (const row of rows) {
+      try {
+        if (input.action === 'delete') {
+          if (resource.protectDelete) throw ApiError.badRequest('Cannot be deleted.');
+          if (hooks.beforeDelete) await hooks.beforeDelete(row);
+          await delegate(resource).delete({ where: { id: row.id } });
+        } else {
+          const data: Row = { [resource.statusField!]: status };
+          if (HAS_PUBLISHED_AT.has(resource.model) && status === resource.publishStatus && !row.publishedAt) data.publishedAt = new Date();
+          await delegate(resource).update({ where: { id: row.id }, data });
+        }
+        done.push(row.id);
+      } catch (error) {
+        skipped.push({ id: row.id, title: String(row[resource.titleField] ?? row.id), reason: error instanceof Error ? error.message : 'Could not change it.' });
+      }
+    }
+    await audit(req, {
+      action: input.action === 'delete' ? 'delete' : 'status',
+      entityType: resource.key,
+      summary: `Bulk ${input.action}: ${done.length} ${resource.plural.toLowerCase()}${input.allDemo ? ' (all DEMO records)' : ''}`,
+      after: { ids: done, skipped: skipped.length },
+      sensitive: input.action === 'delete',
+    });
+    res.json({ done: done.length, skipped });
+  }),
+);

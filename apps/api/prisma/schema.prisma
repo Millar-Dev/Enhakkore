@@ -59,6 +59,9 @@ model User {
   /// encrypted with the server's key; it is never sent back to a browser.
   totpSecret        String?
   totpEnabled       Boolean   @default(false)
+  /// Which version of the member terms the person accepted, and when.
+  termsVersion      String?
+  termsAcceptedAt   DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -814,6 +817,8 @@ model City {
   timezone  String?
   latitude  Float?
   longitude Float?
+  /// GeoNames id when the city came from the worldwide dataset.
+  geonameId Int?
   summary   String?
   heroImage String?
   featured  Boolean @default(false)
@@ -931,6 +936,8 @@ model Activity {
   gallery     String  @default("[]")
   videoUrl    String?
   featured    Boolean @default(false)
+  /// Example content for testing and layout. Shown with a DEMO label, never as real.
+  isDemo      Boolean @default(false)
 
   createdById String?
   publishedAt DateTime?
@@ -1018,9 +1025,14 @@ model Place {
   /// VERIFIED | BUSINESS_SUBMITTED | UNVERIFIED
   infoSource     String    @default("UNVERIFIED")
   lastVerifiedAt DateTime?
+  /// Where publicly researched details came from, and when they were checked.
+  sourceUrl      String?
+  researchedAt   DateTime?
   sponsored      Boolean   @default(false)
   hiddenGem      Boolean   @default(false)
   featured       Boolean   @default(false)
+  /// Example content for testing and layout. Shown with a DEMO label, never as real.
+  isDemo         Boolean   @default(false)
   /// A partner account allowed to edit this listing.
   managerId      String?
   status         String    @default("DRAFT")
@@ -1084,6 +1096,8 @@ model Experience {
   gallery         String    @default("[]")
   videoUrl        String?
   featured        Boolean   @default(false)
+  /// Example content for testing and layout. Shown with a DEMO label, never as real.
+  isDemo          Boolean   @default(false)
   status          String    @default("DRAFT")
 
   publishedAt DateTime?
@@ -1127,6 +1141,8 @@ model Event {
   gallery             String    @default("[]")
   videoUrl            String?
   featured            Boolean   @default(false)
+  /// Example content for testing and layout. Shown with a DEMO label, never as real.
+  isDemo              Boolean   @default(false)
   status              String    @default("DRAFT")
 
   publishedAt DateTime?
@@ -1686,6 +1702,8 @@ model Community {
   reviewNotes String?
   createdById String?
   featured    Boolean @default(false)
+  /// Example content for testing and layout. Shown with a DEMO label, never as real.
+  isDemo      Boolean @default(false)
 
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -1764,6 +1782,8 @@ model Tournament {
   /// DRAFT | REGISTRATION_OPEN | REGISTRATION_CLOSED | IN_PROGRESS | COMPLETED | CANCELLED | ARCHIVED
   status               String    @default("DRAFT")
   featured             Boolean   @default(false)
+  /// Example content for testing and layout. Shown with a DEMO label, never as real.
+  isDemo               Boolean   @default(false)
 
   publishedAt DateTime?
   createdAt   DateTime  @default(now())

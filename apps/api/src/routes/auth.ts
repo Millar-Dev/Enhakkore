@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
-import { DEFAULT_COMMISSION_RATE } from '@enhakkore/shared';
+import { DEFAULT_COMMISSION_RATE, LEGAL_VERSION } from '@enhakkore/shared';
 import { ApiError, route } from '../lib/http';
 import { uniqueSlug } from '../lib/ids';
 import { prisma } from '../lib/prisma';
@@ -43,6 +43,7 @@ const registerSchema = z.object({
   phone: z.string().trim().max(40).optional(),
   /** Required when accountType is ORGANIZER. */
   companyName: z.string().trim().min(2).max(120).optional(),
+  acceptedTerms: z.literal(true, { errorMap: () => ({ message: 'Please accept the terms to create an account.' }) }),
 });
 
 authRouter.post(
@@ -69,6 +70,8 @@ authRouter.post(
 
     const user = await prisma.user.create({
       data: {
+        termsVersion: LEGAL_VERSION,
+        termsAcceptedAt: new Date(),
         name: input.name,
         email: input.email,
         passwordHash,

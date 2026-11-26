@@ -177,7 +177,7 @@ export const ENQUIRY_TYPES = [
 export type EnquiryType = (typeof ENQUIRY_TYPES)[number];
 export const ENQUIRY_TYPE_LABELS: Record<string, string> = {
   GENERAL: 'General',
-  TRIP: 'Trip',
+  TRIP: 'Trip request',
   PRIVATE_TRIP: 'Private trip',
   PLACE: 'Place',
   TABLE: 'Restaurant reservation',
@@ -235,13 +235,16 @@ export function enquiryStatusesFor(type: string): string[] {
   if (type === 'ROOM' || type === 'TABLE') {
     return ['NEW', 'CONTACTED', 'AWAITING_BUSINESS', 'ALTERNATIVE_OFFERED', 'CONFIRMED', 'DECLINED', 'CANCELLED', 'UNSUCCESSFUL', 'SPAM'];
   }
+  if (type === 'TRIP' || type === 'PRIVATE_TRIP') {
+    return ['NEW', 'CONTACTED', 'IN_PROGRESS', 'CONFIRMED', 'CONVERTED', 'DECLINED', 'CANCELLED', 'CLOSED', 'SPAM'];
+  }
   if (type === 'PARTNERSHIP') {
     return ['NEW', 'CONTACTED', 'NEGOTIATING', 'AWAITING_VERIFICATION', 'AWAITING_AGREEMENT', 'APPROVED', 'PUBLISHED', 'DECLINED', 'SPAM'];
   }
   return ['NEW', 'CONTACTED', 'IN_PROGRESS', 'CONFIRMED', 'CONVERTED', 'DECLINED', 'CANCELLED', 'CLOSED', 'SPAM'];
 }
 /** Enquiry types that send the team an automatic WhatsApp notice. */
-export const NOTIFY_ENQUIRY_TYPES = ['ROOM', 'TABLE', 'EVENT_PLAN', 'PARTNERSHIP', 'PRIVATE_TRIP', 'CATERING', 'PRIVATE_CHEF'];
+export const NOTIFY_ENQUIRY_TYPES = ['TRIP', 'ROOM', 'TABLE', 'EVENT_PLAN', 'PARTNERSHIP', 'PRIVATE_TRIP', 'CATERING', 'PRIVATE_CHEF'];
 
 /** Where a trip stands — shown on the trip page, set by the travel team. */
 export const TRIP_STAGES = [

@@ -25,6 +25,9 @@ import { decideParticipant } from './cc/operations';
  */
 export const communityRouter = Router();
 
+/** Example listings exist to show the layout; nobody can sign up for one. */
+export const DEMO_MESSAGE = 'This is an example (DEMO) listing, not a real scheduled activity, so registration is closed.';
+
 const formLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: env.isProduction ? 15 : 1000,
@@ -90,12 +93,17 @@ const enquirySchema = z
       if (!value.details?.time) ctx.addIssue({ code: 'custom', path: ['time'], message: 'Choose a time.' });
       if (!value.people) ctx.addIssue({ code: 'custom', path: ['people'], message: 'How many guests?' });
     }
+    if (value.type === 'TRIP') {
+      if (!value.phone) ctx.addIssue({ code: 'custom', path: ['phone'], message: 'Give a phone or WhatsApp number so we can reply.' });
+      if (!value.people) ctx.addIssue({ code: 'custom', path: ['people'], message: 'How many travellers?' });
+    }
     if (value.type === 'PARTNERSHIP' && !value.details?.businessName) {
       ctx.addIssue({ code: 'custom', path: ['businessName'], message: 'Give the business name.' });
     }
   });
 
 const ENQUIRY_THANKS: Record<string, string> = {
+  TRIP: 'Thank you — your trip request has reached the Enhakkore travel team. This is a request, not a confirmed place: we will contact you about dates, availability and how to secure your place.',
   ROOM: 'Thank you — your hotel enquiry has reached the Enhakkore team. This is a request, not a booking: no room is reserved until the property confirms availability and price.',
   TABLE: 'Thank you — your reservation request has reached the Enhakkore team. Your table is not confirmed until the restaurant accepts it; we will tell you as soon as it does.',
   EVENT_PLAN: 'Thank you — your event-planning request has reached the Enhakkore team. Sending it is free; we will contact you to discuss your event and, if you wish, a quotation.',
@@ -352,6 +360,7 @@ communityRouter.post(
     rejectBots(req);
     const input = registerSchema.parse(req.body);
     const event = await prisma.event.findFirst({ where: { slug: req.params.slug, status: 'PUBLISHED' }, include: { tickets: true } });
+    if (event?.isDemo) throw ApiError.conflict(DEMO_MESSAGE);
     if (!event) throw ApiError.notFound('That event is not open for registration.');
     if (event.registrationMode !== 'ENHAKKORE') throw ApiError.unprocessable('Registration for this event is handled by its organiser.');
     if ((event.endsAt ?? event.startsAt).getTime() < Date.now()) throw ApiError.unprocessable('This event has already taken place.');
@@ -414,6 +423,7 @@ communityRouter.post(
   route(async (req, res) => {
     const { message } = z.object({ message: z.string().trim().max(500).optional() }).parse(req.body ?? {});
     const activity = await prisma.activity.findFirst({ where: { slug: req.params.slug, status: { in: ['PUBLISHED', 'FULL'] } } });
+    if (activity?.isDemo) throw ApiError.conflict(DEMO_MESSAGE);
     if (!activity) throw ApiError.notFound('That activity is not taking requests.');
     if (activity.startsAt && !activity.recurrence && (activity.endsAt ?? activity.startsAt).getTime() < Date.now()) {
       throw ApiError.unprocessable('This activity has already happened.');

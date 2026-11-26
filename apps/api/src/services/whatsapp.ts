@@ -26,9 +26,13 @@ export function whatsappConfigured(): boolean {
 }
 
 /** The team numbers marked "WhatsApp" in Settings → Contacts. */
-export async function teamWhatsappNumbers(): Promise<string[]> {
+export async function teamWhatsappNumbers(type?: string): Promise<string[]> {
   const settings = await getSettings();
-  return settings.contact.numbers.filter((number) => number.whatsapp && number.digits).map((number) => number.digits);
+  const numbers = settings.contact.numbers.filter((number) => number.whatsapp && number.digits).map((number) => number.digits);
+  // Settings → Contacts → routing: "1" or "2" sends that type of enquiry to one number only.
+  const route = type ? settings.contact.routing?.[type] : undefined;
+  const index = route && /^\d+$/.test(route) ? Number(route) - 1 : -1;
+  return index >= 0 && numbers[index] ? [numbers[index]!] : numbers;
 }
 
 /** Test hook: messages "sent" while NODE_ENV=test. */
@@ -70,8 +74,8 @@ async function sendOne(to: string, text: string): Promise<{ ok: boolean; id?: st
 }
 
 /** Sends one notice to every team WhatsApp number. Never throws. */
-export async function notifyTeam(summary: string, text: string, subject?: { type: string; id: string }): Promise<NotifyOutcome> {
-  const numbers = await teamWhatsappNumbers();
+export async function notifyTeam(summary: string, text: string, subject?: { type: string; id: string }, routeType?: string): Promise<NotifyOutcome> {
+  const numbers = await teamWhatsappNumbers(routeType);
   const configured = whatsappConfigured();
   if (!configured || numbers.length === 0) {
     await prisma.notificationDelivery.create({
@@ -148,10 +152,12 @@ export function enquiryNoticeText(enquiry: EnquiryLike): string {
 /** Sends the team notice for an enquiry and records the outcome on it. */
 export async function notifyEnquiry(enquiry: EnquiryLike): Promise<NotifyOutcome> {
   if (!NOTIFY_ENQUIRY_TYPES.includes(enquiry.type)) return 'NOT_REQUIRED';
-  const outcome = await notifyTeam(`${enquiry.reference} ${ENQUIRY_TYPE_LABELS[enquiry.type] ?? enquiry.type}`, enquiryNoticeText(enquiry), {
-    type: 'ENQUIRY',
-    id: enquiry.id,
-  });
+  const outcome = await notifyTeam(
+    `${enquiry.reference} ${ENQUIRY_TYPE_LABELS[enquiry.type] ?? enquiry.type}`,
+    enquiryNoticeText(enquiry),
+    { type: 'ENQUIRY', id: enquiry.id },
+    enquiry.type,
+  );
   const failure =
     outcome === 'SENT'
       ? null

@@ -23,6 +23,7 @@ import { notify } from '../services/notifications';
 import { ENGAGEMENT_KINDS, freshness, popularityScores, rankByPopularity, recordEngagement } from '../services/popularity';
 import { toPublic, type Row } from '../services/resources/engine';
 import { LIVE, TRIP_PUBLIC_INCLUDE, toActivity, toEvent, toTrip } from './public';
+import { DEMO_MESSAGE } from './community';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -107,12 +108,12 @@ experiencesPublic.get(
 export async function trendingItems(limit: number) {
   const now = new Date();
   const [places, activities, events, trips, tournaments, experiences] = await Promise.all([
-    prisma.place.findMany({ where: LIVE.place, include: GEO, take: 200 }),
-    prisma.activity.findMany({ where: { status: { in: ['PUBLISHED', 'FULL'] }, OR: [{ startsAt: null }, { startsAt: { gte: now } }, { recurrence: { not: null } }] }, include: GEO, take: 200 }),
-    prisma.event.findMany({ where: { status: { in: ['PUBLISHED'] }, OR: [{ startsAt: { gte: now } }, { endsAt: { gte: now } }] }, include: GEO, take: 200 }),
+    prisma.place.findMany({ where: { ...LIVE.place, isDemo: false }, include: GEO, take: 200 }),
+    prisma.activity.findMany({ where: { isDemo: false, status: { in: ['PUBLISHED', 'FULL'] }, OR: [{ startsAt: null }, { startsAt: { gte: now } }, { recurrence: { not: null } }] }, include: GEO, take: 200 }),
+    prisma.event.findMany({ where: { isDemo: false, status: { in: ['PUBLISHED'] }, OR: [{ startsAt: { gte: now } }, { endsAt: { gte: now } }] }, include: GEO, take: 200 }),
     prisma.trip.findMany({ where: LIVE.trip, include: TRIP_PUBLIC_INCLUDE, take: 50 }),
-    prisma.tournament.findMany({ where: { status: { in: ['REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'IN_PROGRESS'] } }, include: TOURNAMENT_INCLUDE, take: 100 }),
-    prisma.experience.findMany({ where: LIVE.experience, include: GEO, take: 200 }),
+    prisma.tournament.findMany({ where: { isDemo: false, status: { in: ['REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'IN_PROGRESS'] } }, include: TOURNAMENT_INCLUDE, take: 100 }),
+    prisma.experience.findMany({ where: { ...LIVE.experience, isDemo: false }, include: GEO, take: 200 }),
   ]);
   const where = (row: Row) => [row.city?.name, row.country?.name].filter(Boolean).join(', ');
   const liveTrips = trips.map((row) => ({ row, trip: toTrip(row) })).filter(({ trip }) => !trip.isPast && trip.nextDeparture?.bookable);
@@ -190,9 +191,9 @@ async function sectionContent(section: string | undefined, req: { query: Record<
 function upcomingCards(content: Awaited<ReturnType<typeof sectionContent>>) {
   const where = (row: Row) => [row.city?.name, row.country?.name].filter(Boolean).join(', ');
   return [
-    ...content.activities.map((row) => ({ kind: 'Activity', id: row.id, subjectType: 'ACTIVITY', title: row.title, href: `/activities/${row.slug}`, image: row.coverImage, startsAt: row.startsAt, where: where(row), recurrence: row.recurrence, category: row.category?.name, free: !row.price, publishedAt: row.publishedAt })),
-    ...content.events.map((row) => ({ kind: 'Event', id: row.id, subjectType: 'EVENT', title: row.title, href: `/events/${row.slug}`, image: row.poster, startsAt: row.startsAt, where: where(row), category: row.category?.name, publishedAt: row.publishedAt })),
-    ...content.tournaments.map((row) => ({ kind: 'Gaming', id: row.id, subjectType: 'TOURNAMENT', title: row.title, href: `/experiences/gaming/${row.slug}`, image: row.coverImage, startsAt: row.startsAt, where: row.kind === 'ONLINE' ? `Online${row.server ? ` · ${row.server}` : ''}` : row.venue ?? where(row), category: row.game?.name, free: true, publishedAt: row.publishedAt })),
+    ...content.activities.map((row) => ({ kind: 'Activity', id: row.id, subjectType: 'ACTIVITY', title: row.title, href: `/activities/${row.slug}`, image: row.coverImage, startsAt: row.startsAt, where: where(row), recurrence: row.recurrence, category: row.category?.name, free: !row.price, publishedAt: row.publishedAt, isDemo: row.isDemo })),
+    ...content.events.map((row) => ({ kind: 'Event', id: row.id, subjectType: 'EVENT', title: row.title, href: `/events/${row.slug}`, image: row.poster, startsAt: row.startsAt, where: where(row), category: row.category?.name, publishedAt: row.publishedAt, isDemo: row.isDemo })),
+    ...content.tournaments.map((row) => ({ kind: 'Gaming', id: row.id, subjectType: 'TOURNAMENT', title: row.title, href: `/experiences/gaming/${row.slug}`, image: row.coverImage, startsAt: row.startsAt, where: row.kind === 'ONLINE' ? `Online${row.server ? ` · ${row.server}` : ''}` : row.venue ?? where(row), category: row.game?.name, free: true, publishedAt: row.publishedAt, isDemo: row.isDemo })),
   ].sort((a, b) => (a.startsAt ? new Date(a.startsAt).getTime() : Infinity) - (b.startsAt ? new Date(b.startsAt).getTime() : Infinity));
 }
 
@@ -222,7 +223,7 @@ experiencesPublic.get(
       )
     )
       .flat()
-      .filter((item) => item.popularity > 0)
+      .filter((item) => item.popularity > 0 && !item.isDemo)
       .sort((a, b) => b.popularity - a.popularity)
       .slice(0, 8);
     const guided = await prisma.experience.findMany({ where: LIVE.experience, include: GEO, orderBy: [{ featured: 'desc' }, { updatedAt: 'desc' }], take: 6 });
@@ -310,6 +311,7 @@ experiencesMember.post(
   route(async (req, res) => {
     const community = await prisma.community.findFirst({ where: { slug: req.params.slug, status: 'PUBLISHED' } });
     if (!community) throw ApiError.notFound('That community is not listed.');
+    if (community.isDemo) throw ApiError.conflict('This is an example (DEMO) community, so it cannot be joined.');
     await prisma.communityMember.upsert({
       where: { communityId_userId: { communityId: community.id, userId: req.auth!.id } },
       create: { communityId: community.id, userId: req.auth!.id },
@@ -450,6 +452,7 @@ experiencesMember.post(
     const tournament = await prisma.tournament.findFirst({ where: { slug: req.params.slug }, include: TOURNAMENT_INCLUDE });
     if (!tournament) throw ApiError.notFound('That tournament is not listed.');
     const view = toTournament(tournament);
+    if (tournament.isDemo) throw ApiError.conflict(DEMO_MESSAGE);
     if (!view.registrationOpen) throw ApiError.conflict('Registration for this tournament is closed.');
     const team = tournament.format !== 'SOLO' && tournament.teamSize > 1;
     if (team && !input.teamName) throw new ApiError(422, 'Please check the highlighted fields.', 'validation_error', { teamName: 'Give your team a name.' });
@@ -497,6 +500,7 @@ experiencesMember.post(
     const input = joinTeamSchema.parse(req.body);
     const entry = await prisma.tournamentEntry.findUnique({ where: { inviteCode: input.inviteCode.toUpperCase() }, include: { tournament: true, _count: { select: { members: true } } } });
     if (!entry || entry.tournament.slug !== req.params.slug) throw ApiError.notFound('That team code is not right for this tournament.');
+    if (entry.tournament.isDemo) throw ApiError.conflict(DEMO_MESSAGE);
     if (!['REGISTERED', 'CONFIRMED'].includes(entry.status)) throw ApiError.conflict('That team is no longer in the tournament.');
     if (entry._count.members + 1 >= entry.tournament.teamSize) throw ApiError.conflict('That team is already full.');
     const already = await prisma.tournamentEntry.findFirst({
@@ -567,6 +571,7 @@ experiencesMember.post(
   route(async (req, res) => {
     const session = await prisma.activitySession.findUnique({ where: { id: req.params.id }, include: { activity: true } });
     if (!session || !ACTIVITY_PUBLIC_STATUSES.includes(session.activity.status as any)) throw ApiError.notFound('That session is not available.');
+    if (session.activity.isDemo) throw ApiError.conflict(DEMO_MESSAGE);
     if (session.status === 'CANCELLED' || session.startsAt.getTime() < Date.now()) throw ApiError.conflict('Registration for this session is closed.');
     const capacity = session.capacity ?? session.activity.capacity;
     const result = await prisma.$transaction(async (tx) => {

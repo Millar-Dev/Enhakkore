@@ -34,6 +34,8 @@ export interface RegisterInput {
   companyName?: string;
   country?: string;
   phone?: string;
+  /** The member accepted the current terms (required). */
+  acceptedTerms?: boolean;
 }
 
 const SessionContext = createContext<SessionState | null>(null);

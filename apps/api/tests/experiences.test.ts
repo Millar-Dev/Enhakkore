@@ -297,3 +297,86 @@ describe('trip groups after the trip', () => {
     assert.ok(await prisma.report.findFirst({ where: { targetType: 'MESSAGE', targetId: group.messages[0]!.id } }));
   });
 });
+
+describe('round 3: trips visible, demo content, search, locations, bulk', () => {
+  test('the Arusha Escape is published and appears in upcoming trips and search', async () => {
+    const trips = await api.request('GET', '/public/trips');
+    assert.ok(trips.body.items.some((trip: { slug: string }) => trip.slug === 'arusha-escape'), 'Arusha is listed');
+    const found = await api.request('GET', '/public/search?q=Arusha');
+    assert.ok(found.body.results.some((item: { href: string }) => item.href === '/travel/arusha-escape'));
+  });
+
+  test('a trip request is saved with a reference and sent to the routed number', async () => {
+    process.env.WHATSAPP_ACCESS_TOKEN = 't';
+    process.env.WHATSAPP_PHONE_NUMBER_ID = '1';
+    const before = whatsappTestOutbox.length;
+    const settings = await api.request('GET', '/cc/settings', { token: owner });
+    const contact = settings.body.settings.contact;
+    await api.request('PUT', '/cc/settings/contact', { token: owner, body: { value: { ...contact, routing: { ...contact.routing, TRIP: '2' } }, confirm: true } });
+    const sent = await api.request('POST', '/community/enquiries', { body: { type: 'TRIP', subjectType: 'TRIP', subjectTitle: 'Arusha Escape', name: 'Neema', phone: '+255 700 000 010', people: 3, message: 'Three of us for December.', details: { preferredDate: '18 Dec 2026' } } });
+    assert.equal(sent.status, 201, JSON.stringify(sent.body));
+    assert.match(sent.body.reference, /^ENQ-/);
+    const delivered = whatsappTestOutbox.slice(before);
+    assert.deepEqual(delivered.map((item) => item.to), ['255794279089'], 'only the second number, as routed');
+    assert.match(delivered[0]!.text, /Arusha Escape/);
+    await api.request('PUT', '/cc/settings/contact', { token: owner, body: { value: contact, confirm: true } });
+    delete process.env.WHATSAPP_ACCESS_TOKEN;
+    delete process.env.WHATSAPP_PHONE_NUMBER_ID;
+  });
+
+  test('demo listings are labelled and cannot be signed up for', async () => {
+    const list = await api.request('GET', '/public/tournaments?q=Free%20Fire');
+    const demo = list.body.items.find((item: { isDemo: boolean }) => item.isDemo);
+    assert.ok(demo, 'a DEMO Free Fire tournament exists');
+    const member = await api.register('demoplayer');
+    const tried = await api.request('POST', `/community/tournaments/${demo.slug}/register`, { token: member.token, body: { playerName: 'Xavier', gameUid: '123456', teamName: 'Tigers', agreedRules: true } });
+    assert.equal(tried.status, 409);
+    const trending = await api.request('GET', '/public/trending');
+    assert.ok(!trending.body.items.some((item: { title: string }) => /demo/i.test(item.title)));
+  });
+
+  test('search understands “restaurants in Zanzibar” and “hotels in Dar es Salaam”', async () => {
+    const restaurants = await api.request('GET', `/public/search?q=${encodeURIComponent('restaurants in Zanzibar')}`);
+    assert.equal(restaurants.body.interpreted.city, 'Zanzibar');
+    assert.ok(restaurants.body.results.some((item: { title: string }) => item.title === 'The Rock Restaurant'));
+    assert.ok(restaurants.body.results.every((item: { type: string }) => item.type === 'place' || item.type === 'city' || item.type === 'country'));
+    const hotels = await api.request('GET', `/public/search?q=${encodeURIComponent('hotels in Dar es Salaam')}`);
+    const titles = hotels.body.results.map((item: { title: string }) => item.title);
+    assert.ok(titles.includes('Dar es Salaam Serena Hotel'));
+    assert.ok(!titles.includes('Elewana Arusha Coffee Lodge'), 'Arusha lodges are not in Dar es Salaam');
+    const suggest = await api.request('GET', '/public/suggest?q=free');
+    assert.ok(suggest.body.items.some((item: { label: string }) => /Free Fire/.test(item.label)));
+  });
+
+  test('worldwide cities: search a country, pick one, it becomes a stored city', async () => {
+    const found = await api.request('GET', '/public/geo/cities?country=TZ&q=moshi');
+    assert.equal(found.status, 200);
+    const moshi = found.body.items.find((item: { name: string }) => item.name === 'Moshi');
+    assert.ok(moshi, 'Moshi is in the dataset');
+    const lagos = await api.request('GET', '/public/geo/cities?country=NG&q=ibad');
+    assert.ok(lagos.body.items.some((item: { name: string }) => item.name === 'Ibadan'));
+    const member = await api.register('geo');
+    const city = await api.request('POST', '/community/geo/city', { token: member.token, body: { country: 'TZ', geonameId: moshi.geonameId } });
+    assert.equal(city.status, 200, JSON.stringify(city.body));
+    const again = await api.request('POST', '/community/geo/city', { token: member.token, body: { country: 'TZ', geonameId: moshi.geonameId } });
+    assert.equal(again.body.id, city.body.id, 'chosen twice, stored once');
+  });
+
+  test('bulk: the owner removes every DEMO community at once', async () => {
+    const before = await prisma.community.count({ where: { isDemo: true } });
+    assert.ok(before > 0);
+    const noConfirm = await api.request('POST', '/cc/r/communities/bulk', { token: owner, body: { action: 'delete', allDemo: true } });
+    assert.equal(noConfirm.status, 428);
+    const archived = await api.request('POST', '/cc/r/communities/bulk', { token: owner, body: { action: 'archive', allDemo: true } });
+    assert.equal(archived.body.done, before);
+    assert.equal(await prisma.community.count({ where: { isDemo: true, status: { not: 'ARCHIVED' } } }), 0);
+  });
+
+  test('new members record which terms they accepted', async () => {
+    const refused = await api.request('POST', '/auth/register', { body: { name: 'No Terms', email: `noterms-${Date.now()}@test.local`, password: 'TestPass-123' } });
+    assert.equal(refused.status, 422);
+    const member = await api.register('terms');
+    const stored = await prisma.user.findUniqueOrThrow({ where: { id: member.id } });
+    assert.ok(stored.termsVersion && stored.termsAcceptedAt);
+  });
+});

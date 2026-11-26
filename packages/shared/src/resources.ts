@@ -227,7 +227,7 @@ export const ACTIVITY_RESOURCE: ResourceDef = {
   imageField: 'coverImage',
   columns: ['title', 'categoryId', 'cityId', 'startsAt', 'source', 'status'],
   searchFields: ['title', 'organiserName', 'meetingPoint'],
-  filters: ['status', 'source', 'countryId', 'cityId', 'categoryId', 'mode'],
+  filters: ['status', 'source', 'countryId', 'cityId', 'categoryId', 'mode', 'isDemo'],
   defaultSort: { field: 'createdAt', dir: 'desc' },
   fields: [
     f.title('Activity title'),
@@ -268,6 +268,7 @@ export const ACTIVITY_RESOURCE: ResourceDef = {
     f.video(),
     { name: 'status', label: 'Status', type: 'select', options: opts(ACTIVITY_STATUSES), default: 'DRAFT', section: 'Visibility' },
     { name: 'reviewNotes', label: 'Review notes (internal)', type: 'textarea', private: true, max: 2000, section: 'Visibility' },
+    { name: 'isDemo', label: 'DEMO record (example content, not real)', type: 'boolean', section: 'Visibility', help: 'Shown on the website with a DEMO label. Replace or delete demo records before launch.' },
     f.featured(),
   ],
 };
@@ -291,7 +292,7 @@ export const PLACE_RESOURCE: ResourceDef = {
   ownerField: 'managerId',
   columns: ['name', 'categoryId', 'cityId', 'infoSource', 'sponsored', 'status'],
   searchFields: ['name', 'address', 'area'],
-  filters: ['status', 'countryId', 'cityId', 'categoryId', 'infoSource'],
+  filters: ['status', 'countryId', 'cityId', 'categoryId', 'infoSource', 'isDemo'],
   defaultSort: { field: 'updatedAt', dir: 'desc' },
   fields: [
     { name: 'name', label: 'Name', type: 'text', required: true, max: 160, section: 'Basics' },
@@ -347,9 +348,12 @@ export const PLACE_RESOURCE: ResourceDef = {
     f.video(),
     { name: 'infoSource', label: 'Who provided these details', type: 'select', options: opts(INFO_SOURCES, INFO_SOURCE_LABELS), default: 'UNVERIFIED', section: 'Trust' },
     { name: 'lastVerifiedAt', label: 'Last verified on', type: 'date', section: 'Trust' },
+    { name: 'sourceUrl', label: 'Public source used', type: 'url', section: 'Trust', help: 'For researched listings: where the details came from (the business’s own website or official page).' },
+    { name: 'researchedAt', label: 'Source checked on', type: 'date', section: 'Trust' },
     { name: 'sponsored', label: 'Sponsored listing', type: 'boolean', section: 'Trust', help: 'Shown with a “Sponsored” label.' },
     { name: 'managerId', label: 'Managed by (partner account)', type: 'user', section: 'Trust', help: 'A Business Partner or Property Manager who may edit this listing.' },
     { name: 'status', label: 'Status', type: 'select', options: opts(CONTENT_STATUSES), default: 'DRAFT', section: 'Visibility' },
+    { name: 'isDemo', label: 'DEMO record (example content, not real)', type: 'boolean', section: 'Visibility', help: 'Shown on the website with a DEMO label. Replace or delete demo records before launch.' },
     f.featured(),
   ],
 };
@@ -373,7 +377,7 @@ export const EXPERIENCE_RESOURCE: ResourceDef = {
   ownerField: 'managerId',
   columns: ['title', 'categoryId', 'cityId', 'provider', 'status'],
   searchFields: ['title', 'provider'],
-  filters: ['status', 'countryId', 'cityId', 'categoryId'],
+  filters: ['status', 'countryId', 'cityId', 'categoryId', 'isDemo'],
   defaultSort: { field: 'updatedAt', dir: 'desc' },
   fields: [
     f.title(),
@@ -400,6 +404,7 @@ export const EXPERIENCE_RESOURCE: ResourceDef = {
     f.gallery(),
     f.video(),
     { name: 'status', label: 'Status', type: 'select', options: opts(CONTENT_STATUSES), default: 'DRAFT', section: 'Visibility' },
+    { name: 'isDemo', label: 'DEMO record (example content, not real)', type: 'boolean', section: 'Visibility', help: 'Shown on the website with a DEMO label. Replace or delete demo records before launch.' },
     f.featured(),
   ],
 };
@@ -423,7 +428,7 @@ export const EVENT_RESOURCE: ResourceDef = {
   ownerField: 'managerId',
   columns: ['title', 'host', 'cityId', 'startsAt', 'status'],
   searchFields: ['title', 'venue', 'hostName'],
-  filters: ['status', 'host', 'countryId', 'cityId', 'categoryId'],
+  filters: ['status', 'host', 'countryId', 'cityId', 'categoryId', 'isDemo'],
   defaultSort: { field: 'startsAt', dir: 'desc' },
   fields: [
     f.title('Event name'),
@@ -468,6 +473,7 @@ export const EVENT_RESOURCE: ResourceDef = {
     f.gallery(),
     f.video(),
     { name: 'status', label: 'Status', type: 'select', options: opts(EVENT_STATUSES), default: 'DRAFT', section: 'Visibility' },
+    { name: 'isDemo', label: 'DEMO record (example content, not real)', type: 'boolean', section: 'Visibility', help: 'Shown on the website with a DEMO label. Replace or delete demo records before launch.' },
     f.featured(),
   ],
 };
@@ -490,7 +496,7 @@ export const TRIP_RESOURCE: ResourceDef = {
   imageField: 'heroImage',
   columns: ['title', 'type', 'cityId', 'basePrice', 'status'],
   searchFields: ['title', 'summary'],
-  filters: ['status', 'type', 'countryId'],
+  filters: ['status', 'type', 'countryId', 'isDemo'],
   defaultSort: { field: 'updatedAt', dir: 'desc' },
   fields: [
     f.title('Trip name'),
@@ -604,6 +610,7 @@ export const TRIP_RESOURCE: ResourceDef = {
     },
     f.video(),
     { name: 'status', label: 'Status', type: 'select', options: opts(['DRAFT', 'PUBLISHED', 'ARCHIVED']), default: 'DRAFT', section: 'Visibility' },
+    { name: 'isDemo', label: 'DEMO record (example content, not real)', type: 'boolean', section: 'Visibility', help: 'Shown on the website with a DEMO label. Replace or delete demo records before launch.' },
     f.featured(),
   ],
 };
@@ -1025,7 +1032,7 @@ export const COMMUNITY_RESOURCE: ResourceDef = {
   imageField: 'coverImage',
   columns: ['name', 'categoryId', 'cityId', 'status'],
   searchFields: ['name', 'summary'],
-  filters: ['status', 'countryId', 'categoryId'],
+  filters: ['status', 'countryId', 'categoryId', 'isDemo'],
   defaultSort: { field: 'updatedAt', dir: 'desc' },
   fields: [
     { name: 'name', label: 'Name', type: 'text', required: true, max: 120, section: 'Basics' },
@@ -1039,6 +1046,7 @@ export const COMMUNITY_RESOURCE: ResourceDef = {
     f.cover(),
     { name: 'status', label: 'Status', type: 'select', options: opts(COMMUNITY_STATUSES), default: 'DRAFT', section: 'Visibility' },
     { name: 'reviewNotes', label: 'Review notes (internal)', type: 'textarea', private: true, max: 2000, section: 'Visibility' },
+    { name: 'isDemo', label: 'DEMO record (example content, not real)', type: 'boolean', section: 'Visibility', help: 'Shown on the website with a DEMO label. Replace or delete demo records before launch.' },
     f.featured(),
   ],
 };
@@ -1061,7 +1069,7 @@ export const TOURNAMENT_RESOURCE: ResourceDef = {
   imageField: 'coverImage',
   columns: ['title', 'gameId', 'kind', 'format', 'startsAt', 'status'],
   searchFields: ['title', 'server', 'venue'],
-  filters: ['status', 'kind', 'format', 'gameId'],
+  filters: ['status', 'kind', 'format', 'gameId', 'isDemo'],
   defaultSort: { field: 'startsAt', dir: 'desc' },
   fields: [
     f.title('Tournament or session name'),
@@ -1100,6 +1108,7 @@ export const TOURNAMENT_RESOURCE: ResourceDef = {
     { name: 'results', label: 'Final results', type: 'textarea', max: 4000, section: 'Rules & results' },
     f.cover(),
     { name: 'status', label: 'Status', type: 'select', options: opts(TOURNAMENT_STATUSES), default: 'DRAFT', section: 'Visibility' },
+    { name: 'isDemo', label: 'DEMO record (example content, not real)', type: 'boolean', section: 'Visibility', help: 'Shown on the website with a DEMO label. Replace or delete demo records before launch.' },
     f.featured(),
   ],
 };

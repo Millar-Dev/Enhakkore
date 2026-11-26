@@ -75,7 +75,7 @@ export async function startApi(): Promise<Api> {
       counter += 1;
       const email = `${prefix}-${Date.now()}-${counter}@test.local`;
       const result = await request<{ token: string; user: { id: string } }>('POST', '/auth/register', {
-        body: { name: `Test ${prefix}`, email, password: 'TestPass-123', accountType: 'TRAVELER' },
+        body: { name: `Test ${prefix}`, email, password: 'TestPass-123', accountType: 'TRAVELER', acceptedTerms: true },
       });
       if (result.status !== 201) throw new Error(`register failed: ${result.status} ${JSON.stringify(result.body)}`);
       return { token: result.body.token, email, id: result.body.user.id };

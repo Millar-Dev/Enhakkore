@@ -35,6 +35,7 @@ import { rankByPopularity } from '../services/popularity';
  */
 export const publicRouter = Router();
 
+const TOURNAMENT_SEARCH_STATUSES = ['REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'IN_PROGRESS', 'COMPLETED'];
 const str = (value: unknown) => (typeof value === 'string' && value.trim() ? value.trim() : undefined);
 const GEO = { country: true, city: true, category: true };
 
@@ -748,33 +749,155 @@ publicRouter.get(
   }),
 );
 
+/* --------------------------------- Search --------------------------------- */
+
+/** Words people type, mapped to the category names they mean. */
+const CATEGORY_WORDS: Record<string, string[]> = {
+  hotel: ['Hotels', 'Resorts', 'Lodges', 'Guesthouses', 'Villas', 'Apartments', 'Holiday homes'],
+  stay: ['Hotels', 'Resorts', 'Lodges', 'Guesthouses', 'Villas', 'Apartments', 'Holiday homes'],
+  accommodation: ['Hotels', 'Resorts', 'Lodges', 'Guesthouses', 'Villas', 'Apartments', 'Holiday homes'],
+  restaurant: ['Restaurants', 'Cafés', 'Food outlets'],
+  food: ['Restaurants', 'Cafés', 'Food outlets', 'Catering'],
+  cafe: ['Cafés'],
+  beach: ['Beaches', 'Beach clubs'],
+  venue: ['Wedding venues', 'Conference halls', 'Party venues', 'Gardens', 'Rooftops', 'Private event spaces', 'Entertainment venues'],
+  attraction: ['Attractions', 'Cultural sites', 'Nature destinations', 'Places worth visiting', 'Recreation centres'],
+  museum: ['Cultural sites', 'Attractions'],
+  safari: ['Safaris'],
+};
+
+const stem = (word: string) => word.toLowerCase().replace(/(ies)$/, 'y').replace(/(es|s)$/, '');
+
+/** "restaurants in Arusha" → keyword "restaurants", place "Arusha". */
+async function parseQuery(raw: string) {
+  let keyword = raw.trim();
+  let city: { id: string; name: string } | null = null;
+  let country: { id: string; name: string } | null = null;
+  const match = /^(.*?)\s+(?:in|near|at)\s+(.+)$/i.exec(keyword);
+  const tryPlace = async (text: string) => {
+    const c = await prisma.city.findFirst({ where: { status: 'PUBLISHED', name: textContains(text) }, orderBy: { featured: 'desc' } });
+    if (c) return { city: { id: c.id, name: c.name }, country: null };
+    const k = await prisma.country.findFirst({ where: { status: 'PUBLISHED', name: textContains(text) } });
+    return k ? { city: null, country: { id: k.id, name: k.name } } : null;
+  };
+  if (match) {
+    const place = await tryPlace(match[2]!.trim());
+    if (place) {
+      keyword = match[1]!.trim();
+      city = place.city;
+      country = place.country;
+    }
+  }
+  const words = keyword.split(/\s+/).filter(Boolean).map(stem);
+  const categoryNames = [...new Set(words.flatMap((word) => CATEGORY_WORDS[word] ?? []))];
+  // When the keyword was only a category word, search by category rather than by text.
+  const textual = words.some((word) => !CATEGORY_WORDS[word]) ? keyword : '';
+  return { keyword, textual, categoryNames, city, country };
+}
+
 publicRouter.get(
   '/search',
   route(async (req, res) => {
-    const q = str(req.query.q);
-    if (!q || q.length < 2) return res.json({ q: q ?? '', results: [] });
-    const take = 8;
-    const [activities, places, experiences, events, trips, countries, cities] = await Promise.all([
-      prisma.activity.findMany({ where: { status: { in: ACTIVITY_PUBLIC_STATUSES }, OR: [{ title: textContains(q) }, { summary: textContains(q) }, { category: { name: textContains(q) } }] }, include: GEO, take }),
-      prisma.place.findMany({ where: { status: 'PUBLISHED', OR: [{ name: textContains(q) }, { summary: textContains(q) }, { area: textContains(q) }, { category: { name: textContains(q) } }] }, include: GEO, take }),
-      prisma.experience.findMany({ where: { status: 'PUBLISHED', OR: [{ title: textContains(q) }, { summary: textContains(q) }] }, include: GEO, take }),
-      prisma.event.findMany({ where: { status: { in: EVENT_PUBLIC_STATUSES }, OR: [{ title: textContains(q) }, { summary: textContains(q) }, { venue: textContains(q) }] }, include: GEO, take }),
-      prisma.trip.findMany({ where: { ...LIVE.trip, OR: [{ title: textContains(q) }, { summary: textContains(q) }, { destinationLabel: textContains(q) }] }, include: { country: true, city: true }, take }),
-      prisma.country.findMany({ where: { status: 'PUBLISHED', name: textContains(q) }, take: 4 }),
-      prisma.city.findMany({ where: { status: 'PUBLISHED', name: textContains(q) }, include: { country: true }, take: 6 }),
+    const q = str(req.query.q) ?? '';
+    const type = str(req.query.type);
+    const parsed = q.length >= 2 ? await parseQuery(q) : { keyword: '', textual: '', categoryNames: [] as string[], city: null, country: null };
+    const countryParam = str(req.query.country);
+    const cityParam = str(req.query.city);
+    const fromParam = str(req.query.from);
+    const toParam = str(req.query.to);
+    if (!q && !countryParam && !cityParam && !type) return res.json({ q, results: [], interpreted: null });
+
+    const loc: Row = {};
+    if (parsed.city) loc.cityId = parsed.city.id;
+    else if (parsed.country) loc.countryId = parsed.country.id;
+    if (countryParam) loc.country = { OR: [{ code: countryParam.toUpperCase() }, { slug: countryParam.toLowerCase() }] };
+    if (cityParam) loc.city = { slug: cityParam.toLowerCase() };
+    const dateRangeWhere = (field: string): Row => {
+      const r: Row = {};
+      if (fromParam && /^\d{4}-\d{2}-\d{2}/.test(fromParam)) r.gte = new Date(`${fromParam.slice(0, 10)}T00:00:00Z`);
+      if (toParam && /^\d{4}-\d{2}-\d{2}/.test(toParam)) r.lte = new Date(`${toParam.slice(0, 10)}T23:59:59Z`);
+      return Object.keys(r).length ? { [field]: r } : {};
+    };
+    const text = (fields: string[], categoryField = true): Row => {
+      const or: Row[] = [];
+      if (parsed.textual) or.push(...fields.map((field) => ({ [field]: textContains(parsed.textual) })), ...(categoryField ? [{ category: { name: textContains(parsed.textual) } }] : []));
+      if (parsed.categoryNames.length && categoryField) or.push({ category: { name: { in: parsed.categoryNames } } });
+      return or.length ? { OR: or } : {};
+    };
+    const want = (kind: string) => !type || type === kind;
+    const take = 12;
+    const now = new Date();
+    const [activities, places, experiences, events, trips, tournaments, communities, cities, countries] = await Promise.all([
+      want('activity') ? prisma.activity.findMany({ where: { AND: [{ status: { in: ACTIVITY_PUBLIC_STATUSES } }, loc, text(['title', 'summary', 'platformName']), dateRangeWhere('startsAt')] }, include: GEO, take }) : [],
+      want('place') ? prisma.place.findMany({ where: { AND: [{ status: 'PUBLISHED' }, loc, text(['name', 'summary', 'area'])] }, include: GEO, take }) : [],
+      want('experience') ? prisma.experience.findMany({ where: { AND: [{ status: 'PUBLISHED' }, loc, text(['title', 'summary'])] }, include: GEO, take }) : [],
+      want('event') ? prisma.event.findMany({ where: { AND: [{ status: { in: EVENT_PUBLIC_STATUSES } }, loc, text(['title', 'summary', 'venue']), dateRangeWhere('startsAt')] }, include: GEO, take }) : [],
+      want('trip')
+        ? prisma.trip.findMany({
+            where: {
+              AND: [
+                LIVE.trip,
+                loc,
+                parsed.textual || parsed.categoryNames.includes('Safaris')
+                  ? { OR: [...(parsed.textual ? [{ title: textContains(parsed.textual) }, { summary: textContains(parsed.textual) }, { destinationLabel: textContains(parsed.textual) }] : []), ...(parsed.categoryNames.includes('Safaris') ? [{ type: 'SAFARI' }, { title: textContains('safari') }, { summary: textContains('safari') }] : [])] }
+                  : {},
+              ],
+            },
+            include: { country: true, city: true, departures: true },
+            take,
+          })
+        : [],
+      want('tournament') ? prisma.tournament.findMany({ where: { AND: [{ status: { in: ['REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'IN_PROGRESS', 'COMPLETED'] } }, loc, parsed.textual ? { OR: [{ title: textContains(parsed.textual) }, { game: { name: textContains(parsed.textual) } }] } : {}, dateRangeWhere('startsAt')] }, include: { game: true, country: true, city: true }, take }) : [],
+      want('community') ? prisma.community.findMany({ where: { AND: [{ status: 'PUBLISHED' }, loc, parsed.textual ? { OR: [{ name: textContains(parsed.textual) }, { summary: textContains(parsed.textual) }] } : {}] }, include: { country: true, city: true }, take }) : [],
+      !type && parsed.textual ? prisma.city.findMany({ where: { status: 'PUBLISHED', name: textContains(parsed.textual) }, include: { country: true }, take: 6 }) : [],
+      !type && parsed.textual ? prisma.country.findMany({ where: { status: 'PUBLISHED', name: textContains(parsed.textual) }, take: 4 }) : [],
     ]);
     const place = (row: Row) => [row.city?.name, row.country?.name].filter(Boolean).join(', ');
+    const upcomingTrip = (row: Row) => (row.departures ?? []).some((d: Row) => new Date(d.endDate).getTime() >= now.getTime());
     res.json({
       q,
+      interpreted: q ? { keyword: parsed.keyword, categories: parsed.categoryNames, city: parsed.city?.name ?? null, country: parsed.country?.name ?? null } : null,
       results: [
-        ...trips.map((row) => ({ kind: 'Trip', title: row.title, href: `/travel/${row.slug}`, where: place(row), image: row.heroImage })),
-        ...activities.map((row) => ({ kind: 'Activity', title: row.title, href: `/activities/${row.slug}`, where: place(row), image: row.coverImage })),
-        ...events.map((row) => ({ kind: 'Event', title: row.title, href: `/events/${row.slug}`, where: place(row), image: row.poster })),
-        ...experiences.map((row) => ({ kind: 'Experience', title: row.title, href: `/experiences/${row.slug}`, where: place(row), image: row.coverImage })),
-        ...places.map((row) => ({ kind: 'Place', title: row.name, href: `/explore/${row.slug}`, where: place(row), image: row.coverImage })),
-        ...cities.map((row) => ({ kind: 'City', title: row.name, href: `/destinations/${row.country.slug}/${row.slug}`, where: row.country.name, image: row.heroImage })),
-        ...countries.map((row) => ({ kind: 'Country', title: row.name, href: `/destinations/${row.slug}`, where: row.region ?? '', image: row.heroImage })),
+        ...trips.map((row) => ({ kind: 'Trip', type: 'trip', title: row.title, href: `/travel/${row.slug}`, where: row.destinationLabel ?? place(row), image: row.heroImage, past: !upcomingTrip(row) })),
+        ...activities.map((row) => ({ kind: 'Activity', type: 'activity', title: row.title, href: `/activities/${row.slug}`, where: place(row), image: row.coverImage, startsAt: row.startsAt, isDemo: row.isDemo })),
+        ...tournaments.map((row) => ({ kind: 'Gaming', type: 'tournament', title: row.title, href: `/experiences/gaming/${row.slug}`, where: row.game?.name ?? '', image: row.coverImage, startsAt: row.startsAt, isDemo: row.isDemo })),
+        ...events.map((row) => ({ kind: 'Event', type: 'event', title: row.title, href: `/events/${row.slug}`, where: place(row), image: row.poster, startsAt: row.startsAt, isDemo: row.isDemo })),
+        ...experiences.map((row) => ({ kind: 'Experience', type: 'experience', title: row.title, href: `/experiences/${row.slug}`, where: place(row), image: row.coverImage, isDemo: row.isDemo })),
+        ...places.map((row) => ({ kind: row.category?.name ?? 'Place', type: 'place', title: row.name, href: `/explore/${row.slug}`, where: place(row), image: row.coverImage, isDemo: row.isDemo })),
+        ...communities.map((row) => ({ kind: 'Community', type: 'community', title: row.name, href: `/experiences/communities/${row.slug}`, where: place(row), image: row.coverImage, isDemo: row.isDemo })),
+        ...cities.map((row) => ({ kind: 'City', type: 'city', title: row.name, href: `/destinations/${row.country.slug}/${row.slug}`, where: row.country.name, image: row.heroImage })),
+        ...countries.map((row) => ({ kind: 'Country', type: 'country', title: row.name, href: `/destinations/${row.slug}`, where: row.region ?? '', image: row.heroImage })),
       ],
+    });
+  }),
+);
+
+/** Quick suggestions as someone types: titles, places and categories. */
+publicRouter.get(
+  '/suggest',
+  route(async (req, res) => {
+    const q = str(req.query.q);
+    if (!q || q.length < 2) return res.json({ items: [] });
+    const take = 4;
+    const [trips, activities, places, tournaments, cities, categories, games] = await Promise.all([
+      prisma.trip.findMany({ where: { ...LIVE.trip, title: textContains(q) }, select: { title: true, slug: true }, take }),
+      prisma.activity.findMany({ where: { status: { in: ['PUBLISHED', 'FULL'] }, title: textContains(q) }, select: { title: true, slug: true }, take }),
+      prisma.place.findMany({ where: { status: 'PUBLISHED', name: textContains(q) }, select: { name: true, slug: true }, take }),
+      prisma.tournament.findMany({ where: { status: { in: TOURNAMENT_SEARCH_STATUSES }, OR: [{ title: textContains(q) }, { game: { name: textContains(q) } }] }, select: { title: true, slug: true }, take }),
+      prisma.city.findMany({ where: { status: 'PUBLISHED', name: textContains(q) }, include: { country: true }, take }),
+      prisma.category.findMany({ where: { status: 'PUBLISHED', kind: { in: ['PLACE', 'ACTIVITY'] }, name: textContains(q) }, select: { name: true }, take }),
+      prisma.category.findMany({ where: { status: 'PUBLISHED', kind: 'GAME', name: textContains(q) }, select: { name: true, slug: true }, take: 3 }),
+    ]);
+    res.json({
+      items: [
+        ...trips.map((row) => ({ label: row.title, kind: 'Trip', href: `/travel/${row.slug}` })),
+        ...games.map((row) => ({ label: `${row.name} tournaments`, kind: 'Gaming', href: `/experiences/gaming?game=${row.slug}` })),
+        ...tournaments.map((row) => ({ label: row.title, kind: 'Gaming', href: `/experiences/gaming/${row.slug}` })),
+        ...activities.map((row) => ({ label: row.title, kind: 'Activity', href: `/activities/${row.slug}` })),
+        ...places.map((row) => ({ label: row.name, kind: 'Place', href: `/explore/${row.slug}` })),
+        ...categories.map((row) => ({ label: row.name, kind: 'Search', href: `/search?q=${encodeURIComponent(row.name)}` })),
+        ...cities.map((row) => ({ label: `${row.name}, ${row.country.name}`, kind: 'City', href: `/destinations/${row.country.slug}/${row.slug}` })),
+      ].slice(0, 10),
     });
   }),
 );

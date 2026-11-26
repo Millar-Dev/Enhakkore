@@ -114,8 +114,9 @@ describe('activities in more than one country', () => {
     const inNigeria = await api.request('GET', '/public/activities?country=NG');
     assert.deepEqual(inNigeria.body.items.map((item: { title: string }) => item.title), ['Lagos morning run']);
     const basketballOnly = await api.request('GET', '/public/activities?category=basketball&city=dar-es-salaam');
-    assert.equal(basketballOnly.body.items.length, 1);
-    assert.equal(basketballOnly.body.items[0].organiserPhone, undefined, 'private fields never reach the public');
+    const realBasketball = basketballOnly.body.items.filter((item: { isDemo?: boolean }) => !item.isDemo);
+    assert.equal(realBasketball.length, 1);
+    assert.equal(realBasketball[0].organiserPhone, undefined, 'private fields never reach the public');
 
     const catalogue = await api.request('GET', '/public/catalogue');
     assert.ok(catalogue.body.countries.some((country: { code: string }) => country.code === 'NG'), 'Nigeria now has something to show');
@@ -408,7 +409,7 @@ describe('Connect', () => {
 describe('launch scope', () => {
   test('operator sign-ups are closed until the marketplace phase', async () => {
     const result = await api.request('POST', '/auth/register', {
-      body: { name: 'Op', email: `op-${Date.now()}@test.local`, password: 'TestPass-123', accountType: 'ORGANIZER', companyName: 'Op Co' },
+      body: { name: 'Op', email: `op-${Date.now()}@test.local`, password: 'TestPass-123', accountType: 'ORGANIZER', companyName: 'Op Co', acceptedTerms: true },
     });
     assert.equal(result.status, 403);
   });
