@@ -567,15 +567,23 @@ communityRouter.get(
     const link = await prisma.connection.findFirst({
       where: { OR: [{ requesterId: req.auth!.id, addresseeId: user.id }, { requesterId: user.id, addresseeId: req.auth!.id }] },
     });
-    const going = await prisma.activityParticipant.findMany({
-      where: { userId: user.id, status: 'APPROVED', activity: { status: { in: ['PUBLISHED', 'FULL'] } } },
-      select: { activity: { select: { title: true, slug: true } } },
-      take: 6,
-    });
+    const [going, communities, published] = await Promise.all([
+      prisma.activityParticipant.findMany({
+        where: { userId: user.id, status: 'APPROVED', activity: { status: { in: ['PUBLISHED', 'FULL'] } } },
+        select: { activity: { select: { title: true, slug: true } } },
+        take: 6,
+      }),
+      prisma.communityMember.findMany({ where: { userId: user.id, community: { status: 'PUBLISHED' } }, select: { community: { select: { name: true, slug: true } } }, take: 20 }),
+      prisma.activity.findMany({ where: { organiserUserId: user.id, status: { in: ['PUBLISHED', 'FULL', 'COMPLETED'] } }, select: { title: true, slug: true }, take: 12 }),
+    ]);
     res.json({
       ...memberCard(user),
       connection: link ? { id: link.id, status: link.status, incoming: link.addresseeId === req.auth!.id } : null,
       activities: going.map((row) => row.activity),
+      communities: communities.map((row) => row.community),
+      published: published,
+      // An organiser is "approved" once the team has published one of their activities.
+      approvedOrganiser: published.length > 0,
     });
   }),
 );

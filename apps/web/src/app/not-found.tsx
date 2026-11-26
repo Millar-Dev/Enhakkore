@@ -36,7 +36,7 @@ export default function NotFound() {
             {[
               { href: '/travel', label: 'Trips' },
               { href: '/activities', label: 'Activities' },
-              { href: '/discover', label: 'Discover' },
+              { href: '/explore', label: 'Discover' },
               { href: '/events', label: 'Events' },
               { href: '/catering', label: 'Catering' },
               { href: '/impact', label: 'Impact' },

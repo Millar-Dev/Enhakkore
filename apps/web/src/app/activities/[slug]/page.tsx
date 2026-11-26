@@ -6,6 +6,8 @@ import { PublicShell } from '@/components/layout/PublicShell';
 import { ReportButton, SaveButton } from '@/components/public/Actions';
 import { Facts, Gallery, Prose, VideoBlock } from '@/components/public/Cards';
 import { JoinPanel } from '@/components/public/JoinPanel';
+import { Sessions } from '@/components/public/Sessions';
+import { ShareButton, TrackView } from '@/components/public/Track';
 import { SmartImage } from '@/components/public/SmartImage';
 import { apiGet } from '@/lib/api';
 import { placeLabel, priceLabel, whenLabel, type Listing } from '@/lib/public';
@@ -54,6 +56,8 @@ export default async function ActivityPage({ params }: { params: Promise<{ slug:
               {item.status === 'CANCELLED' && <span className="rounded-full bg-danger px-3 py-1.5 font-semibold text-white">Cancelled</span>}
               {ended && item.status !== 'CANCELLED' && <span className="rounded-full bg-ink-muted px-3 py-1.5 font-semibold text-white">This activity has taken place</span>}
               <SaveButton itemType="ACTIVITY" itemId={item.id} />
+              <ShareButton subjectType="ACTIVITY" subjectId={item.id} title={String(item.title)} />
+              <TrackView subjectType="ACTIVITY" subjectId={item.id} />
             </div>
           </div>
           {item.coverImage && (
@@ -90,6 +94,25 @@ export default async function ActivityPage({ params }: { params: Promise<{ slug:
               <Prose text={String(item.requirements)} className="mt-2" />
             </div>
           ) : null}
+          {item.eligibility ? (
+            <div>
+              <p className="font-display text-xl text-acacia-700">Who can take part</p>
+              <Prose text={String(item.eligibility)} className="mt-2" />
+            </div>
+          ) : null}
+          {item.rules ? (
+            <div>
+              <p className="font-display text-xl text-acacia-700">Rules</p>
+              <Prose text={String(item.rules)} className="mt-2" />
+            </div>
+          ) : null}
+          {item.cancellationTerms ? (
+            <div>
+              <p className="font-display text-xl text-acacia-700">Cancellation</p>
+              <Prose text={String(item.cancellationTerms)} className="mt-2" />
+            </div>
+          ) : null}
+          <Sessions slug={slug} />
           <VideoBlock url={item.videoUrl} />
           <Gallery images={(item.gallery ?? []).map((src) => ({ src }))} />
         </div>

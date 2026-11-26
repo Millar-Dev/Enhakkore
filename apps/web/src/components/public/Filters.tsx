@@ -12,17 +12,21 @@ export function Filters({
   kind,
   values,
   extra,
+  hidden,
 }: {
   action: string;
   catalogue: Catalogue;
   kind?: 'ACTIVITY' | 'PLACE' | 'EXPERIENCE' | 'EVENT';
   values: Record<string, string | undefined>;
   extra?: { name: string; label: string; options: { value: string; label: string }[] }[];
+  /** Kept when the form is submitted (e.g. the chosen section). */
+  hidden?: Record<string, string | undefined>;
 }) {
   const country = catalogue.countries.find((item) => item.code.toLowerCase() === values.country?.toLowerCase() || item.slug === values.country);
   const categories = kind ? catalogue.categories.filter((item) => item.kind === kind) : [];
   return (
     <form action={action} className="grid gap-3 rounded-[1.1rem] border border-line bg-white p-4 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end">
+      {Object.entries(hidden ?? {}).map(([name, value]) => (value ? <input key={name} type="hidden" name={name} value={value} /> : null))}
       <label className="grid gap-1 text-[0.75rem] font-semibold text-ink-muted lg:w-48">
         Country
         <select name="country" defaultValue={country?.code ?? ''} className="field">

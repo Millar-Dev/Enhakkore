@@ -6,36 +6,35 @@ import { SocialIcon } from './SocialIcon';
 
 const COLUMNS = [
   {
-    title: 'Explore',
+    title: 'Discover',
     links: [
-      { href: '/travel', label: 'Enhakkore Travel' },
-      { href: '/discover', label: 'Discover places' },
+      { href: '/explore', label: 'Explore places' },
       { href: '/experiences', label: 'Experiences' },
-      { href: '/events', label: 'Events' },
+      { href: '/experiences/gaming', label: 'Gaming & esports' },
+      { href: '/experiences/communities', label: 'Communities' },
+      { href: '/travel', label: 'Travel' },
       { href: '/catering', label: 'Catering & lunchboxes' },
-      { href: '/destinations', label: 'Destinations' },
-    ],
-  },
-  {
-    title: 'Community',
-    links: [
-      { href: '/activities', label: 'Activities' },
-      { href: '/activities/host', label: 'Host an activity' },
-      { href: '/connect', label: 'Find your people' },
-      { href: '/weekend', label: 'This weekend' },
-      { href: '/community', label: 'Stories, polls & challenges' },
-      { href: '/deals', label: 'Local deals' },
     ],
   },
   {
     title: 'Enhakkore',
     links: [
-      { href: '/impact', label: 'Impact & WSC' },
-      { href: '/donate', label: 'Donate' },
+      { href: '/about', label: 'About Enhakkore' },
       { href: '/contact', label: 'Contact' },
-      { href: '/legal/terms', label: 'Terms' },
-      { href: '/legal/privacy', label: 'Privacy' },
-      { href: '/legal/safety', label: 'Community safety' },
+      { href: '/faq', label: 'FAQs' },
+      { href: '/partner', label: 'Partner with us' },
+      { href: '/impact', label: 'WSC & impact' },
+      { href: '/donate', label: 'Donate' },
+    ],
+  },
+  {
+    title: 'Policies',
+    links: [
+      { href: '/legal/privacy', label: 'Privacy policy' },
+      { href: '/legal/terms', label: 'Terms and conditions' },
+      { href: '/legal/community', label: 'Community guidelines' },
+      { href: '/legal/cancellation', label: 'Cancellation & refunds' },
+      { href: '/legal', label: 'All policies' },
     ],
   },
 ];

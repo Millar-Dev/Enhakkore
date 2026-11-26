@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Avatar, Icon, cx } from '@/components/ui';
+import { api } from '@/lib/api';
 import { homeFor, useSession } from '@/lib/session';
 import { OriginalLogo } from './BrandLogo';
 import { SocialIcon } from './SocialIcon';
@@ -13,27 +14,52 @@ export interface HeaderProps {
   brandName: string;
   nav: { label: string; href: string }[];
   whatsapp: { label: string; display: string; href: string }[];
-  hostHref: string;
+  hostHref?: string;
 }
 
-/** Secondary links, shown in the menu sheet and the "More" list. */
-const MORE = [
-  { label: 'Catering & lunchboxes', href: '/catering' },
-  { label: 'Destinations', href: '/destinations' },
-  { label: 'This weekend', href: '/weekend' },
-  { label: 'Community stories & polls', href: '/community' },
-  { label: 'Local deals', href: '/deals' },
-  { label: 'Donate', href: '/donate' },
-  { label: 'Contact', href: '/contact' },
-];
+/** What sits inside each of the four main categories, shown in the menu sheet. */
+const SUBNAV: Record<string, { label: string; href: string }[]> = {
+  '/explore': [
+    { label: 'Stays & accommodation', href: '/explore?section=STAYS' },
+    { label: 'Food & dining', href: '/explore?section=FOOD' },
+    { label: 'Venues & event spaces', href: '/explore?section=VENUES' },
+    { label: 'Places & attractions', href: '/explore?section=ATTRACTIONS' },
+    { label: 'Destinations', href: '/destinations' },
+  ],
+  '/experiences': [
+    { label: 'Events & activities', href: '/experiences#upcoming' },
+    { label: 'Gaming & esports', href: '/experiences/gaming' },
+    { label: 'Communities', href: '/experiences/communities' },
+    { label: 'Plan an event', href: '/experiences/plan' },
+    { label: 'Publish an activity', href: '/experiences/publish' },
+  ],
+  '/travel': [
+    { label: 'Upcoming trips', href: '/travel' },
+    { label: 'Plan a private trip', href: '/private-trips' },
+    { label: 'Catering & lunchboxes', href: '/catering' },
+  ],
+  '/impact': [
+    { label: 'WSC — We Save Children', href: '/impact' },
+    { label: 'Donate', href: '/donate' },
+    { label: 'Partner with us', href: '/partner' },
+  ],
+};
 
 /**
  * The site header. Always a light ground, because the original logo is navy
  * artwork and must stay legible; it is never inverted or recoloured.
  */
-export function Header({ logoUrl, brandName, nav, whatsapp, hostHref }: HeaderProps) {
+export function Header({ logoUrl, brandName, nav, whatsapp }: HeaderProps) {
   const pathname = usePathname();
   const { user, status, signOut } = useSession();
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+    api
+      .get<{ items: { read: boolean }[]; unread?: number }>('/me/notifications')
+      .then((data) => setUnread(data.unread ?? data.items.filter((item) => !item.read).length))
+      .catch(() => undefined);
+  }, [status, pathname]);
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -68,7 +94,7 @@ export function Header({ logoUrl, brandName, nav, whatsapp, hostHref }: HeaderPr
             <OriginalLogo src={logoUrl} height={46} priority className="md:hidden" />
           </Link>
 
-          <nav className="hidden items-center xl:flex" aria-label="Primary">
+          <nav className="hidden items-center lg:flex" aria-label="Primary">
             {nav.map((item) => (
               <Link
                 key={item.href}
@@ -89,11 +115,20 @@ export function Header({ logoUrl, brandName, nav, whatsapp, hostHref }: HeaderPr
             <Link href="/search" aria-label="Search" className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink hover:bg-sand-deep">
               <Icon.search size={19} />
             </Link>
+            {status === 'authenticated' && (
+              <Link href="/account/notifications" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} className="relative inline-flex h-11 w-11 items-center justify-center rounded-full text-ink hover:bg-sand-deep">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                </svg>
+                {unread > 0 && <span className="absolute right-1.5 top-1.5 min-w-[1.1rem] rounded-full bg-clay-500 px-1 text-center text-[0.625rem] font-bold leading-[1.1rem] text-white">{unread > 9 ? '9+' : unread}</span>}
+              </Link>
+            )}
             <Link
-              href={hostHref}
-              className="hidden h-10 items-center rounded-full bg-clay-400 px-4 text-[0.8125rem] font-bold text-acacia-700 shadow-sm transition hover:bg-clay-500 hover:text-white lg:inline-flex"
+              href="/donate"
+              className="hidden h-10 items-center rounded-full bg-clay-400 px-4 text-[0.8125rem] font-bold text-acacia-700 shadow-sm transition hover:bg-clay-500 hover:text-white md:inline-flex"
             >
-              Host an activity
+              Donate
             </Link>
             {status === 'authenticated' && user ? (
               <Link
@@ -113,7 +148,7 @@ export function Header({ logoUrl, brandName, nav, whatsapp, hostHref }: HeaderPr
               onClick={() => setOpen((value) => !value)}
               aria-label={open ? 'Close menu' : 'Open menu'}
               aria-expanded={open}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink hover:bg-sand-deep xl:hidden"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink hover:bg-sand-deep lg:hidden"
             >
               {open ? (
                 <Icon.close size={20} />
@@ -128,31 +163,35 @@ export function Header({ logoUrl, brandName, nav, whatsapp, hostHref }: HeaderPr
       </header>
 
       {open && (
-        <div className="fixed inset-0 top-[4.25rem] z-40 animate-fade overflow-y-auto bg-[color:var(--color-cream)] md:top-20 xl:hidden">
+        <div className="fixed inset-0 top-[4.25rem] z-40 animate-fade overflow-y-auto bg-[color:var(--color-cream)] md:top-20 lg:hidden">
           <div className="shell flex min-h-full flex-col py-6">
             <nav aria-label="Primary mobile" className="grid">
+              <Link href="/" className="flex items-center justify-between border-b border-line py-3 font-display text-[1.5rem] text-acacia-700">
+                Home
+                <Icon.arrow className="text-clay-500" />
+              </Link>
               {nav.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center justify-between border-b border-line py-3.5 font-display text-[1.6rem] text-acacia-700"
-                >
-                  {item.label}
-                  <Icon.arrow className="text-clay-500" />
-                </Link>
+                <div key={item.href} className="border-b border-line py-3">
+                  <Link href={item.href} className="flex items-center justify-between font-display text-[1.5rem] text-acacia-700">
+                    {item.label}
+                    <Icon.arrow className="text-clay-500" />
+                  </Link>
+                  {SUBNAV[item.href] && (
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
+                      {SUBNAV[item.href]!.map((sub) => (
+                        <Link key={sub.href} href={sub.href} className="text-[0.875rem] font-medium text-ink-soft">
+                          {sub.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </nav>
-            <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-2.5">
-              {MORE.map((item) => (
-                <Link key={item.href} href={item.href} className="text-[0.9375rem] font-medium text-ink-soft">
-                  {item.label}
-                </Link>
-              ))}
-            </div>
 
             <div className="mt-7 grid gap-2.5">
-              <Link href={hostHref} className="inline-flex h-12 items-center justify-center rounded-full bg-clay-400 font-bold text-acacia-700">
-                Host an activity
+              <Link href="/donate" className="inline-flex h-12 items-center justify-center rounded-full bg-clay-400 font-bold text-acacia-700">
+                Donate now
               </Link>
               {status === 'authenticated' && user ? (
                 <>

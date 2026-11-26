@@ -6,6 +6,7 @@ import { ReportButton, SaveButton } from '@/components/public/Actions';
 import { Facts, Gallery, Prose, VideoBlock } from '@/components/public/Cards';
 import { RegisterForm } from '@/components/public/RegisterForm';
 import { SmartImage } from '@/components/public/SmartImage';
+import { ShareButton, TrackView } from '@/components/public/Track';
 import { SocialIcon } from '@/components/site/SocialIcon';
 import { apiGet } from '@/lib/api';
 import { placeLabel, whenLabel, type Listing } from '@/lib/public';
@@ -49,7 +50,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
               {item.status === 'CANCELLED' && <span className="rounded-full bg-danger px-3 py-1.5 text-xs font-bold">Cancelled</span>}
               {ended && <span className="rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold">This event has taken place</span>}
             </div>
-            <div className="mt-5 [&_.chip]:bg-white/10 [&_.chip]:text-white [&_.chip]:border-white/25"><SaveButton itemType="EVENT" itemId={item.id} /></div>
+            <div className="mt-5 [&_.chip]:bg-white/10 [&_.chip]:text-white [&_.chip]:border-white/25"><SaveButton itemType="EVENT" itemId={item.id} /> <ShareButton subjectType="EVENT" subjectId={item.id} title={String(item.title)} /><TrackView subjectType="EVENT" subjectId={item.id} /></div>
           </div>
         </div>
       </section>

@@ -21,9 +21,9 @@ import { localStorage } from './local';
  * provider's own signature before the id is written to the database.
  */
 
-export type UploadKind = 'TRIP_IMAGE' | 'AVATAR' | 'VERIFICATION_DOCUMENT' | 'MEDIA_IMAGE' | 'MEDIA_VIDEO' | 'RECEIPT';
+export type UploadKind = 'TRIP_IMAGE' | 'AVATAR' | 'VERIFICATION_DOCUMENT' | 'MEDIA_IMAGE' | 'MEDIA_VIDEO' | 'RECEIPT' | 'CHAT_FILE';
 
-export const UPLOAD_KINDS = ['TRIP_IMAGE', 'AVATAR', 'VERIFICATION_DOCUMENT', 'MEDIA_IMAGE', 'MEDIA_VIDEO', 'RECEIPT'] as const;
+export const UPLOAD_KINDS = ['TRIP_IMAGE', 'AVATAR', 'VERIFICATION_DOCUMENT', 'MEDIA_IMAGE', 'MEDIA_VIDEO', 'RECEIPT', 'CHAT_FILE'] as const;
 
 export interface UploadRule {
   /** Largest file accepted, in bytes. */
@@ -71,6 +71,13 @@ export const UPLOAD_RULES: Record<UploadKind, UploadRule> = {
     maxBytes: 100 * 1024 * 1024,
     accept: ['video/mp4', 'video/webm', 'video/quicktime'],
     folder: 'enhakkore/video',
+    visibility: 'public',
+  },
+  /** Photos and documents shared in a trip group, under an unguessable name. */
+  CHAT_FILE: {
+    maxBytes: 10 * 1024 * 1024,
+    accept: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+    folder: 'enhakkore/chat',
     visibility: 'public',
   },
   /** Receipts and payment confirmations. Private: only finance staff can open one. */

@@ -148,7 +148,7 @@ export const TRAVELLER_NAV: NavItem[] = [
   { href: '/account/groups', label: 'Trip groups' },
   { href: '/account/hosting', label: 'Hosting' },
   { href: '/account/saved', label: 'Wishlist' },
-  { href: '/connect/requests', label: 'Connections' },
+  { href: '/experiences/communities', label: 'Communities' },
   { href: '/account/profile', label: 'Profile' },
 ];
 

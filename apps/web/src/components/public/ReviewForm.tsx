@@ -12,7 +12,7 @@ export function ReviewForm({ slug }: { slug: string }) {
   const [rating, setRating] = useState(5);
   const [message, setMessage] = useState<string | null>(null);
   if (status !== 'authenticated') {
-    return <Link href={`/signin?next=/discover/${slug}`} className="text-sm font-semibold text-acacia-600 underline">Sign in to write a review</Link>;
+    return <Link href={`/signin?next=/explore/${slug}`} className="text-sm font-semibold text-acacia-600 underline">Sign in to write a review</Link>;
   }
   if (message) return <p className="text-sm text-safari-700">{message}</p>;
   if (!open) return <button type="button" onClick={() => setOpen(true)} className="chip">Write a review</button>;

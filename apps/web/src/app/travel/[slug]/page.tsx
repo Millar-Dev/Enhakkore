@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { formatMoney } from '@enhakkore/shared';
+import { TRIP_STAGE_LABELS, formatMoney } from '@enhakkore/shared';
 import { PublicShell } from '@/components/layout/PublicShell';
 import { CopyButton, SaveButton } from '@/components/public/Actions';
 import { ApplyForm } from '@/components/public/ApplyForm';
 import { Facts, Gallery, Prose, VideoBlock } from '@/components/public/Cards';
 import { tripDates } from '@/components/public/listings';
 import { SmartImage } from '@/components/public/SmartImage';
+import { ShareButton, TrackView } from '@/components/public/Track';
 import { SocialIcon } from '@/components/site/SocialIcon';
 import { apiGet } from '@/lib/api';
 import { getSite, waHref } from '@/lib/site';
@@ -32,6 +33,8 @@ interface Trip {
   accommodation: string | null;
   transport: string | null;
   minParticipants: number | null;
+  maxParticipants?: number | null;
+  stage?: string;
   includes: string[];
   excludes: string[];
   toConfirm: string[];
@@ -89,7 +92,16 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
 
       <section className="shell grid gap-10 py-10 md:py-14 lg:grid-cols-[1.5fr_1fr]">
         <div className="space-y-10">
-          <div className="flex flex-wrap items-center gap-2"><SaveButton itemType="TRIP" itemId={trip.id} /></div>
+          <div className="flex flex-wrap items-center gap-2">
+            <SaveButton itemType="TRIP" itemId={trip.id} />
+            <ShareButton subjectType="TRIP" subjectId={trip.id} title={trip.title} />
+            <TrackView subjectType="TRIP" subjectId={trip.id} />
+            {trip.stage && (
+              <span className={`rounded-full px-3 py-1.5 text-xs font-bold ${trip.stage === 'TRIP_CONFIRMED' || trip.stage === 'DEPARTURE_READY' ? 'bg-safari-50 text-safari-700' : trip.stage === 'CANCELLED' ? 'bg-danger-soft text-danger' : 'bg-[#fdf4e3] text-warning'}`}>
+                {TRIP_STAGE_LABELS[trip.stage] ?? trip.stage}
+              </span>
+            )}
+          </div>
           <p className="font-display text-[1.4rem] leading-snug text-acacia-700 md:text-[1.65rem]">{trip.summary}</p>
           {/* The description often opens with the summary; show only what it adds. */}
           <Prose text={trip.description.startsWith(trip.summary) ? trip.description.slice(trip.summary.length).trim() : trip.description} />
@@ -99,6 +111,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
             { label: 'Meeting point', value: trip.meetingPoint },
             { label: 'Group', value: upcoming[0] ? `${upcoming[0].capacity} places` : null },
             { label: 'Minimum', value: trip.minParticipants ? `${trip.minParticipants} travellers` : null },
+            { label: 'Maximum', value: trip.maxParticipants ? `${trip.maxParticipants} travellers` : null },
             { label: 'Accommodation', value: trip.accommodation },
             { label: 'Transport', value: trip.transport },
           ]} />

@@ -24,7 +24,7 @@ export default async function DealsPage() {
                 <Prose text={deal.description} className="mt-2 text-[0.9375rem]" />
                 {deal.terms ? <p className="mt-3 text-xs text-ink-muted">Terms: {String(deal.terms)}</p> : null}
                 {deal.validUntil ? <p className="mt-1 text-xs text-ink-muted">Valid until {new Date(String(deal.validUntil)).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}</p> : null}
-                {deal.place && <Link href={`/discover/${deal.place.slug}`} className="mt-3 inline-block text-sm font-semibold text-acacia-600 underline">About {deal.place.name}</Link>}
+                {deal.place && <Link href={`/explore/${deal.place.slug}`} className="mt-3 inline-block text-sm font-semibold text-acacia-600 underline">About {deal.place.name}</Link>}
               </div>
             ))}
           </div>

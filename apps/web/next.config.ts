@@ -49,6 +49,12 @@ const nextConfig: NextConfig = {
     return [
       { source: '/packages/:slug', destination: '/travel/:slug', permanent: true },
       { source: '/impact/dashboard', destination: '/impact', permanent: true },
+      // Discover became Explore in the rebuild.
+      { source: '/discover', destination: '/explore', permanent: true },
+      { source: '/discover/:slug', destination: '/explore/:slug', permanent: true },
+      { source: '/connect', destination: '/experiences/communities', permanent: false },
+      { source: '/connect/members/:id', destination: '/members/:id', permanent: true },
+      { source: '/connect/requests', destination: '/experiences/communities', permanent: false },
       // The third-party operator marketplace is a later phase. Its old
       // addresses lead to the launch equivalents.
       { source: '/trips', destination: '/travel', permanent: false },

@@ -31,7 +31,7 @@ export default async function ActivitiesPage({ searchParams }: { searchParams: P
           <Link href="/activities/host" className="inline-flex h-12 items-center rounded-full bg-clay-400 px-6 font-bold text-acacia-700 shadow-sm hover:bg-clay-500 hover:text-white">
             Host an activity
           </Link>
-          <Link href="/connect" className="inline-flex h-12 items-center rounded-full border border-acacia-600/30 bg-white px-6 font-semibold text-acacia-600">
+          <Link href="/experiences/communities" className="inline-flex h-12 items-center rounded-full border border-acacia-600/30 bg-white px-6 font-semibold text-acacia-600">
             Find your people
           </Link>
         </div>

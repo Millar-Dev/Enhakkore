@@ -160,7 +160,7 @@ publicRouter.get(
       prisma.category.findMany({
         where: { status: 'PUBLISHED' },
         orderBy: [{ featured: 'desc' }, { sortOrder: 'asc' }, { name: 'asc' }],
-        select: { id: true, kind: true, name: true, slug: true, group: true, icon: true, featured: true, description: true },
+        select: { id: true, kind: true, name: true, slug: true, group: true, icon: true, featured: true, description: true, section: true },
       }),
     ]);
     const total = (counts: Record<string, number>) => Object.values(counts).reduce((sum, value) => sum + value, 0);
@@ -183,7 +183,7 @@ publicRouter.get(
   '/countries',
   route(async (_req, res) => {
     // Every country, for pickers (profile, member search). Names only.
-    res.json(await prisma.country.findMany({ where: { status: 'PUBLISHED' }, select: { code: true, name: true, slug: true }, orderBy: { name: 'asc' } }));
+    res.json(await prisma.country.findMany({ where: { status: 'PUBLISHED' }, select: { id: true, code: true, name: true, slug: true, timezone: true }, orderBy: { name: 'asc' } }));
   }),
 );
 

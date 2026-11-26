@@ -144,7 +144,8 @@ export async function trendingItems(limit: number) {
 async function sectionContent(section: string | undefined, req: { query: Record<string, unknown> }) {
   const now = new Date();
   const q = str(req.query.q);
-  const categoryFilter = section ? { category: { section } } : {};
+  const categorySlug = str(req.query.category);
+  const categoryFilter = section ? { category: { section, ...(categorySlug ? { slug: categorySlug } : {}) } } : categorySlug ? { category: { slug: categorySlug } } : {};
   const location = geo(req);
   const activityText = q ? { OR: [{ title: textContains(q) }, { summary: textContains(q) }, { platformName: textContains(q) }, { category: { name: textContains(q) } }] } : {};
   const eventText = q ? { OR: [{ title: textContains(q) }, { summary: textContains(q) }, { venue: textContains(q) }, { category: { name: textContains(q) } }] } : {};

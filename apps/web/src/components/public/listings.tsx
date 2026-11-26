@@ -40,7 +40,7 @@ export function PlaceCard({ item }: { item: Listing }) {
   ].filter(Boolean) as { label: string; tone: 'gold' | 'navy' | 'green' }[];
   return (
     <ListingCard
-      href={`/discover/${item.slug}`}
+      href={`/explore/${item.slug}`}
       image={item.coverImage}
       kicker={[item.category?.icon, item.category?.name].filter(Boolean).join(' ')}
       title={String(item.name)}

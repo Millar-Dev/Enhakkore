@@ -5,6 +5,7 @@ import { PublicShell } from '@/components/layout/PublicShell';
 import { CardGrid, Empty, ListingCard, SectionTitle } from '@/components/public/Cards';
 import type { Project } from '@/components/public/impact';
 import { SmartImage } from '@/components/public/SmartImage';
+import { EnquiryForm } from '@/components/public/Actions';
 import { WscLogo } from '@/components/site/BrandLogo';
 import { SocialIcon } from '@/components/site/SocialIcon';
 import { apiGet } from '@/lib/api';
@@ -99,6 +100,19 @@ export default async function ImpactPage() {
           ))}
         </div>
         <p className="mt-8 text-center text-sm text-ink-muted">Not every Enhakkore trip supports a charity project. Where one does, its page says so.</p>
+      </section>
+      <section id="volunteer" className="shell max-w-3xl scroll-mt-28 pb-16">
+        <div className="rounded-[1.4rem] border border-line bg-white p-5 md:p-8">
+          <EnquiryForm
+            type="VOLUNTEER"
+            subjectType="IMPACT"
+            subjectTitle="Volunteering with WSC"
+            heading="Volunteer with us"
+            messagePlaceholder="What would you like to help with? Any skills, and when you are free."
+            extraFields={[{ name: 'skills', label: 'Skills (optional)', placeholder: 'Teaching, first aid, photography…' }]}
+            whatsappHref={waHref(settings, 'general')}
+          />
+        </div>
       </section>
     </PublicShell>
   );

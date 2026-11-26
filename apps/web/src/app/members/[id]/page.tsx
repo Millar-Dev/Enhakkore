@@ -1,5 +1,5 @@
 import { PublicShell } from '@/components/layout/PublicShell';
-import { MemberProfile } from '@/components/connect/ConnectClient';
+import { MemberProfile } from '@/components/connect/MemberProfile';
 
 export default async function MemberPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

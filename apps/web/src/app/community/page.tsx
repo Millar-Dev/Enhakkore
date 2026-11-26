@@ -20,7 +20,7 @@ export default async function CommunityPage() {
       <PageHero kicker="Community" title="Stories, polls & challenges" intro="Discoveries shared by members, votes on what we do next, and challenges to get you out exploring.">
         <div className="flex flex-wrap gap-3">
           <Link href="/stories/new" className="inline-flex h-12 items-center rounded-full bg-acacia-600 px-6 font-bold text-white">Share a story</Link>
-          <Link href="/connect" className="inline-flex h-12 items-center rounded-full border border-acacia-600/30 bg-white px-6 font-semibold text-acacia-600">Find your people</Link>
+          <Link href="/experiences/communities" className="inline-flex h-12 items-center rounded-full border border-acacia-600/30 bg-white px-6 font-semibold text-acacia-600">Find a community</Link>
         </div>
       </PageHero>
       <section className="shell py-12" id="stories">

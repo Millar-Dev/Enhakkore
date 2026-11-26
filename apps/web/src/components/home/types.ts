@@ -16,3 +16,51 @@ export interface HomeData {
   catering: Listing[];
   whatsNew: { kind: string; title: string; href: string; at: string; image: string | null }[];
 }
+
+/** One upcoming thing in Experiences — an activity, an event or a gaming tournament. */
+export interface UpcomingCard {
+  kind: string;
+  id: string;
+  subjectType: string;
+  title: string;
+  href: string;
+  image: string | null;
+  startsAt: string | null;
+  where: string;
+  recurrence?: string | null;
+  category?: string | null;
+  free?: boolean;
+  popularity?: number;
+}
+
+export interface CommunityCard {
+  id: string;
+  slug: string;
+  name: string;
+  summary: string | null;
+  coverImage: string | null;
+  memberCount: number;
+  city?: { name: string } | null;
+  country?: { name: string } | null;
+  category?: { name: string; icon?: string | null } | null;
+}
+
+export interface HubData {
+  sections: { key: string; label: string; icon: string; blurb: string; count: number }[];
+  upcoming: UpcomingCard[];
+  popular: UpcomingCard[];
+  communities: CommunityCard[];
+  guided: Listing[];
+}
+
+export interface TrendingItem {
+  kind: string;
+  title: string;
+  href: string;
+  where: string;
+  image: string | null;
+  startsAt?: string | null;
+  sponsored?: boolean;
+  subjectId: string;
+  popularity: number;
+}

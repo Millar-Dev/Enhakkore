@@ -27,7 +27,7 @@ export default function WishlistPage() {
         <div className="rounded-xl bg-[color:var(--color-cream)] p-8 text-center">
           <p className="font-display text-2xl text-acacia-700">Nothing saved yet</p>
           <p className="mt-2 text-sm text-ink-soft">Tap “Save to wishlist” on any trip, place, event or activity.</p>
-          <Link href="/discover" className="mt-4 inline-flex h-11 items-center rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">Start discovering</Link>
+          <Link href="/explore" className="mt-4 inline-flex h-11 items-center rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">Start discovering</Link>
         </div>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

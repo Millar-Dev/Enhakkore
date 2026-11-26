@@ -8,6 +8,8 @@ import { Facts, Gallery, Prose, VideoBlock } from '@/components/public/Cards';
 import { ReviewForm } from '@/components/public/ReviewForm';
 import { SmartImage } from '@/components/public/SmartImage';
 import { SocialIcon } from '@/components/site/SocialIcon';
+import { HotelEnquiryForm, RestaurantReservationForm } from '@/components/public/Reservations';
+import { ShareButton, TrackView } from '@/components/public/Track';
 import { apiGet } from '@/lib/api';
 import { placeLabel, type Listing } from '@/lib/public';
 import { getSite, waHref } from '@/lib/site';
@@ -43,6 +45,8 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
   const socials = (place.socials as { label: string; url: string }[]) ?? [];
   const source = String(place.infoSource);
   const enquiryType = place.enquiryKind === 'ROOM' ? 'ROOM' : place.enquiryKind === 'TABLE' ? 'TABLE' : 'PLACE';
+  const verifiedWhatsapp = !!place.whatsapp && source === 'VERIFIED';
+  const roomTypes = ((place.roomTypes as string[] | undefined) ?? []).filter(Boolean);
   const mapLink = place.latitude && place.longitude ? `https://www.google.com/maps/search/?api=1&query=${place.latitude},${place.longitude}` : place.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place.name} ${place.address}`)}` : null;
 
   return (
@@ -52,7 +56,7 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
           {place.coverImage && <SmartImage src={place.coverImage} alt="" fill priority sizes="100vw" className="object-cover" />}
           <div className="absolute inset-0 bg-gradient-to-t from-acacia-900/80 via-acacia-900/10 to-transparent" />
           <div className="shell absolute inset-x-0 bottom-0 pb-8 text-white">
-            <Link href={`/discover?category=${place.category?.slug ?? ''}`} className="text-[0.75rem] font-bold uppercase tracking-[0.16em] text-clay-400">
+            <Link href={`/explore?category=${place.category?.slug ?? ''}`} className="text-[0.75rem] font-bold uppercase tracking-[0.16em] text-clay-400">
               {place.category?.icon} {place.category?.name}
             </Link>
             <h1 className="display-lg mt-2">{String(place.name)}</h1>
@@ -76,6 +80,8 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
               </span>
             )}
             <SaveButton itemType="PLACE" itemId={place.id} />
+            <ShareButton subjectType="PLACE" subjectId={place.id} title={String(place.name)} />
+            <TrackView subjectType="PLACE" subjectId={place.id} />
           </div>
           {source !== 'VERIFIED' && (
             <p className="rounded-xl bg-[color:var(--color-cream)] p-4 text-sm leading-relaxed text-ink-soft">
@@ -107,6 +113,16 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
               </dl>
             </div>
           )}
+          {place.availabilityNote ? (
+            <p className="rounded-xl border border-safari-100 bg-safari-50 p-4 text-sm font-semibold text-safari-700">Availability (verified): {String(place.availabilityNote)}</p>
+          ) : null}
+          {place.menu || place.menuUrl ? (
+            <div>
+              <p className="font-display text-xl text-acacia-700">Menu</p>
+              {place.menu ? <Prose text={String(place.menu)} className="mt-2 text-sm" /> : null}
+              {place.menuUrl ? <a href={String(place.menuUrl)} target="_blank" rel="noreferrer noopener" className="mt-2 inline-block font-semibold text-acacia-600 underline">Open the menu ↗</a> : null}
+            </div>
+          ) : null}
           {place.offers ? (
             <div className="rounded-xl border border-clay-100 bg-clay-50 p-4">
               <p className="font-bold text-clay-700">Current offer</p>
@@ -119,6 +135,16 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
               <Prose text={deal.description} className="mt-1 text-sm" />
             </div>
           ))}
+          {place.latitude && place.longitude ? (
+            <div className="overflow-hidden rounded-[1.1rem] border border-line">
+              <iframe
+                title={`Map: ${String(place.name)}`}
+                loading="lazy"
+                className="h-72 w-full"
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(place.longitude) - 0.01}%2C${Number(place.latitude) - 0.006}%2C${Number(place.longitude) + 0.01}%2C${Number(place.latitude) + 0.006}&layer=mapnik&marker=${place.latitude}%2C${place.longitude}`}
+              />
+            </div>
+          ) : null}
           <VideoBlock url={place.videoUrl} />
           <Gallery images={(place.gallery ?? []).map((src) => ({ src }))} />
 
@@ -145,31 +171,37 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
 
         <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
           <div className="rounded-[1.2rem] border border-line bg-white p-5 shadow-[var(--shadow-card)]">
-            {place.bookingMode === 'EXTERNAL' && place.bookingUrl ? (
-              <a href={String(place.bookingUrl)} target="_blank" rel="noreferrer noopener" className="mb-4 inline-flex h-12 w-full items-center justify-center rounded-full bg-acacia-600 font-bold text-white">
-                Book on their website
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-clay-600">How to book</p>
+            <ul className="mt-2 grid gap-1.5 text-sm">
+              <li className={place.bookingMode === 'ENQUIRY' ? 'text-ink' : 'text-ink-muted line-through'}>① Send an enquiry through Enhakkore</li>
+              <li className={verifiedWhatsapp ? 'text-ink' : 'text-ink-muted line-through'}>② Contact the business on its verified WhatsApp</li>
+              <li className={place.bookingUrl ? 'text-ink' : 'text-ink-muted line-through'}>③ Use its own reservation link</li>
+            </ul>
+            <div className="mt-4">
+              {place.bookingMode === 'ENQUIRY' && enquiryType === 'ROOM' && (
+                <HotelEnquiryForm placeId={place.id} placeName={String(place.name)} roomTypes={roomTypes} whatsappHref={waHref(settings, 'place', String(place.name))} />
+              )}
+              {place.bookingMode === 'ENQUIRY' && enquiryType === 'TABLE' && (
+                <RestaurantReservationForm placeId={place.id} placeName={String(place.name)} whatsappHref={waHref(settings, 'place', String(place.name))} />
+              )}
+              {place.bookingMode === 'ENQUIRY' && enquiryType === 'PLACE' && (
+                <EnquiryForm type="PLACE" subjectType="PLACE" subjectId={place.id} subjectTitle={String(place.name)} heading="Ask about this place" whatsappHref={waHref(settings, 'place', String(place.name))} />
+              )}
+            </div>
+            {enquiryType === 'ROOM' && place.bookingMode === 'ENQUIRY' && (
+              <p className="mt-3 text-xs leading-relaxed text-ink-muted">Live room availability is not connected. Availability and prices are confirmed with the property.</p>
+            )}
+            {verifiedWhatsapp && (
+              <a href={`https://wa.me/${String(place.whatsapp).replace(/\D/g, '')}`} target="_blank" rel="noreferrer noopener" className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-[#1f9d55] text-sm font-bold text-[#1f9d55]">
+                <SocialIcon platform="whatsapp" size={18} /> WhatsApp the business (verified)
+              </a>
+            )}
+            {place.bookingUrl ? (
+              <a href={String(place.bookingUrl)} target="_blank" rel="noreferrer noopener" className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-full bg-acacia-600 text-sm font-bold text-white">
+                Reserve on their website ↗
               </a>
             ) : null}
-            {place.bookingMode === 'ENQUIRY' ? (
-              <>
-                <EnquiryForm
-                  type={enquiryType}
-                  subjectType="PLACE"
-                  subjectId={place.id}
-                  subjectTitle={String(place.name)}
-                  heading={enquiryType === 'ROOM' ? 'Ask about a stay' : enquiryType === 'TABLE' ? 'Ask about a table' : 'Ask about this place'}
-                  withDates={enquiryType !== 'PLACE'}
-                  withPeople={enquiryType !== 'PLACE'}
-                  whatsappHref={waHref(settings, 'place', String(place.name))}
-                />
-                <p className="mt-3 text-xs leading-relaxed text-ink-muted">
-                  {enquiryType === 'ROOM'
-                    ? 'Live room availability is not connected for this property. Availability and prices must be confirmed with the property.'
-                    : 'The place confirms any booking itself. Enhakkore does not take payment on its behalf.'}
-                </p>
-              </>
-            ) : null}
-            <a href={waHref(settings, 'place', String(place.name))} target="_blank" rel="noreferrer noopener" className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#1f9d55] text-sm font-bold text-white">
+            <a href={waHref(settings, 'place', String(place.name))} target="_blank" rel="noreferrer noopener" className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#1f9d55] text-sm font-bold text-white">
               <SocialIcon platform="whatsapp" size={18} /> Ask Enhakkore on WhatsApp
             </a>
           </div>

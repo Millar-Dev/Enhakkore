@@ -985,12 +985,18 @@ model Place {
   longitude   Float?
 
   /// JSON string arrays.
-  facilities   String  @default("[]")
-  amenities    String  @default("[]")
+  facilities       String  @default("[]")
+  amenities        String  @default("[]")
   /// JSON array of { days, hours }.
-  openingHours String  @default("[]")
-  priceRange   String?
-  offers       String?
+  openingHours     String  @default("[]")
+  priceRange       String?
+  offers           String?
+  /// JSON string array — only room types the property has confirmed.
+  roomTypes        String  @default("[]")
+  menu             String?
+  menuUrl          String?
+  /// Only when verified with the business, e.g. "Rooms available for December — confirmed 3 Nov".
+  availabilityNote String?
 
   phone    String?
   whatsapp String?

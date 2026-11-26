@@ -16,9 +16,9 @@ import { useSession } from '@/lib/session';
 
 const TABS = [
   { href: '/', label: 'Home', icon: Icon.home, exact: true },
-  { href: '/activities', label: 'Activities', icon: Icon.users },
+  { href: '/explore', label: 'Explore', icon: Icon.pin },
+  { href: '/experiences', label: 'Experiences', icon: Icon.users },
   { href: '/travel', label: 'Travel', icon: Icon.compass },
-  { href: '/discover', label: 'Discover', icon: Icon.pin },
   { href: '/account', label: 'Me', icon: Icon.user, exact: true },
 ];
 

@@ -60,7 +60,7 @@ export interface CatalogueCountry {
 
 export interface Catalogue {
   countries: CatalogueCountry[];
-  categories: (Ref & { kind: string; featured: boolean; description: string | null })[];
+  categories: (Ref & { kind: string; featured: boolean; description: string | null; section?: string | null })[];
 }
 
 export async function getCatalogue(): Promise<Catalogue> {
