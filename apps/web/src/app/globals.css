@@ -47,14 +47,14 @@
   --color-acacia-300: #6f9ab8;
   --color-acacia-500: #0e4269;
   --color-acacia-600: #082b45;
-  --color-acacia-700: #061f33;
+  --color-acacia-700: #0a1a2e; /* the logo’s navy */
   --color-acacia-900: #04121e;
 
   /* Clay — accents, prices and actions, now golden sand. 400 is the sand
      itself and is a FILL; 600 and 700 are the steps that may carry text. */
   --color-clay-50: #fdf8ec;
   --color-clay-100: #f7ecd0;
-  --color-clay-400: #d4af53;
+  --color-clay-400: #cb9a3c; /* sampled from the original logo’s gold */
   --color-clay-500: #a9842f;
   --color-clay-600: #8a6a1f;
   --color-clay-700: #6a5115;

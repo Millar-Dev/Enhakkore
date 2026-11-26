@@ -29,6 +29,8 @@ function SignInForm() {
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const [needsCode, setNeedsCode] = useState(false);
+  const [code, setCode] = useState('');
 
   const next = params.get('next');
 
@@ -38,10 +40,13 @@ function SignInForm() {
     setError(null);
     setFields({});
     try {
-      const user = await signIn(email, password);
+      const user = await signIn(email, password, needsCode ? code : undefined);
       router.push(next ?? homeFor(user.role));
     } catch (caught) {
-      if (caught instanceof ApiError) {
+      if (caught instanceof ApiError && caught.code === 'two_factor_required') {
+        setNeedsCode(true);
+        setError(null);
+      } else if (caught instanceof ApiError) {
         setError(caught.message);
         setFields(caught.fields);
       } else {
@@ -64,12 +69,12 @@ function SignInForm() {
 
       <h1 className="mt-10 text-h1">Welcome back</h1>
       <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink-muted">
-        Sign in to see your trips, your groups and the projects you support.
+        Sign in to see your experiences, enquiries, trips and groups.
       </p>
 
       {next && (
         <Alert tone="info" className="mt-6">
-          Sign in to continue with your booking — we have kept your place.
+          Sign in to continue where you left off.
         </Alert>
       )}
 
@@ -101,6 +106,19 @@ function SignInForm() {
           error={fields.password}
           placeholder="••••••••"
         />
+
+        {needsCode && (
+          <Input
+            label="6-digit code from your authenticator app"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            required
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
+            placeholder="123456"
+            autoFocus
+          />
+        )}
 
         <div className="-mt-1 flex justify-end">
           <Link
@@ -171,8 +189,8 @@ export default function SignInPage() {
 
       <div className="relative hidden lg:block">
         <Image
-          src="https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1400&h=1800&q=85"
-          alt="A single acacia against a sunset sky"
+          src="/packages/arusha/mount-meru.webp"
+          alt="Mount Meru, on the Arusha Escape route"
           fill
           sizes="50vw"
           className="object-cover"

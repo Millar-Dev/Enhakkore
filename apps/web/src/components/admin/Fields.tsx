@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { currencyDef, type FieldDef } from '@enhakkore/shared';
+import { RESOURCES } from '@enhakkore/shared';
 import { SmartImage } from '@/components/public/SmartImage';
 import { cx } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -254,6 +255,8 @@ function FieldInput({ field, value, onChange, siblings, parent, errors, path }: 
       return <UserPicker value={value} onChange={onChange} />;
     case 'place':
       return <PlacePicker value={value} onChange={onChange} />;
+    case 'ref':
+      return <RefPicker resource={field.ref ?? ''} value={value} onChange={onChange} />;
     case 'repeater':
       return <Repeater field={field} value={Array.isArray(value) ? value : []} onChange={onChange} parent={siblings} errors={errors} path={path} />;
     default:
@@ -388,6 +391,25 @@ function PlacePicker({ value, onChange }: { value: string; onChange: (value: str
     <select className="field" value={value ?? ''} onChange={(event) => onChange(event.target.value)}>
       <option value="">Not linked to a place</option>
       {places.map((place) => <option key={place.id} value={place.id}>{place.name}</option>)}
+    </select>
+  );
+}
+
+/** Any other resource's rows, by title — e.g. the community an activity belongs to. */
+function RefPicker({ resource, value, onChange }: { resource: string; value: string; onChange: (value: string) => void }) {
+  const [rows, setRows] = useState<{ id: string; label: string }[]>([]);
+  useEffect(() => {
+    const def = RESOURCES.find((item) => item.key === resource);
+    if (!def) return;
+    api
+      .get<{ items: Record<string, any>[] }>(`/cc/r/${resource}?pageSize=100`)
+      .then((data) => setRows(data.items.map((row) => ({ id: String(row.id), label: String(row[def.titleField] ?? row.id) }))))
+      .catch(() => undefined);
+  }, [resource]);
+  return (
+    <select className="field" value={value ?? ''} onChange={(event) => onChange(event.target.value)}>
+      <option value="">None</option>
+      {rows.map((row) => <option key={row.id} value={row.id}>{row.label}</option>)}
     </select>
   );
 }

@@ -17,7 +17,7 @@ interface SessionState {
   user: PublicUser | null;
   organizer: OrganizerSummary | null;
   status: 'loading' | 'authenticated' | 'anonymous';
-  signIn(email: string, password: string): Promise<PublicUser>;
+  signIn(email: string, password: string, code?: string): Promise<PublicUser>;
   register(input: RegisterInput): Promise<PublicUser>;
   signOut(): void;
   refresh(): Promise<void>;
@@ -68,8 +68,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     void refresh();
   }, [refresh]);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const result = await api.post<AuthResponse>('/auth/login', { email, password }, { token: null });
+  const signIn = useCallback(async (email: string, password: string, code?: string) => {
+    const result = await api.post<AuthResponse>('/auth/login', { email, password, ...(code ? { code } : {}) }, { token: null });
     setToken(result.token);
     setUser(result.user);
     setOrganizer(result.organizer);

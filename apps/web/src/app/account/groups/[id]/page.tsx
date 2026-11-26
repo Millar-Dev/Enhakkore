@@ -4,7 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ConversationDetail, MessageDto, TripDetail } from '@enhakkore/shared';
+import { io, type Socket } from 'socket.io-client';
+import type { ConversationDetail, MessageDto } from '@enhakkore/shared';
 import { Logo } from '@/components/brand/Logo';
 import {
   Alert,
@@ -19,7 +20,8 @@ import {
   Skeleton,
   cx,
 } from '@/components/ui';
-import { ApiError, api } from '@/lib/api';
+import { ApiError, REALTIME_URL, api, getToken } from '@/lib/api';
+import { uploadFile } from '@/lib/upload';
 import { dateRange, daysUntil, formatDate, timeAgo } from '@/lib/format';
 import { useSession } from '@/lib/session';
 
@@ -27,28 +29,56 @@ type Tab = 'chat' | 'overview' | 'members' | 'itinerary' | 'documents';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'chat', label: 'Chat' },
-  { id: 'overview', label: 'Overview' },
-  { id: 'members', label: 'Members' },
+  { id: 'overview', label: 'Trip information' },
   { id: 'itinerary', label: 'Itinerary' },
+  { id: 'members', label: 'Participants' },
   { id: 'documents', label: 'Documents' },
 ];
+
+interface GroupTrip {
+  title: string;
+  summary: string;
+  destination: string | null;
+  meetingPoint: string | null;
+  departureCity: string | null;
+  accommodation: string | null;
+  transport: string | null;
+  includes: string[];
+  excludes: string[];
+  toConfirm: string[];
+  stage: string;
+  itinerary: { dayNumber: number; title: string; label: string | null; summary: string | null; accommodation: string | null; stops: { name: string; detail?: string }[] }[];
+}
+
+type Detail = ConversationDetail & {
+  documents: MessageDto[];
+  trip: GroupTrip;
+  readOnly: boolean;
+  archivedAt: string | null;
+  canModerate: boolean;
+};
 
 /**
  * A trip's private group.
  *
  * Access is decided by the API — a traveller without a confirmed booking on this
- * departure gets a 404, not a login prompt. Messages are fetched over REST and
- * then kept current by polling; the socket layer exists on the server and this
- * client is written so swapping the poll for it changes one function.
+ * departure gets a 404, not a login prompt. History comes over REST; new
+ * messages arrive in real time over the authenticated socket, which only joins
+ * a group the API says this account belongs to. If the socket drops, a slow
+ * poll keeps the conversation current, and nothing is lost: every message is
+ * saved before it is pushed.
  */
 export default function TripGroupPage() {
   const params = useParams<{ id: string }>();
   const { user, status } = useSession();
 
   const [tab, setTab] = useState<Tab>('chat');
-  const [conversation, setConversation] = useState<ConversationDetail | null>(null);
+  const [conversation, setConversation] = useState<Detail | null>(null);
   const [messages, setMessages] = useState<MessageDto[]>([]);
-  const [trip, setTrip] = useState<TripDetail | null>(null);
+  const [live, setLive] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const trip = conversation?.trip ?? null;
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [announcement, setAnnouncement] = useState(false);
@@ -68,13 +98,10 @@ export default function TripGroupPage() {
 
     (async () => {
       try {
-        const detail = await api.get<ConversationDetail>(`/conversations/${params.id}`);
+        const detail = await api.get<Detail>(`/conversations/${params.id}`);
         if (cancelled) return;
         setConversation(detail);
         await loadMessages();
-
-        const tripDetail = await api.get<TripDetail>(`/trips/${detail.tripSlug}`, { token: null });
-        if (!cancelled) setTrip(tripDetail);
       } catch (caught) {
         if (!cancelled) {
           setError(
@@ -91,15 +118,78 @@ export default function TripGroupPage() {
     };
   }, [params.id, status, loadMessages]);
 
-  // Poll while the tab is visible. Cheap, predictable, and it stops when the
-  // user is not looking — the socket transport is the upgrade path.
+  const reloadDetail = useCallback(async () => {
+    setConversation(await api.get<Detail>(`/conversations/${params.id}`));
+  }, [params.id]);
+
+  // Real-time delivery over the authenticated socket.
+  const conversationId = conversation?.id;
   useEffect(() => {
-    if (!conversation || tab !== 'chat') return;
+    if (!conversationId) return;
+    const token = getToken();
+    if (!token) return;
+    const socket: Socket = io(REALTIME_URL, { path: '/realtime', auth: { token }, transports: ['websocket', 'polling'] });
+    socket.on('connect', () => socket.emit('conversation:join', conversationId));
+    socket.on('conversation:joined', () => setLive(true));
+    socket.on('disconnect', () => setLive(false));
+    socket.on('message:new', (payload: { conversationId: string; message: MessageDto }) => {
+      if (payload.conversationId !== conversationId) return;
+      setMessages((current) => (current.some((item) => item.id === payload.message.id) ? current : [...current, payload.message]));
+      void api.post(`/conversations/${conversationId}/read`, {}).catch(() => undefined);
+    });
+    return () => {
+      socket.disconnect();
+    };
+  }, [conversationId]);
+
+  // A slow fallback poll while the socket is not connected.
+  useEffect(() => {
+    if (!conversation || tab !== 'chat' || live) return;
     const timer = setInterval(() => {
       if (document.visibilityState === 'visible') void loadMessages().catch(() => undefined);
-    }, 8000);
+    }, 15000);
     return () => clearInterval(timer);
-  }, [conversation, tab, loadMessages]);
+  }, [conversation, tab, live, loadMessages]);
+
+  async function share(file: File) {
+    setUploading(true);
+    setError(null);
+    try {
+      const stored = await uploadFile('CHAT_FILE', file);
+      if (!stored.url) throw new Error('no url');
+      const message = await api.post<MessageDto>(`/conversations/${params.id}/messages`, {
+        body: file.name.slice(0, 200),
+        kind: file.type.startsWith('image/') ? 'IMAGE' : 'DOCUMENT',
+        attachments: [stored.url],
+      });
+      setMessages((current) => (current.some((item) => item.id === message.id) ? current : [...current, message]));
+      void reloadDetail();
+    } catch (caught) {
+      setNotice(caught instanceof ApiError ? caught.message : 'The file could not be shared. Images and PDFs up to 10 MB.');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function moderate(message: MessageDto, action: 'report' | 'remove' | 'pin') {
+    try {
+      if (action === 'report') {
+        const reason = window.prompt('Why are you reporting this message?');
+        if (!reason) return;
+        await api.post(`/conversations/${params.id}/messages/${message.id}/report`, { reason: reason.slice(0, 200) });
+        setNotice('Reported. The Enhakkore team will review it.');
+      } else if (action === 'remove') {
+        if (!window.confirm('Remove this message for everyone?')) return;
+        await api.delete(`/conversations/${params.id}/messages/${message.id}`);
+        setMessages((current) => current.filter((item) => item.id !== message.id));
+      } else {
+        await api.post(`/conversations/${params.id}/messages/${message.id}/pin`, {});
+        await reloadDetail();
+      }
+    } catch (caught) {
+      setNotice(caught instanceof ApiError ? caught.message : 'That did not work.');
+    }
+  }
 
   // Only auto-scroll when the reader is already at the bottom — yanking someone
   // away from a message they are reading is worse than a missed scroll.
@@ -119,7 +209,7 @@ export default function TripGroupPage() {
         body,
         kind: announcement ? 'ANNOUNCEMENT' : 'TEXT',
       });
-      setMessages((current) => [...current, message]);
+      setMessages((current) => (current.some((item) => item.id === message.id) ? current : [...current, message]));
       setDraft('');
       atBottomRef.current = true;
     } catch (caught) {
@@ -279,6 +369,8 @@ export default function TripGroupPage() {
                             key={message.id}
                             message={message}
                             mine={message.author.id === user?.id}
+                            canModerate={conversation.canModerate}
+                            onAction={(action) => void moderate(message, action)}
                           />
                         ))}
                       </div>
@@ -287,8 +379,13 @@ export default function TripGroupPage() {
                 )}
               </div>
 
+              {notice && <p className="border-t border-line bg-sand px-4 py-2 text-[0.8125rem] text-ink-soft">{notice}</p>}
               {/* Composer */}
-              {conversation.canPost ? (
+              {conversation.readOnly ? (
+                <div className="border-t border-line p-4">
+                  <Alert tone="neutral">This group has been archived after the trip. You can still read its history, but no new messages can be sent.</Alert>
+                </div>
+              ) : conversation.canPost ? (
                 <form onSubmit={send} className="border-t border-line p-3 md:p-4">
                   {conversation.viewerIsOrganizer && (
                     <label className="mb-2.5 inline-flex cursor-pointer items-center gap-2 text-[0.8125rem] font-medium text-ink-muted">
@@ -302,6 +399,10 @@ export default function TripGroupPage() {
                     </label>
                   )}
                   <div className="flex items-end gap-2">
+                    <label className="inline-flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line-strong text-ink-muted hover:border-acacia-600" aria-label="Share a photo or PDF" title="Share a photo or PDF">
+                      {uploading ? '…' : '📎'}
+                      <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void share(file); event.target.value = ''; }} />
+                    </label>
                     <textarea
                       value={draft}
                       onChange={(event) => setDraft(event.target.value)}
@@ -365,6 +466,21 @@ export default function TripGroupPage() {
                 >
                   Trip details
                 </ButtonLink>
+                <p className="mt-4 text-[0.75rem] text-ink-muted">{live ? '● Live — new messages appear instantly' : '○ Reconnecting — messages still arrive every few seconds'}</p>
+                {conversation.canModerate && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const archive = !conversation.archivedAt;
+                      if (!window.confirm(archive ? 'Archive this group? It becomes read-only; history is kept.' : 'Reopen this group?')) return;
+                      await api.post(`/conversations/${params.id}/archive`, { archive });
+                      await reloadDetail();
+                    }}
+                    className="mt-3 text-[0.8125rem] font-semibold text-ink-muted underline"
+                  >
+                    {conversation.archivedAt ? 'Reopen group' : 'Archive group (read-only)'}
+                  </button>
+                )}
               </Card>
 
               <Card className="p-5">
@@ -400,24 +516,41 @@ export default function TripGroupPage() {
         )}
 
         {tab === 'overview' && trip && (
-          <div className="mx-auto max-w-3xl">
+          <div className="mx-auto max-w-3xl space-y-6">
             <h2 className="text-h2">{trip.title}</h2>
-            <div className="prose-body mt-5">
-              {trip.description.split('\n\n').map((paragraph, index) => (
-                <p key={index}>{paragraph}</p>
-              ))}
-            </div>
-            <Card className="mt-8 p-6">
-              <h3 className="text-[0.9375rem] font-bold tracking-tight">What&rsquo;s included</h3>
-              <ul className="mt-4 space-y-2.5">
-                {trip.includes.map((item) => (
-                  <li key={item} className="flex gap-3 text-[0.875rem] text-ink-soft">
-                    <Icon.check size={16} className="mt-0.5 shrink-0 text-acacia-600" />
-                    {item}
-                  </li>
+            <p className="text-[0.9375rem] leading-relaxed text-ink-soft">{trip.summary}</p>
+            <Card className="p-6">
+              <dl className="grid gap-3 text-[0.875rem] sm:grid-cols-2">
+                {[
+                  ['Destination', trip.destination],
+                  ['Departs', trip.departureCity],
+                  ['Meeting point', trip.meetingPoint],
+                  ['Accommodation', trip.accommodation],
+                  ['Transport', trip.transport],
+                ].filter(([, value]) => value).map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="text-ink-muted">{label}</dt>
+                    <dd className="mt-0.5 font-semibold">{value}</dd>
+                  </div>
                 ))}
-              </ul>
+              </dl>
             </Card>
+            {trip.includes.length > 0 && (
+              <Card className="p-6">
+                <h3 className="text-[0.9375rem] font-bold tracking-tight">What&rsquo;s included</h3>
+                <ul className="mt-4 space-y-2.5">
+                  {trip.includes.map((item) => (
+                    <li key={item} className="flex gap-3 text-[0.875rem] text-ink-soft">
+                      <Icon.check size={16} className="mt-0.5 shrink-0 text-acacia-600" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
+            {trip.toConfirm.length > 0 && (
+              <Alert tone="neutral">Still being confirmed: {trip.toConfirm.join(' ')}</Alert>
+            )}
           </div>
         )}
 
@@ -439,6 +572,24 @@ export default function TripGroupPage() {
                     </p>
                   </div>
                   {member.role === 'ORGANIZER' && <Badge tone="brand">Organizer</Badge>}
+                  {conversation.canModerate && member.id !== user?.id && member.role !== 'ORGANIZER' && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const reason = window.prompt(`Remove ${member.name} from this group? Give the reason (kept in the audit log).`);
+                        if (!reason) return;
+                        try {
+                          await api.post(`/conversations/${params.id}/members/${member.id}/remove`, { reason });
+                          await reloadDetail();
+                        } catch (caught) {
+                          setNotice(caught instanceof ApiError ? caught.message : 'Could not remove.');
+                        }
+                      }}
+                      className="text-xs font-semibold text-danger underline"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </Card>
               ))}
             </div>
@@ -448,19 +599,20 @@ export default function TripGroupPage() {
         {tab === 'itinerary' && trip && (
           <div className="mx-auto max-w-3xl">
             <h2 className="text-h2">Day by day</h2>
+            {trip.itinerary.length === 0 && <p className="mt-4 text-ink-muted">The itinerary has not been added yet.</p>}
             <ol className="mt-8 space-y-6">
               {trip.itinerary.map((day) => (
-                <li key={day.id} className="rounded-[var(--radius-card)] border border-line bg-white p-6">
+                <li key={day.dayNumber} className="rounded-[var(--radius-card)] border border-line bg-white p-6">
                   <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-ink-faint">
-                    Day {day.dayNumber}
+                    Day {day.dayNumber}{day.label ? ` · ${day.label}` : ''}
                   </p>
                   <h3 className="mt-1.5 text-[1.0625rem] font-bold tracking-tight">{day.title}</h3>
                   {day.summary && <p className="mt-2 text-[0.875rem] text-ink-muted">{day.summary}</p>}
                   <ul className="mt-4 space-y-2">
-                    {day.activities.map((activity, index) => (
+                    {day.stops.map((stop, index) => (
                       <li key={index} className="flex gap-3 text-[0.875rem] text-ink-soft">
                         <span className="mt-[0.5rem] h-1 w-1 shrink-0 rounded-full bg-line-strong" />
-                        {activity}
+                        <span><strong className="text-ink">{stop.name}</strong>{stop.detail ? ` — ${stop.detail}` : ''}</span>
                       </li>
                     ))}
                   </ul>
@@ -472,16 +624,27 @@ export default function TripGroupPage() {
 
         {tab === 'documents' && (
           <div className="mx-auto max-w-3xl">
-            <EmptyState
-              icon={<Icon.ticket size={32} />}
-              title="No documents yet"
-              description="Your organizer can share kit lists, permits and joining instructions here. File sharing is not connected in this build — the group chat is the place to ask for anything you need in the meantime."
-              action={
-                <Button variant="secondary" onClick={() => setTab('chat')}>
-                  Go to chat
-                </Button>
-              }
-            />
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-h2">Documents & photos</h2>
+              {conversation.canPost && (
+                <label className="inline-flex h-10 cursor-pointer items-center rounded-full bg-acacia-600 px-4 text-sm font-bold text-white">
+                  {uploading ? 'Uploading…' : 'Share a file'}
+                  <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void share(file); event.target.value = ''; }} />
+                </label>
+              )}
+            </div>
+            {conversation.documents.length === 0 ? (
+              <p className="mt-6 text-ink-muted">Nothing shared yet. Kit lists, permits, tickets and photos shared in the chat appear here.</p>
+            ) : (
+              <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+                {conversation.documents.map((message) => (
+                  <li key={message.id} className="rounded-xl border border-line bg-white p-4">
+                    <a href={message.attachments[0]} target="_blank" rel="noreferrer noopener" className="font-semibold text-acacia-700 underline">{message.kind === 'IMAGE' ? '🖼️' : '📄'} {message.body}</a>
+                    <p className="mt-1 text-xs text-ink-muted">Shared by {message.author.name} · {timeAgo(message.createdAt)}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
       </div>
@@ -491,7 +654,7 @@ export default function TripGroupPage() {
 
 /* -------------------------------------------------------------------------- */
 
-function MessageRow({ message, mine }: { message: MessageDto; mine: boolean }) {
+function MessageRow({ message, mine, canModerate, onAction }: { message: MessageDto; mine: boolean; canModerate: boolean; onAction: (action: 'report' | 'remove' | 'pin') => void }) {
   if (message.kind === 'SYSTEM') {
     return (
       <p className="text-center text-[0.8125rem] italic leading-relaxed text-ink-muted">{message.body}</p>
@@ -526,7 +689,21 @@ function MessageRow({ message, mine }: { message: MessageDto; mine: boolean }) {
               Announcement
             </p>
           )}
-          <p className="whitespace-pre-wrap">{message.body}</p>
+          {message.kind === 'IMAGE' && message.attachments[0] ? (
+            <a href={message.attachments[0]} target="_blank" rel="noreferrer noopener">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={message.attachments[0]} alt={message.body} className="max-h-64 rounded-lg" />
+            </a>
+          ) : message.kind === 'DOCUMENT' && message.attachments[0] ? (
+            <a href={message.attachments[0]} target="_blank" rel="noreferrer noopener" className="font-semibold underline">📄 {message.body}</a>
+          ) : (
+            <p className="whitespace-pre-wrap">{message.body}</p>
+          )}
+        </div>
+        <div className={cx('mt-1 flex gap-3 text-[0.6875rem] font-semibold text-ink-faint', mine && 'justify-end')}>
+          {!mine && <button type="button" onClick={() => onAction('report')} className="hover:text-danger">Report</button>}
+          {canModerate && <button type="button" onClick={() => onAction('pin')} className="hover:text-ink">{message.pinned ? 'Unpin' : 'Pin'}</button>}
+          {(canModerate || mine) && <button type="button" onClick={() => onAction('remove')} className="hover:text-danger">Remove</button>}
         </div>
       </div>
     </div>

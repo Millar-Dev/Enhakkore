@@ -33,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: settings.brand.name,
       images: [{ url: settings.homepage.hero.imageUrl }],
     },
-    icons: { icon: [{ url: settings.brand.faviconUrl }], apple: settings.brand.markUrl },
+    icons: { icon: [{ url: settings.brand.faviconUrl }, { url: '/brand/refined/enhakkore-icon-192.png', sizes: '192x192' }], apple: '/brand/refined/enhakkore-icon-180.png' },
   };
 }
 

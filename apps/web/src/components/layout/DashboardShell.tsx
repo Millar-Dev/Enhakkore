@@ -144,11 +144,13 @@ export function DashboardShell({
 
 export const TRAVELLER_NAV: NavItem[] = [
   { href: '/account', label: 'Overview', exact: true },
+  { href: '/account/experiences', label: 'My experiences' },
+  { href: '/account/enquiries', label: 'Enquiries & reservations' },
   { href: '/account/applications', label: 'Trip applications' },
   { href: '/account/groups', label: 'Trip groups' },
   { href: '/account/hosting', label: 'Hosting' },
-  { href: '/account/saved', label: 'Wishlist' },
-  { href: '/experiences/communities', label: 'Communities' },
+  { href: '/account/saved', label: 'Saved' },
+  { href: '/account/notifications', label: 'Notifications' },
   { href: '/account/profile', label: 'Profile' },
 ];
 

@@ -1,0 +1,24 @@
+{
+  "enhakkore": {
+    "dominant": [
+      "#000c24",
+      "#000c18",
+      "#001830",
+      "#0c1824",
+      "#0c1830",
+      "#fcfcfc"
+    ],
+    "gold_average": "#cb993a"
+  },
+  "wsc": {
+    "dominant": [
+      "#000c6c",
+      "#00186c",
+      "#fcfcfc",
+      "#000c60",
+      "#0c186c",
+      "#fcfcf0"
+    ]
+  },
+  "emblem_cut_row": 314
+}

@@ -24,11 +24,13 @@ export default function AccountHome() {
   }, []);
 
   const tiles = [
+    { href: '/account/experiences', title: 'My experiences', body: 'Registrations, upcoming and past, teams, communities, event plans and activities you published.' },
+    { href: '/account/enquiries', title: 'Enquiries & reservations', body: 'Hotel enquiries, table requests and their status.' },
     { href: '/account/applications', title: 'Trip applications', body: 'Follow your applications and see how to pay.' },
     { href: '/account/groups', title: 'Trip groups', body: 'Chat with the people on your confirmed departures.' },
     { href: '/account/hosting', title: 'Activities you host', body: 'Approve people who asked to join.' },
-    { href: '/account/saved', title: 'Wishlist', body: 'Trips, places, events and activities you saved.' },
-    { href: '/connect/requests', title: 'Connections', body: 'Requests and the people you are connected with.' },
+    { href: '/account/saved', title: 'Saved', body: 'Trips, places, events and activities you saved.' },
+    { href: '/account/notifications', title: 'Notifications', body: 'Updates on your registrations, enquiries and trips.' },
     { href: '/account/profile', title: 'Your profile', body: 'Photo, city and interests other members see.' },
   ];
 

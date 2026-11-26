@@ -236,6 +236,7 @@ function coerceField(field: FieldDef, raw: unknown, env: CoerceEnv): unknown {
     case 'category':
     case 'place':
     case 'user':
+    case 'ref':
       return String(raw).trim();
     default:
       return raw;

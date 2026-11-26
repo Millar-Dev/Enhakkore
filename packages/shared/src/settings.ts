@@ -150,7 +150,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
       'An international platform connecting people to destinations, experiences, events, communities and opportunities to create positive change.',
     logoUrl: '/partners/enhakkore-wordmark.webp',
     markUrl: '/partners/enhakkore-mark.webp',
-    faviconUrl: '/icon.svg',
+    faviconUrl: '/brand/refined/favicon-32.png',
     wscLogoUrl: '/partners/wsc.webp',
     primaryColor: '',
     accentColor: '',

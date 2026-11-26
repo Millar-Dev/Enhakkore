@@ -1,113 +1,135 @@
-# Requirements audit — Enhakkore Travel & Impact
+# Requirements audit — Enhakkore Travel & Impact (master rebuild)
 
-Every requirement from the owner's briefs (the master prompt, the complete
-admin control centre, the final completion instruction, Catering & Lunchbox
-Services, and the rebuild decision), checked against the code.
+Every section of the master rebuild brief (and the earlier briefs it builds on),
+checked against the code on this branch.
 
-**Status:** ✅ built and tested · 🟡 built, needs the owner's input or an
-external account · 🔜 deliberately a later phase · ❌ not possible from here (reason given)
+**Status:** ✅ built and tested · 🟡 built, needs the owner's input or an external
+account · 🔜 deliberately a later phase · ❌ not done (reason given)
 
-## 1. Brand
+Tested: **109 automated API tests** (including 16 for this rebuild) and **62
+browser checks on an emulated Android phone** (every public page loads with no
+errors and no sideways scrolling; hotel enquiry, member sign-up, team
+tournament registration, joining a community, publishing an activity, event
+planning, My Experiences, notifications, and every new admin screen).
 
-| Requirement | Status | Where |
-|---|---|---|
-| Name, slogan "Explore. Connect. Create impact." | ✅ | Settings → Brand (editable); header, footer, hero |
-| Navy, gold, white, cream; serif headings, sans body | ✅ | `apps/web/src/app/globals.css` (Cormorant Garamond + Plus Jakarta Sans) |
-| Original Enhakkore logo, never recoloured or stretched | ✅ | `components/site/BrandLogo.tsx`, `components/brand/Logo.tsx` → `/partners/enhakkore-wordmark.webp`; browser-tested on phone and desktop |
-| Original WSC logo in Impact, as its own organisation | ✅ | `/impact`, `/donate`, `/impact/<project>`, footer → `/partners/wsc.webp`; browser-tested |
-| Subtle motion, 3D globe, reduced-motion fallback | ✅ | `components/home/Globe.tsx` (static with reduced motion; data saver skips hero video) |
-
-## 2. International platform
+## 1–2. Inspection, brand and design
 
 | Requirement | Status | Where |
 |---|---|---|
-| Dynamic countries (all 249) and cities, added without code | ✅ | Admin → Countries / Cities; "+ Add a new city" inside every form |
-| Currencies TZS, USD, EUR, GBP, KES, NGN (+ UGX, RWF, ZAR, AED) | ✅ | `packages/shared/src/money.ts` |
-| Time zones per city; times entered and shown in local time | ✅ | `packages/shared/src/time.ts`; tested Dar es Salaam and Lagos |
-| Location filters and search; country and city pages | ✅ | `/destinations`, `/destinations/<country>/<city>`, `/search`, filters on every listing |
-| Launch focus Dar es Salaam, no fake activity elsewhere | ✅ | Settings → Launch city; countries appear only with real listings |
+| Old structure replaced, no old and new side by side | ✅ | Marketplace, booking, assistant and Connect-following screens removed; old addresses redirect (`/discover`→`/explore`, `/connect`→communities, `/trips`→`/travel`…) |
+| Original Enhakkore and WSC logos, never redesigned | ✅ | Header, footer, hero, Impact, About — `public/partners/*` |
+| Palette sampled from the logo (navy, gold, white, ivory) | ✅ | `public/brand/colours.json`; gold `#cb9a3c` and navy `#0a1a2e` tokens in `globals.css` |
+| Brand message "Travel Further. Connect Deeper. Create Impact." | ✅ | Settings → Brand / Homepage (editable) |
+| Interactive globe hero: rotates, lit markers, travel lines, drag, zoom, mobile and reduced-motion fallback | ✅ | `components/home/Globe.tsx` (drag in any direction, pinch, ⌘/ctrl-wheel, +/− buttons) |
 
-## 3. Divisions
-
-| Requirement | Status | Where |
-|---|---|---|
-| **Travel:** group/private trips, safaris; itinerary, dates, seats, deadlines, prices per currency/tier, inclusions, payment instructions, cancellation | ✅ | `/travel`, `/travel/<trip>`; Admin → Travel — trips |
-| Apply → review → verify payment → confirm → private group per departure | ✅ | `/account/applications`; Admin → Trip applications; tested end to end |
-| Past trips shown as past, not bookable | ✅ | Napuru Gateway (24 Oct 2026) on `/travel` "Past trips" |
-| Arusha Escape kept upcoming with its real details | ✅ | moved from content file to database by `apps/api/prisma/bootstrap.ts` |
-| **Discover:** hotels, restaurants, beaches, nightlife… with verified / business-submitted / unverified labels, sponsored, hours, contacts, map link, reviews | ✅ | `/discover`, `/discover/<place>` |
-| Room availability "confirm with the property" where no live inventory | ✅ | place pages; live inventory 🔜 |
-| **Experiences** with provider, price or "on request", enquiries | ✅ | `/experiences` |
-| **Events:** posters, tickets, capacity, registration, payment instructions, attendee check-in; Enhakkore vs third-party | ✅ | `/events`; Admin → Event registrations |
-| **Impact:** WSC, projects, updates, authentic photos, donations, volunteering, partnerships; no invented figures | ✅ | `/impact`, `/impact/mkuranga-outreach`, `/donate` |
-| Donations separate from business income | ✅ | Admin → Donations (own ledger); tested |
-| Donate shows exactly "Selcom / 0745341440", copy button, WhatsApp confirmation | ✅ | `/donate` |
-| Donation account authorised for the stated project | 🟡 | owner confirms, then ticks Settings → Impact |
-| **Catering & Lunchbox Services:** lunchboxes, group catering, private chef on request; under Travel & Experiences; WhatsApp ordering; no invented menus | ✅ | `/catering` (menu link, Travel and Experiences pages); lunchbox and private-chef request forms; Admin → Catering & lunchboxes; tested |
-| Catering admin: packages, menus, photos, prices, group discounts, dietary options, availability, private-chef enquiries | ✅ | Admin → Catering & lunchboxes; Enquiries inbox filtered by "Catering" / "Private chef" |
-
-## 4. Connect and activities
-
-| Requirement | Status | Where |
-|---|---|---|
-| Profiles, photo, country/city, interests; discover by country/city/interest | ✅ | `/connect`, `/account/profile` |
-| Connection requests, accept/decline/remove, block, report; no addresses or live location | ✅ | `/connect/members/<id>`, `/connect/requests`; tested |
-| Messaging and groups addable later | ✅ ready | data model; trip departure groups already have chat |
-| **Host an activity** → WhatsApp with prefilled message; reviewed before publishing | ✅ | `/activities/host` |
-| Admin-created and community-submitted activities; full status list | ✅ | Admin → Activities |
-| Basketball as a visible main category; sports, fitness, console and mobile gaming categories, editable | ✅ | Admin → Categories; homepage and `/activities` chips |
-| Request to join; organisers manage participants and send updates | ✅ | `/activities/<slug>`, `/account/hosting`; tested |
-| Filters: country, city, category, date, level, online/in person, spaces | ✅ | `/activities` |
-
-## 5. Return visits
-
-Weekend Radar `/weekend` ✅ · Hidden gems (Discover filter) ✅ · Wishlist `/account/saved` ✅ ·
-Community stories `/community`, `/stories/new` ✅ · Local challenges ✅ · Polls ✅ ·
-What's new (homepage) ✅ · Local deals `/deals` ✅ · Travel together `/travel` ✅ · Activity finder ✅
-
-## 6. Admin control centre (`/admin`)
+## 3–4. Navigation and homepage
 
 | Requirement | Status |
 |---|---|
-| Overview: members, activities, pending submissions, trips, bookings, events, listings, enquiries, income, donations, recent activity, alerts | ✅ |
-| Visitors count | 🟡 needs Vercel Analytics switched on (link shown on overview) |
-| Add / edit / draft / preview / publish / unpublish / archive / restore / delete / search / filter / sort for every content type | ✅ |
-| Homepage sections, order, hero, banners; navigation; SEO; brand colours | ✅ Settings |
-| Contacts, WhatsApp numbers and messages, socials, email, address | ✅ Settings → Contacts / Social / WhatsApp messages |
-| Terms, privacy, cancellation, safety pages | ✅ editor · 🟡 text to be written by the owner |
-| Media library with folders, captions, reuse; originals protected | ✅ |
-| Payment settings per scope (trips, events, experiences, catering, donations), confirmed and logged | ✅ |
-| Finance: income/expenses/refunds, categories, related trip/event, receipts, reports, trip and event profit, outstanding, cash flow, CSV | ✅ |
-| Customers & members: history, suspend, export, access logged | ✅ |
-| Roles & permissions (10 roles, custom roles, granular, partner "own listings only"), enforced on the server | ✅ tested |
-| Security: login history, failed sign-ins, sessions with revoke, audit log, settings history and restore | ✅ |
-| Two-factor sign-in | ❌ not built yet (listed in handover) |
-| Global settings search | ✅ search box in the admin header |
+| Exactly four primary categories: Explore, Experiences, Travel, Impact + Search, Notifications, Account | ✅ header (bell with unread count for members), phone tab bar, menu sheet with sub-links |
+| Homepage order: hero (Explore the World / Join / Donate, WSC) → Discover Enhakkore panels (icons, no photos) → What's happening now → Explore by interest → Featured destinations → Upcoming experiences & trips → Trending → Impact corner → Join → Footer | ✅ order and visibility editable in Homepage editor |
+| Footer: About, contact, socials, FAQs, privacy, terms, community guidelines, partner, WSC & donations | ✅ `/about`, `/faq`, `/partner`, `/legal/*` |
+| Donation reachable everywhere without popups | ✅ "Donate" in the header and menu |
 
-## 7. Security and technical
+## 5–6. Explore and enquiries & reservations
 
-Secure passwords (bcrypt), revocable sessions, server-side permissions, rate limits,
-spam honeypots, validation, private receipts, audit trail ✅ ·
-demo accounts blocked on the live site ✅ · migrations tested on PostgreSQL, including
-upgrading a database that already holds data ✅ · backups: Neon point-in-time + CSV exports 🟡
-
-## 8. Assets
-
-| Asset | Status |
+| Requirement | Status |
 |---|---|
-| Enhakkore logo, WSC logo | ✅ preserved, original files, displayed |
-| Mkuranga outreach photographs (18 + cover) | ✅ preserved, in the media library, on the project page |
-| Arusha trip materials (itinerary, prices, payment numbers, 6 credited photos) | ✅ preserved |
-| Homepage safari video and poster | ✅ preserved |
-| **Mkuranga videos** | ❌ never in the repository — please send the files |
-| **Meru Eco Camp photos and videos** | ❌ never in the repository (searched full history) — please send the files |
-| **AIM Mall media** | ❌ never in the repository — please send the files |
-| **Cultural Heritage Centre media** | 🟡 only a Creative Commons Wikimedia photo exists; your own photos were never uploaded |
+| Four sections — Stays, Food & dining (incl. catering/lunchboxes), Venues & event spaces, Places & attractions — with their sub-types | ✅ `/explore?section=…`; categories carry a section |
+| Businesses cannot publish; team publishes; editorial / sponsored (labelled) / referral distinguished | ✅ listings only via control centre; Partner agreements module |
+| Listing fields incl. room types, menus, verified availability, map, hours, contacts, reviews | ✅ (map: OpenStreetMap embed from coordinates) |
+| Search, country/city/category filters, featured, popular, recently added | ✅ |
+| Map browsing of the whole list | 🟡 each place has a map; a combined map of all listings is not built |
+| Hotel enquiry form with every listed field | ✅ `components/public/Reservations.tsx` |
+| Restaurant reservation form | ✅ |
+| Three methods shown per listing (Enhakkore enquiry, verified WhatsApp, external link) | ✅ |
+| Saved, reference number, dates, notification status, follow-up status, admin notes | ✅ |
+| Statuses New … Unsuccessful | ✅ per-type status lists |
+| Automatic WhatsApp to both team numbers via WhatsApp Business Platform; never pretended; manual fallback; enquiry never lost | 🟡 built and tested; **needs Meta credentials** (see handover). Until then enquiries are marked "Automatic WhatsApp not set up" with a retry button |
+| Customers see enquiries and statuses in their account | ✅ `/account/enquiries` + notifications |
 
-Once you send them, they go into Admin → Media library (no code change needed).
+## 7–8. Experiences and gaming
 
-## 9. Deliberately later phases
+| Requirement | Status |
+|---|---|
+| Search area, location filters, Discover / Plan an Event / Publish, 8 categories, Upcoming right below, Popular after | ✅ `/experiences` |
+| Category-specific search ("Free Fire" finds Free Fire only) | ✅ tested |
+| Plan an Event guided form (not implied free) | ✅ `/experiences/plan` |
+| Publish an event or activity, approval process, enhanced review for large/paid | ✅ `/experiences/publish`; tested |
+| Recurring activities with separate sessions (date, time, meeting point, route, capacity, registration list, attendance, status, notices), past sessions kept | ✅ tested |
+| Communities: join, description, members, announcements, meetups, apply to create (approval) | ✅ tested |
+| No general following system | ✅ old Connect follow/requests screens removed; member profiles remain |
+| Public profiles (photo, name, bio, location, interests, communities, published activities, approved organiser) | ✅ `/members/<id>`, members only, no contact details |
+| My Experiences (registrations, upcoming, past, saved, teams, communities, event plans, published, notifications, profile) | ✅ `/account/experiences` |
+| Gaming hub: online tournaments + PS/console sessions, editable games list, formats, server, slots, deadline, rules, results, brackets, disputes, age | ✅ `/experiences/gaming` |
+| Registration with player name, UID, server, team, squad IDs, captain, rules agreement; team invitations | ✅ invite codes; tested |
+| Free at launch, no entry payments | ✅ |
 
-Third-party operator marketplace and commission payments 🔜 (removed from the launch
-website; the database and API keep the groundwork) · online card / mobile-money payments 🔜 ·
-live hotel inventory 🔜 · member-to-member chat 🔜 · mobile apps 🔜 · paid organiser subscriptions 🔜
+## 9–10. Travel and private trip groups
+
+| Requirement | Status |
+|---|---|
+| Trip fields incl. min/max group, exclusions, accommodation, transport, departure point | ✅ |
+| Trip stage system (Registration open … Cancelled) | ✅ shown on the trip page |
+| Arusha Escape as editable content **requiring final admin verification** | 🟡 imported with accommodation "not yet booked", transport/meals "provisional", max 28, Mlimani City Friday departure — **held as a draft until the owner publishes it** |
+| Private group per departure; access only after confirmation | ✅ |
+| Tabs Chat / Trip information / Itinerary / Participants / Documents | ✅ |
+| Real-time persistent messaging over authenticated sockets | ✅ socket.io with server-side membership checks; slow poll fallback |
+| Images and documents, announcements, pinned, unread counts, notifications | ✅ (images/PDF up to 10 MB) |
+| Reporting, blocking, moderation, admin removal of participants, archive after trip (read-only history) | ✅ tested |
+
+## 11–12. Impact and partnerships
+
+| Requirement | Status |
+|---|---|
+| WSC as Enhakkore's impact side with its logo; completed projects; donations; volunteering | ✅ volunteer form added |
+| Donations separate from revenue; payment integration disabled | ✅ |
+| Mkuranga outreach with authentic photos | ✅ |
+| Meru Eco Camp, Cultural Heritage, AIM Mall records | ❌ no media or verified dates exist in the project — please send them (nothing invented) |
+| Partner page: WhatsApp option + application form; stored; statuses; agreements and commission tracking | ✅ `/partner`, Business partnerships inbox, Partner agreements |
+
+## 13–14. Accounts and admin
+
+| Requirement | Status |
+|---|---|
+| Two account types: Member (open) and Team (invite only, no public staff sign-up) | ✅ operator sign-up closed |
+| Roles: Content, Explore, Experiences, Gaming, Travel, Impact, Community, Finance managers; multiple permissions; Super Admin | ✅ |
+| Server-side permissions; two-factor authentication | ✅ TOTP two-factor sign-in (`/admin/two-factor`), secrets encrypted |
+| Dashboard overview counts (members, upcoming, reservations, hotel/restaurant enquiries, partnerships, event-planning, organiser applications, pending approvals, recent activity) | ✅ |
+| All 20 modules | ✅ menu groups Today, Explore, Experiences, Travel & Impact, Content, Money & reports, People & settings |
+| Add → category → details → media → location → preview → draft/publish; schedule; archive/restore; delete with confirmation | ✅ ("schedule" = set dates; no timed auto-publish) |
+| Notification delivery review, activity history, audit log | ✅ `/admin/notifications`, Security & audit |
+
+## 15–17. Popularity, notifications, business model
+
+| Requirement | Status |
+|---|---|
+| Popularity from unique views, saves, shares, registrations, enquiries; freshness; anti-manipulation; manual featuring; sponsored never ranked; expired excluded | ✅ `services/popularity.ts`; tested |
+| Verified reviews and completed bookings in the score | 🟡 reviews exist separately; not yet weighted into the score |
+| In-app notifications for registrations, enquiries, trips, chat, events, communities, approvals, partnerships | ✅ |
+| Email notifications | 🟡 only password reset by email (Resend key needed); others in-app |
+| WhatsApp notifications to members | 🔜 team notices only |
+| No public payment collection at launch | ✅ |
+
+## 18–21. Contacts, launch content, technical, policies
+
+| Requirement | Status |
+|---|---|
+| WhatsApp +255 745 341 440 and +255 794 279 089; Instagram ×3 (incl. @_wsc2022); TikTok; editable; no invented links | ✅ (an invented support email on the error page was removed) |
+| Saturday jog — 06:30, Sayansi towards the beach, free, per-session registration, unconfirmed details kept in draft | 🟡 created as a **draft**; add the beach, distance and sessions, then publish |
+| Curated real businesses | 🟡 none added: no verified details were available, and the brief forbids inventing them. Add them in Explore listings |
+| Secure database, validation, rate limits, spam honeypots, audit, env vars, `.env.example` | ✅ |
+| Twelve policy pages, clearly drafts until legal review | ✅ `/legal` (plain-language drafts; tick "reviewed" after a lawyer) |
+| Report listing / user / message, block | ✅ |
+
+## Logos and asset library
+
+`public/brand/originals/` (untouched masters) and `public/brand/refined/` (transparent
+full logo, @2x, navigation and footer sizes, emblem, square social images, on-dark plates,
+favicons and app icons, WSC equivalents). No SVG: a faithful vector would have to be
+redrawn by a designer, which needs your approval.
+
+## Later phases
+
+Third-party operator marketplace · online payments · live hotel inventory · paid
+tournaments · member-to-member private chat · mobile app (the API is ready for it).

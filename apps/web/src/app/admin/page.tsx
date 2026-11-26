@@ -42,7 +42,9 @@ export default function AdminOverview() {
           {can(user, 'activities.create') && <Link className={btn.gold} href="/admin/r/activities/new">+ Activity</Link>}
           {can(user, 'events.create') && <Link className={btn.secondary} href="/admin/r/events/new">+ Event</Link>}
           {can(user, 'trips.create') && <Link className={btn.secondary} href="/admin/r/trips/new">+ Trip</Link>}
-          {can(user, 'places.create') && <Link className={btn.secondary} href="/admin/r/places/new">+ Place</Link>}
+          {can(user, 'places.create') && <Link className={btn.secondary} href="/admin/r/places/new">+ Explore listing</Link>}
+          {can(user, 'gaming.create') && <Link className={btn.secondary} href="/admin/r/tournaments/new">+ Tournament</Link>}
+          {can(user, 'communities.create') && <Link className={btn.secondary} href="/admin/r/communities/new">+ Community</Link>}
           {can(user, 'finance.create') && <Link className={btn.secondary} href="/admin/finance?add=INCOME">+ Income</Link>}
           {can(user, 'finance.create') && <Link className={btn.secondary} href="/admin/finance?add=EXPENSE">+ Expense</Link>}
           {can(user, 'media.create') && <Link className={btn.secondary} href="/admin/media">Upload photos</Link>}
@@ -52,6 +54,13 @@ export default function AdminOverview() {
       <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-ink-muted">Needs attention</h2>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {tile('New enquiries', c.newEnquiries, '/admin/enquiries', 'enquiries.view', true)}
+        {tile('Hotel enquiries open', c.hotelEnquiries, '/admin/enquiries?type=ROOM', 'enquiries.view', true)}
+        {tile('Restaurant reservations open', c.restaurantReservations, '/admin/enquiries?type=TABLE', 'enquiries.view', true)}
+        {tile('Business partnership applications', c.partnershipApplications, '/admin/enquiries?type=PARTNERSHIP', 'enquiries.view', true)}
+        {tile('Event-planning requests', c.eventPlanRequests, '/admin/enquiries?type=EVENT_PLAN', 'enquiries.view', true)}
+        {tile('Organiser submissions', c.organiserSubmissions, '/admin/r/activities?status=PENDING_REVIEW&source=COMMUNITY', 'activities.view', true)}
+        {tile('Communities to approve', c.pendingCommunities, '/admin/r/communities?status=PENDING_REVIEW', 'communities.view', true)}
+        {tile('Pending approvals (all)', c.pendingApprovals, '/admin/r/activities?status=PENDING_REVIEW', 'activities.view', true)}
         {tile('Activity submissions to review', c.pendingActivities, '/admin/r/activities?status=PENDING_REVIEW', 'activities.view', true)}
         {tile('Trip applications open', c.openApplications, '/admin/applications', 'bookings.view', true)}
         {tile('Unpaid event registrations', c.unpaidRegistrations, '/admin/registrations?status=PENDING_PAYMENT', 'events.view', true)}
@@ -69,6 +78,7 @@ export default function AdminOverview() {
         {tile('Upcoming departures', c.upcomingDepartures, '/admin/r/trips', 'trips.view')}
         {tile('Confirmed trip bookings', c.confirmedBookings, '/admin/applications?status=CONFIRMED', 'bookings.view')}
         {tile('Upcoming events', c.upcomingEvents, '/admin/r/events', 'events.view')}
+        {tile('Live tournaments', c.liveTournaments, '/admin/r/tournaments', 'gaming.view')}
         {tile('Published places', c.places, '/admin/r/places', 'places.view')}
         {can(user, 'settings.view') && (
           <div className="rounded-2xl border border-line bg-white p-4">

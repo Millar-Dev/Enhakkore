@@ -7,20 +7,21 @@ your approval or accounts, and how to run the website from your phone.
 
 ## 1. What has been completed
 
-**The public website**, rebuilt around the five divisions plus Connect:
+The site is organised around **four main categories — Explore, Experiences,
+Travel, Impact** — with Search, Notifications and your account. The homepage
+leads with an interactive globe and the brand message *Travel Further. Connect
+Deeper. Create Impact.* The full requirement-by-requirement check is in
+`docs/REQUIREMENTS-AUDIT.md`.
 
 | Area | Address | What it does |
 |---|---|---|
-| Home | `/` | Hero, search, Weekend Radar, activities by group (Basketball is a main category), trips, events, Find your people, places, experiences, catering, an interactive globe, stories, What's new, Impact with WSC, social links. Section order and visibility are set in the control centre. |
-| Enhakkore Travel | `/travel`, `/travel/<trip>` | Upcoming and past trips, itinerary, prices (with separate prices per visitor type, never converted), inclusions, items still being confirmed, payment numbers with copy buttons, cancellation policy, **apply for places**. |
-| Discover | `/discover`, `/discover/<place>` | Places and businesses with "Verified by Enhakkore / Submitted by the business / Not yet verified" labels, sponsored and hidden-gem badges, opening hours, contact links, Google Maps link, member reviews (moderated), deals, and enquiry forms (general, room or table). |
-| Experiences | `/experiences` | Listings with provider, duration, price or "on request", enquiry form. |
-| Events | `/events` | Enhakkore-hosted vs third-party clearly marked; ticket types, live remaining places, **registration with a reference**, payment instructions, external ticket links. |
-| Activities | `/activities`, `/activities/host` | Filters by country, city, category, in-person/online, level, spaces, past/upcoming. **Host an activity** opens WhatsApp with the message already written. Members **request to join**; organisers approve. |
-| Connect | `/connect` | Member profiles (photo, city, interests), discovery by country/city/interest, connection requests, accept/decline/remove, block, report. Members only; no email, phone or address is ever shown. |
-| Impact | `/impact`, `/impact/mkuranga-outreach`, `/donate` | WSC presented as its own organisation; the Mkuranga outreach with all 18 original photographs; donate page with **Account name: Selcom, Account number: 0745341440** exactly, copy button, WhatsApp confirmation. |
-| Catering | `/catering` | Lunchboxes, group catering, private chef — packages you add, plus a custom request form and WhatsApp ordering. |
-| Also | `/destinations`, `/weekend`, `/community` (stories, polls, challenges), `/deals`, `/search`, `/contact`, `/legal/*`, `/account/*` (applications, hosting, wishlist, profile) | |
+| Home | `/` | Globe hero (Explore the World · Join Enhakkore · Donate), Discover Enhakkore, What's happening now, Explore by interest, destinations, upcoming experiences and trips, Trending (real engagement only), Impact corner with WSC, Join. Order and visibility in the Homepage editor. |
+| Explore | `/explore` | Stays, Food & dining, Venues & event spaces, Places & attractions. Each listing says who supplied its details; sponsored ones are labelled. **Hotel enquiry** and **restaurant reservation** forms, the business's verified WhatsApp, and its own booking link where available. |
+| Experiences | `/experiences` | Search and location filters, Plan an event, Publish an activity, eight categories, upcoming and popular. **Gaming** (`/experiences/gaming`): free online tournaments and console sessions with team registration by invite code. **Communities** (`/experiences/communities`). Recurring activities with a separate registration list per session. |
+| Travel | `/travel` | Trips with stages (Registration open … Trip confirmed), applications, and a **private real-time group chat** per departure (chat, trip information, itinerary, participants, documents). |
+| Impact | `/impact`, `/donate` | WSC, the Mkuranga outreach, volunteering, donations (Selcom 0745341440). |
+| Partner | `/partner` | Businesses apply by WhatsApp or form; your team verifies and publishes. |
+| Account | `/account` | My experiences, enquiries & reservations, trip applications and groups, saved, notifications, profile. |
 
 **The control centre** at `/admin` — see section 5.
 
@@ -51,7 +52,11 @@ Tanzania +255 672 302 026, and the contact email shown on the old site
 
 ## 2. What was tested
 
-- **90 automated API tests pass**, including the 71 that already existed. The
+- **109 automated API tests pass**, including 16 for this rebuild (hotel and
+  restaurant requests and their WhatsApp notice, partnerships, communities,
+  tournaments and teams, weekly sessions, member submissions, two-factor
+  sign-in, the popularity engine, archived trip groups), and **62 browser checks
+  on an emulated Android phone**. The earlier tests: The
   new ones cover: staff can only do what their role allows (checked on the
   server); an activity added in Dar es Salaam and one in Lagos, Nigeria, each
   stored in its own time zone; Basketball as a main category; community
@@ -81,25 +86,36 @@ Cloudinary uploads, and real devices — this was done in a development copy.
 
 ## 3. What still needs you (approval, accounts or decisions)
 
-1. **Create your owner account on the live site.** For security, the old
-   demonstration accounts (including `admin@enhakkore.com`, whose password was
-   published in the code) **can no longer sign in on the live site**. In
-   Render → enhakkore-api → Environment, add `OWNER_EMAIL`, `OWNER_PASSWORD`
-   (12+ characters, unique) and optionally `OWNER_NAME`, then redeploy. Your
-   account is created on that deploy. You can then remove `OWNER_PASSWORD`.
-2. **Deploy.** Merge this branch; Render rebuilds the API (it applies the new
-   database tables automatically and loads the starting content), Vercel
-   rebuilds the website.
-3. **Connect Cloudinary** (free plan) so uploaded photos and videos survive
-   deploys — `docs/DEPLOYMENT.md` Part G. Until then the overview shows a
-   warning, and uploads are lost on the next deploy.
-4. **Confirm the donation account.** Confirm that the Selcom account
-   0745341440 is authorised to receive donations for the stated project, then
-   tick "Donation account confirmed" in Settings → Impact & donations. Until
-   you do, the Donate page asks donors to confirm with you first.
-5. **Write your policies.** Terms, privacy, cancellation — Settings → Legal.
-   Until written, those pages say plainly they are not yet published. Have a
-   lawyer review them.
+1. **Create your owner account on the live site.** Demonstration accounts
+   cannot sign in on the live site. In Render → the API service → Environment,
+   add `OWNER_EMAIL`, `OWNER_PASSWORD` (12+ characters, unique) and optionally
+   `OWNER_NAME`, then redeploy. Then turn on two-factor sign-in at
+   `/admin/two-factor`.
+2. **Check and publish the Arusha Escape.** As the brief asked, it was imported
+   as a **draft awaiting your final verification**: accommodation is marked "not
+   yet booked", transport and meals "provisional", maximum 28 travellers,
+   departure Mlimani City on Friday morning. Until you publish it (Travel —
+   trips → Arusha Escape → Publish), the Travel page shows no upcoming trip.
+3. **Saturday Community Jog** is a draft too. Add the beach, the route distance
+   and the meeting instructions, add the Saturday sessions (Events & activities
+   → the jog → Sessions → repeat weekly), then publish.
+4. **Automatic WhatsApp notices** need the WhatsApp Business Platform (Meta):
+   a Meta Business account, a WhatsApp Business number registered for the
+   Cloud API, a permanent access token and an approved message template with
+   one body variable. Put `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`
+   and `WHATSAPP_TEMPLATE_NAME` on the API in Render. Until then every enquiry is
+   still saved and shown, marked "Automatic WhatsApp not set up", and the
+   Notifications screen says so.
+5. **Connect Cloudinary** (free plan) so uploaded photos, videos and chat files
+   survive deploys — `docs/DEPLOYMENT.md` Part G.
+6. **Confirm the donation account** (Settings → Impact & donations) and
+   **review the twelve policy drafts** with a lawyer (Settings → Legal), then tick
+   "Reviewed".
+7. **Add real Explore listings, games and communities.** None were invented.
+   The games list (Free Fire, PUBG Mobile, eFootball, EA SPORTS FC…) is ready under
+   Categories & games.
+8. **Send the missing media**: Mkuranga videos, Meru Eco Camp, Cultural Heritage
+   and AIM Mall photos and their dates.
 6. **Seats already sold off-site.** Arusha Escape starts with 0 seats taken.
    If you have sold places by WhatsApp, set "Seats taken" on the departure.
 7. **Meru Eco Camp.** There was no separate Meru Eco Camp trip record in the
@@ -192,7 +208,7 @@ name ("WhatsApp", "prices", "expenses").
   restore from Neon's dashboard. Once a month, export Finance, Donations,
   Members and the Audit log as CSV and keep them safely.
 - **Passwords:** long and unique for the owner; staff get a one-time password
-  and should change it. Two-factor sign-in is **not** built yet.
+  and should change it. Everyone with team access should turn on two-factor sign-in (`/admin/two-factor`).
 - **If a phone is lost or an account is misused:** Security → sign that person
   out everywhere; suspend or revoke access; reset the password.
 - **Permissions are enforced by the server**, not just hidden buttons. Only the
@@ -206,11 +222,11 @@ name ("WhatsApp", "prices", "expenses").
   hand after checking. Third-party bookings are enquiries only.
 - No live hotel room availability — listings say availability must be
   confirmed with the property.
-- No in-app chat between members yet (the data model is ready for it); trip
-  departure groups do have chat.
-- Notifications are in-app only; email/SMS/WhatsApp notifications are not sent.
+- No private chat between individual members; trip departure groups have
+  real-time chat.
+- Member notifications are in-app. The team gets WhatsApp notices once the
+  WhatsApp Business Platform is connected; emails are only password resets.
 - Currency conversion is not done — every total is shown per currency.
-- Two-factor sign-in is not available.
 - The older "Ask Enhakkore" question box was removed from public pages because
   it answered from fixed files and could quote out-of-date prices now that
   prices are edited in the control centre.

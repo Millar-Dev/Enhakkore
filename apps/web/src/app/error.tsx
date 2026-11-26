@@ -31,9 +31,9 @@ export default function GlobalError({
         <div className="shell-narrow py-20 text-center">
           <h1 className="text-h1 text-balance">Something went wrong on our side</h1>
           <p className="mx-auto mt-4 max-w-md text-[1rem] leading-relaxed text-ink-muted">
-            This is not you. Try again — and if it keeps happening, tell us at{' '}
-            <a href="mailto:support@enhakkore.com" className="font-semibold text-acacia-700 underline">
-              support@enhakkore.com
+            This is not you. Try again — and if it keeps happening, tell us on{' '}
+            <a href="https://wa.me/255745341440" target="_blank" rel="noreferrer noopener" className="font-semibold text-acacia-700 underline">
+              WhatsApp (+255 745 341 440)
             </a>
             .
           </p>

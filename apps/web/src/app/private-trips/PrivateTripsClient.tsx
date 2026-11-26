@@ -348,8 +348,8 @@ export function PrivateTripsClient() {
       <section className="relative overflow-hidden">
         <div className="media relative h-64 md:h-80">
           <Image
-            src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=2400&h=1000&q=85"
-            alt="A boat on a still lake at dawn"
+            src="/packages/arusha/napuru-waterfalls.webp"
+            alt="Napuru waterfalls"
             fill
             priority
             sizes="100vw"

@@ -11,6 +11,7 @@ import { useSession } from '@/lib/session';
 import { Panel, StatusPill, btn } from './AdminShell';
 import { Field, LookupProvider } from './Fields';
 import { ActivityParticipants, EventSales, TripDepartures } from './ResourceExtras';
+import { ActivitySessions, CommunityPanel, TournamentEntries } from './ExperienceExtras';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -177,6 +178,9 @@ export function ResourceForm({ resource, id }: { resource: ResourceDef; id?: str
             );
           })}
           {id && resource.key === 'activities' && <ActivityParticipants activityId={id} />}
+          {id && resource.key === 'activities' && <ActivitySessions activityId={id} />}
+          {id && resource.key === 'tournaments' && <TournamentEntries tournamentId={id} />}
+          {id && resource.key === 'communities' && <CommunityPanel communityId={id} />}
           {id && resource.key === 'trips' && row && <TripDepartures tripValues={values} />}
           {id && resource.key === 'events' && <EventSales eventId={id} />}
         </div>

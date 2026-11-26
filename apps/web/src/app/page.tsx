@@ -83,8 +83,8 @@ export default async function HomePage() {
       {/* Hero: the interactive globe is the visual. */}
       <section className="relative isolate overflow-hidden bg-[radial-gradient(ellipse_at_70%_40%,#0f4a76_0%,#082b45_45%,#04182a_100%)]">
         <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:radial-gradient(rgba(255,255,255,0.5)_1px,transparent_1px)] [background-size:44px_44px]" aria-hidden />
-        <div className="shell relative z-10 grid items-center gap-8 pb-14 pt-12 md:pt-16 lg:min-h-[82vh] lg:grid-cols-[1.05fr_1fr] lg:pb-16">
-          <div className="order-2 lg:order-1">
+        <div className="shell relative z-10 grid items-center gap-6 pb-12 pt-10 md:pt-16 lg:min-h-[82vh] lg:grid-cols-[1.05fr_1fr] lg:pb-16">
+          <div className="order-1">
             <p className="kicker !text-clay-400 animate-hero">{hero.eyebrow}</p>
             <h1 className="display-xl mt-5 max-w-3xl text-white animate-hero" style={{ animationDelay: '120ms' }}>
               {hero.title}
@@ -108,7 +108,7 @@ export default async function HomePage() {
               Our impact work is with WSC — We Save Children
             </Link>
           </div>
-          <div className="order-1 mx-auto w-full max-w-[22rem] sm:max-w-[28rem] lg:order-2 lg:max-w-[34rem]">
+          <div className="order-2 mx-auto w-full max-w-[19rem] sm:max-w-[26rem] lg:max-w-[34rem]">
             <Globe markers={markers} home={homePoint} tone="dark" initialLng={-homePoint.lng + 10} />
           </div>
         </div>

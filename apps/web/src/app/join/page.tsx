@@ -173,8 +173,8 @@ export default function JoinPage() {
 
       <div className="relative hidden lg:block">
         <Image
-          src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=1400&h=1800&q=85"
-          alt="A group of friends together outdoors"
+          src="/packages/arusha/chemka-1.webp"
+          alt="The clear water at Chemka hot springs"
           fill
           sizes="50vw"
           className="object-cover"

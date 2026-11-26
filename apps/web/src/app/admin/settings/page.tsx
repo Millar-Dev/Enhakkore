@@ -20,14 +20,14 @@ const GROUPS: { key: SettingsGroup; label: string; help: string }[] = [
   { key: 'brand', label: 'Brand & logos', help: 'Name, slogan, logos, favicon and optional colours. The original logos are the defaults.' },
   { key: 'seo', label: 'Search engines', help: 'Title, description and keywords for Google and link previews.' },
   { key: 'navigation', label: 'Menu', help: 'The main menu links.' },
-  { key: 'legal', label: 'Legal & policies', help: 'Terms, privacy, cancellation and safety pages. Empty pages say they are not yet published.' },
+  { key: 'legal', label: 'Legal & policies', help: 'Twelve policy pages, each starting as a plain-language draft. Tick “Reviewed” only after a lawyer has reviewed them — until then every page is marked as a draft.' },
   { key: 'impact', label: 'Impact & donations', help: 'Donation wording, and confirming the donation account is authorised.' },
   { key: 'catering', label: 'Catering', help: 'The catering page introduction.' },
   { key: 'launch', label: 'Launch city', help: 'The city Weekend Radar and the homepage focus on.' },
 ];
 
 const IMAGE_KEYS = /url$|image/i;
-const LONG_KEYS = /description|intro|subtitle|terms|privacy|cancellation|safety|use|general|trip|event|place|experience|activity|catering|chef|donation|listing|hours|address/i;
+const LONG_KEYS = /description|intro|subtitle|terms|privacy|cancellation|safety|cookies|community|activityRules|travel|accommodation|partners|gaming|donations|complaints|use|general|trip|event|place|experience|activity|catering|chef|donation|listing|hours|address/i;
 
 export default function SettingsPage() {
   const { user } = useSession();
@@ -176,7 +176,7 @@ function SettingField({ name, value, defaults, onChange }: { name: string; value
       </div>
     );
   }
-  const long = LONG_KEYS.test(name) && (String(current ?? '').length > 60 || /terms|privacy|cancellation|safety/.test(name));
+  const long = LONG_KEYS.test(name) && (String(current ?? '').length > 60 || /terms|privacy|cancellation|safety|cookies|community|activityRules|travel|accommodation|partners|gaming|donations|complaints/.test(name));
   return (
     <label className={`grid gap-1.5 text-[0.8125rem] font-semibold text-ink-soft ${long ? 'sm:col-span-2' : ''}`}>
       {humanise(name)}
