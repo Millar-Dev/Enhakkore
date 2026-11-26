@@ -511,6 +511,173 @@ async function owner() {
   console.log(`› bootstrap: owner account ready for ${email}`);
 }
 
+
+/* ------------------------------ Version 2 content ---------------------------- */
+
+/** Puts every existing category in its part of the site (Explore or Experiences). Only fills empty sections. */
+async function sections() {
+  const groupSection: Record<string, string> = {
+    Sports: 'SPORTS',
+    'Fitness & outdoors': 'SPORTS',
+    'Console gaming': 'GAMING',
+    'Online & mobile gaming': 'GAMING',
+    Stay: 'STAYS',
+    'Eat & drink': 'FOOD',
+    'Beaches & water': 'ATTRACTIONS',
+    'Going out': 'ATTRACTIONS',
+    'See & do': 'ATTRACTIONS',
+  };
+  const nameSection: Record<string, string> = {
+    Hiking: 'OUTDOOR',
+    Cycling: 'OUTDOOR',
+    Walking: 'OUTDOOR',
+    Parties: 'PARTIES',
+    'Silent parties': 'PARTIES',
+    'Halloween events': 'PARTIES',
+    'Costume events': 'PARTIES',
+    'Social gatherings': 'PARTIES',
+    'Music events': 'ARTS',
+    'Cultural festivals': 'ARTS',
+    Entertainment: 'PARTIES',
+    Games: 'GAMING',
+    'Other events': 'OTHER',
+    'Entertainment venues': 'VENUES',
+  };
+  for (const category of await prisma.category.findMany({ where: { section: null, kind: { in: ['ACTIVITY', 'EVENT', 'PLACE'] } } })) {
+    const section = nameSection[category.name] ?? (category.group ? groupSection[category.group] : undefined) ?? (category.kind === 'PLACE' ? 'ATTRACTIONS' : 'OTHER');
+    await prisma.category.update({ where: { id: category.id }, data: { section } });
+  }
+  // Categories the brief names that did not exist yet.
+  const extra: { kind: string; name: string; group: string; section: string; icon: string }[] = [
+    { kind: 'PLACE', name: 'Apartments', group: 'Stay', section: 'STAYS', icon: '🏢' },
+    { kind: 'PLACE', name: 'Holiday homes', group: 'Stay', section: 'STAYS', icon: '🏡' },
+    { kind: 'PLACE', name: 'Food outlets', group: 'Eat & drink', section: 'FOOD', icon: '🥡' },
+    { kind: 'PLACE', name: 'Catering', group: 'Eat & drink', section: 'FOOD', icon: '🍱' },
+    { kind: 'PLACE', name: 'Wedding venues', group: 'Venues', section: 'VENUES', icon: '💒' },
+    { kind: 'PLACE', name: 'Conference halls', group: 'Venues', section: 'VENUES', icon: '🏛️' },
+    { kind: 'PLACE', name: 'Party venues', group: 'Venues', section: 'VENUES', icon: '🎉' },
+    { kind: 'PLACE', name: 'Gardens', group: 'Venues', section: 'VENUES', icon: '🌿' },
+    { kind: 'PLACE', name: 'Rooftops', group: 'Venues', section: 'VENUES', icon: '🌇' },
+    { kind: 'PLACE', name: 'Private event spaces', group: 'Venues', section: 'VENUES', icon: '🔑' },
+    { kind: 'PLACE', name: 'Recreation centres', group: 'See & do', section: 'ATTRACTIONS', icon: '🎳' },
+    { kind: 'PLACE', name: 'Nature destinations', group: 'See & do', section: 'ATTRACTIONS', icon: '🌳' },
+    { kind: 'ACTIVITY', name: 'Art & creativity', group: 'Arts & culture', section: 'ARTS', icon: '🎨' },
+    { kind: 'ACTIVITY', name: 'Meetups', group: 'Communities', section: 'COMMUNITIES', icon: '🤝' },
+    { kind: 'ACTIVITY', name: 'Workshops', group: 'Learning', section: 'LEARNING', icon: '📚' },
+    { kind: 'ACTIVITY', name: 'Outdoor adventures', group: 'Outdoor', section: 'OUTDOOR', icon: '🏞️' },
+    { kind: 'ACTIVITY', name: 'Gaming tournaments', group: 'Online & mobile gaming', section: 'GAMING', icon: '🏆' },
+    { kind: 'ACTIVITY', name: 'Other experiences', group: 'Other', section: 'OTHER', icon: '✨' },
+  ];
+  for (const [index, item] of extra.entries()) {
+    const slug = slugify(item.name);
+    if (await prisma.category.findUnique({ where: { kind_slug: { kind: item.kind, slug } } })) continue;
+    await prisma.category.create({ data: { ...item, slug, sortOrder: 200 + index } });
+  }
+}
+
+/** The games the gaming hub starts with. Editable under Categories → Games. */
+async function games() {
+  const list: { name: string; group: string }[] = [
+    { name: 'Free Fire', group: 'Mobile' },
+    { name: 'PUBG Mobile', group: 'Mobile' },
+    { name: 'Call of Duty Mobile', group: 'Mobile' },
+    { name: 'Delta Force', group: 'Mobile & PC' },
+    { name: 'Mobile Legends', group: 'Mobile' },
+    { name: 'Brawl Stars', group: 'Mobile' },
+    { name: 'Fortnite', group: 'Console & PC' },
+    { name: 'eFootball', group: 'Console & mobile' },
+    { name: 'EA SPORTS FC Mobile', group: 'Mobile' },
+    { name: 'EA SPORTS FC', group: 'Console' },
+    { name: 'Mortal Kombat', group: 'Console' },
+    { name: 'Tekken', group: 'Console' },
+    { name: 'WWE 2K', group: 'Console' },
+    { name: 'Call of Duty', group: 'Console' },
+    { name: 'NBA 2K', group: 'Console' },
+  ];
+  for (const [index, game] of list.entries()) {
+    const slug = slugify(game.name);
+    if (await prisma.category.findUnique({ where: { kind_slug: { kind: 'GAME', slug } } })) continue;
+    await prisma.category.create({ data: { kind: 'GAME', name: game.name, slug, group: game.group, section: 'GAMING', icon: '🎮', sortOrder: index } });
+  }
+}
+
+/** Adds roles the latest brief asks for, without touching roles the owner has edited. */
+async function rolesV2() {
+  for (const role of DEFAULT_ROLES) {
+    if (await prisma.adminRole.findUnique({ where: { name: role.name } })) continue;
+    await prisma.adminRole.create({ data: { name: role.name, description: role.description, permissions: JSON.stringify(role.permissions), scope: role.scope ?? 'ALL', isSystem: true } });
+  }
+}
+
+/**
+ * The Arusha Escape as the brief describes it: accommodation not yet booked,
+ * transport and meals provisional, and the trip held as a draft for the owner's
+ * final check before it is published.
+ */
+async function arushaVerification() {
+  const trip = await prisma.trip.findUnique({ where: { slug: 'arusha-escape' } });
+  if (!trip) return;
+  await prisma.trip.update({
+    where: { id: trip.id },
+    data: {
+      status: 'DRAFT',
+      stage: 'REGISTRATION_OPEN',
+      maxParticipants: 28,
+      meetingPoint: 'Mlimani City, Dar es Salaam — Friday morning',
+      departureCity: 'Dar es Salaam (Mlimani City), Friday morning; return Sunday evening or night',
+      accommodation: 'Two nights in Arusha. Accommodation has not been booked yet — the property will be confirmed before departure.',
+      transport: 'Return road transport from Dar es Salaam and travel between the stops. Costs are a provisional estimate until the transport provider is confirmed.',
+      includes: JSON.stringify([
+        'Accommodation for two nights in Arusha (to be booked and confirmed)',
+        'Return road transport from Dar es Salaam, and travel between the stops (provisional)',
+        'Meals across the three days (provisional)',
+        'Entry fees to the sites on the itinerary',
+        'Guiding fees throughout the weekend',
+      ]),
+      toConfirm: JSON.stringify([
+        'Accommodation — not yet booked.',
+        'Transport — provisional cost estimate, provider to be confirmed.',
+        'Meals — provisional cost estimate.',
+        'The evening at ACES — subject to confirming the venue and access arrangements.',
+      ]),
+      reviewNotes: 'Imported from the original trip materials. Check every detail — accommodation, transport, meals, price and itinerary — then publish.',
+    },
+  });
+}
+
+/**
+ * The Saturday community jog, as a draft. The exact beach, route distance and
+ * meeting instructions were not supplied, so the page stays a draft until the
+ * owner fills them in and publishes it.
+ */
+async function jogging() {
+  if (await prisma.activity.findUnique({ where: { slug: 'saturday-community-jog' } })) return;
+  const tz = await prisma.country.findUnique({ where: { code: 'TZ' } });
+  const dar = tz ? await prisma.city.findUnique({ where: { countryId_slug: { countryId: tz.id, slug: 'dar-es-salaam' } } }) : null;
+  const category = await prisma.category.findUnique({ where: { kind_slug: { kind: 'ACTIVITY', slug: 'jogging' } } });
+  await prisma.activity.create({
+    data: {
+      slug: 'saturday-community-jog',
+      title: 'Saturday Community Jog',
+      summary: 'Every Saturday at 06:30 from Sayansi towards the beach. Free — register for each session.',
+      description:
+        'A free community jog every Saturday morning. We start at 06:30 at Sayansi and run towards the beach together. All paces welcome. Register for each Saturday’s session so we know who is coming.\n\n[To confirm before publishing: the exact beach, the route distance and the meeting instructions.]',
+      categoryId: category?.id ?? null,
+      countryId: tz?.id ?? null,
+      cityId: dar?.id ?? null,
+      mode: 'IN_PERSON',
+      meetingPoint: 'Sayansi (exact meeting spot to be confirmed)',
+      timezone: 'Africa/Dar_es_Salaam',
+      recurrence: 'Every Saturday, 06:30',
+      level: 'ALL',
+      source: 'ADMIN',
+      organiserName: 'Enhakkore',
+      status: 'DRAFT',
+      reviewNotes: 'Confirm the beach destination, route distance and meeting instructions, add the Saturday sessions, then publish.',
+    },
+  });
+}
+
 async function main() {
   await once('countries.v1', countries);
   await once('cities.v1', cities);
@@ -520,6 +687,11 @@ async function main() {
   await once('payment-methods.v1', paymentMethods);
   await once('roles.v1', roles);
   await once('media.v1', media);
+  await once('sections.v2', sections);
+  await once('games.v2', games);
+  await once('roles.v2', rolesV2);
+  await once('arusha-verification.v2', arushaVerification);
+  await once('jogging.v2', jogging);
   // Not run once: a fresh deploy with the variables set is how the owner is created.
   await owner();
 }

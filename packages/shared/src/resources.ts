@@ -24,6 +24,18 @@ import {
   REGISTRATION_MODES,
   REGISTRATION_MODE_LABELS,
   STORY_STATUSES,
+  TRIP_STAGES,
+  TRIP_STAGE_LABELS,
+  TOURNAMENT_KINDS,
+  TOURNAMENT_KIND_LABELS,
+  TOURNAMENT_FORMATS,
+  TOURNAMENT_FORMAT_LABELS,
+  TOURNAMENT_STATUSES,
+  COMMUNITY_STATUSES,
+  AGREEMENT_KINDS,
+  AGREEMENT_KIND_LABELS,
+  AGREEMENT_STATUSES,
+  SECTION_OPTIONS,
   type CategoryKind,
   type PermissionModule,
 } from './platform';
@@ -67,6 +79,7 @@ export type FieldType =
   | 'repeater'
   | 'place'
   | 'user'
+  | 'ref'
   | 'color';
 
 export interface Option {
@@ -90,6 +103,8 @@ export interface FieldDef {
   timezoneField?: string;
   /** For `category`. */
   categoryKind?: CategoryKind;
+  /** For `ref`: the resource key whose rows are offered. */
+  ref?: string;
   /** For `repeater`: the shape of each row. */
   fields?: FieldDef[];
   /** Form section heading this field sits under. */
@@ -234,7 +249,13 @@ export const ACTIVITY_RESOURCE: ResourceDef = {
     f.timezone(),
     { name: 'startsAt', label: 'Starts', type: 'datetime', timezoneField: 'timezone', section: 'Date & time' },
     { name: 'endsAt', label: 'Ends', type: 'datetime', timezoneField: 'timezone', section: 'Date & time' },
-    { name: 'recurrence', label: 'Repeats', type: 'text', max: 120, section: 'Date & time', placeholder: 'Every Saturday morning', help: 'Optional. Describe a regular meet-up.' },
+    { name: 'recurrence', label: 'Repeats', type: 'text', max: 120, section: 'Date & time', placeholder: 'Every Saturday morning', help: 'Optional. Describe a regular meet-up, then add each dated session below the form.' },
+    { name: 'registrationDeadline', label: 'Registration closes', type: 'datetime', timezoneField: 'timezone', section: 'Date & time' },
+    { name: 'communityId', label: 'Community', type: 'ref', ref: 'communities', section: 'Organiser', help: 'Optional. Shows this activity on a community’s page.' },
+    { name: 'eligibility', label: 'Who can take part', type: 'textarea', max: 1000, section: 'Rules', placeholder: 'Ages 16+, all fitness levels' },
+    { name: 'rules', label: 'Rules', type: 'textarea', max: 3000, section: 'Rules' },
+    { name: 'cancellationTerms', label: 'Cancellation conditions', type: 'textarea', max: 2000, section: 'Rules' },
+    { name: 'reviewLevel', label: 'Review needed', type: 'select', options: opts(['STANDARD', 'ENHANCED'], { STANDARD: 'Standard — small, free, low-risk', ENHANCED: 'Enhanced — large, paid or higher-risk: verify the organiser' }), default: 'STANDARD', section: 'Visibility' },
     { name: 'capacity', label: 'Spaces available', type: 'integer', min: 1, max: 100000, section: 'Participants', help: 'Leave empty for no limit.' },
     { name: 'spotsTaken', label: 'Spaces already taken', type: 'integer', min: 0, section: 'Participants', help: 'Updated automatically when you approve a request.' },
     { name: 'level', label: 'Experience level', type: 'select', options: opts(EXPERIENCE_LEVELS, EXPERIENCE_LEVEL_LABELS), default: 'ALL', section: 'Participants' },
@@ -265,7 +286,7 @@ export const PLACE_RESOURCE: ResourceDef = {
   publishStatus: 'PUBLISHED',
   unpublishStatus: 'DRAFT',
   archiveStatus: 'ARCHIVED',
-  publicPath: '/discover/{slug}',
+  publicPath: '/explore/{slug}',
   imageField: 'coverImage',
   ownerField: 'managerId',
   columns: ['name', 'categoryId', 'cityId', 'infoSource', 'sponsored', 'status'],
@@ -497,6 +518,8 @@ export const TRIP_RESOURCE: ResourceDef = {
       ],
     },
     { name: 'minParticipants', label: 'Minimum participants', type: 'integer', min: 1, section: 'Departures' },
+    { name: 'maxParticipants', label: 'Maximum participants', type: 'integer', min: 1, section: 'Departures' },
+    { name: 'stage', label: 'Trip stage', type: 'select', options: opts(TRIP_STAGES, TRIP_STAGE_LABELS), default: 'REGISTRATION_OPEN', section: 'Visibility', help: 'Shown on the trip page. Only choose “Trip confirmed” once suppliers have confirmed.' },
     {
       name: 'departures',
       label: 'Departure dates',
@@ -867,6 +890,7 @@ export const CATEGORY_RESOURCE: ResourceDef = {
     f.slug(),
     { name: 'kind', label: 'Used for', type: 'select', options: opts(CATEGORY_KINDS, CATEGORY_KIND_LABELS), required: true, default: 'ACTIVITY', section: 'Basics' },
     { name: 'group', label: 'Group', type: 'text', max: 80, section: 'Basics', placeholder: 'Sports, Console gaming…', help: 'Categories with the same group are shown together.' },
+    { name: 'section', label: 'Part of the website', type: 'select', options: SECTION_OPTIONS, section: 'Basics', help: 'Activity and event categories go in one of the eight Experiences sections; place categories in one of the four Explore sections.' },
     { name: 'description', label: 'Description', type: 'textarea', max: 500, section: 'Basics' },
     { name: 'icon', label: 'Icon (emoji)', type: 'text', max: 8, section: 'Basics', placeholder: '🏀' },
     { name: 'featured', label: 'Show as a main category', type: 'boolean', section: 'Visibility' },
@@ -978,10 +1002,142 @@ export const PAYMENT_METHOD_RESOURCE: ResourceDef = {
   ],
 };
 
+
+export const COMMUNITY_RESOURCE: ResourceDef = {
+  key: 'communities',
+  label: 'Community',
+  plural: 'Communities',
+  model: 'community',
+  permission: 'communities',
+  description: 'Interest-based communities members can join — Dar Jogging, Tanzania Gaming, Basketball… Member applications arrive as “Pending review”.',
+  titleField: 'name',
+  slugField: 'slug',
+  statusField: 'status',
+  statuses: COMMUNITY_STATUSES,
+  publishStatus: 'PUBLISHED',
+  unpublishStatus: 'DRAFT',
+  archiveStatus: 'ARCHIVED',
+  publicPath: '/experiences/communities/{slug}',
+  imageField: 'coverImage',
+  columns: ['name', 'categoryId', 'cityId', 'status'],
+  searchFields: ['name', 'summary'],
+  filters: ['status', 'countryId', 'categoryId'],
+  defaultSort: { field: 'updatedAt', dir: 'desc' },
+  fields: [
+    { name: 'name', label: 'Name', type: 'text', required: true, max: 120, section: 'Basics' },
+    f.slug(),
+    { name: 'categoryId', label: 'Category', type: 'category', categoryKind: 'ACTIVITY', section: 'Basics' },
+    f.summary(),
+    f.description(),
+    { name: 'rules', label: 'Community rules', type: 'textarea', max: 3000, section: 'Basics' },
+    f.country(false),
+    f.city(),
+    f.cover(),
+    { name: 'status', label: 'Status', type: 'select', options: opts(COMMUNITY_STATUSES), default: 'DRAFT', section: 'Visibility' },
+    { name: 'reviewNotes', label: 'Review notes (internal)', type: 'textarea', private: true, max: 2000, section: 'Visibility' },
+    f.featured(),
+  ],
+};
+
+export const TOURNAMENT_RESOURCE: ResourceDef = {
+  key: 'tournaments',
+  label: 'Tournament or gaming session',
+  plural: 'Gaming & tournaments',
+  model: 'tournament',
+  permission: 'gaming',
+  description: 'Online tournaments (Free Fire, PUBG Mobile, eFootball…) and PlayStation / console sessions. Free to enter at launch. Games are managed under Categories → “Games”.',
+  titleField: 'title',
+  slugField: 'slug',
+  statusField: 'status',
+  statuses: TOURNAMENT_STATUSES,
+  publishStatus: 'REGISTRATION_OPEN',
+  unpublishStatus: 'DRAFT',
+  archiveStatus: 'ARCHIVED',
+  publicPath: '/experiences/gaming/{slug}',
+  imageField: 'coverImage',
+  columns: ['title', 'gameId', 'kind', 'format', 'startsAt', 'status'],
+  searchFields: ['title', 'server', 'venue'],
+  filters: ['status', 'kind', 'format', 'gameId'],
+  defaultSort: { field: 'startsAt', dir: 'desc' },
+  fields: [
+    f.title('Tournament or session name'),
+    f.slug(),
+    { name: 'gameId', label: 'Game', type: 'category', categoryKind: 'GAME', required: true, section: 'Basics' },
+    { name: 'kind', label: 'Kind', type: 'select', options: opts(TOURNAMENT_KINDS, TOURNAMENT_KIND_LABELS), default: 'ONLINE', section: 'Basics' },
+    { name: 'format', label: 'Format', type: 'select', options: opts(TOURNAMENT_FORMATS, TOURNAMENT_FORMAT_LABELS), default: 'SOLO', section: 'Basics' },
+    { name: 'teamSize', label: 'Players per team (including the captain)', type: 'integer', min: 1, max: 20, default: 1, section: 'Basics' },
+    f.summary(),
+    f.description(),
+    { name: 'organiserName', label: 'Organiser', type: 'text', max: 120, default: 'Enhakkore', section: 'Basics' },
+    f.timezone(),
+    { name: 'startsAt', label: 'Starts', type: 'datetime', timezoneField: 'timezone', section: 'Date & time' },
+    { name: 'registrationDeadline', label: 'Registration closes', type: 'datetime', timezoneField: 'timezone', section: 'Date & time' },
+    { name: 'server', label: 'Server', type: 'text', max: 80, section: 'Where', placeholder: 'e.g. Africa / EU', showIf: { field: 'kind', values: ['ONLINE'] } },
+    { name: 'region', label: 'Region', type: 'text', max: 80, section: 'Where', showIf: { field: 'kind', values: ['ONLINE'] } },
+    { name: 'venue', label: 'Venue', type: 'text', max: 200, section: 'Where', showIf: { field: 'kind', values: ['CONSOLE'] } },
+    f.country(false),
+    f.city(),
+    { name: 'slots', label: 'Slots (players or teams)', type: 'integer', min: 1, max: 10000, section: 'Entry' },
+    { name: 'minAge', label: 'Minimum age', type: 'integer', min: 0, max: 99, section: 'Entry' },
+    { name: 'entryRequirements', label: 'Entry requirements', type: 'textarea', max: 2000, section: 'Entry', help: 'Entry is free at launch — no payment is taken.' },
+    { name: 'rules', label: 'Rules', type: 'textarea', max: 8000, section: 'Rules & results', wide: true },
+    { name: 'disputeProcedure', label: 'Disputes and appeals', type: 'textarea', max: 3000, section: 'Rules & results' },
+    {
+      name: 'bracket',
+      label: 'Bracket',
+      type: 'repeater',
+      section: 'Rules & results',
+      fields: [
+        { name: 'round', label: 'Round', type: 'text', placeholder: 'Quarter-final' },
+        { name: 'match', label: 'Match', type: 'text', placeholder: 'Team A vs Team B' },
+        { name: 'result', label: 'Result', type: 'text', placeholder: '2–1, Team A' },
+      ],
+    },
+    { name: 'results', label: 'Final results', type: 'textarea', max: 4000, section: 'Rules & results' },
+    f.cover(),
+    { name: 'status', label: 'Status', type: 'select', options: opts(TOURNAMENT_STATUSES), default: 'DRAFT', section: 'Visibility' },
+    f.featured(),
+  ],
+};
+
+export const AGREEMENT_RESOURCE: ResourceDef = {
+  key: 'agreements',
+  label: 'Partner agreement',
+  plural: 'Partner agreements',
+  model: 'partnerAgreement',
+  permission: 'partnerships',
+  description: 'What was agreed with each business — editorial, sponsored placement, referral commission. Sponsored listings are always labelled on the site.',
+  titleField: 'businessName',
+  statusField: 'status',
+  statuses: AGREEMENT_STATUSES,
+  columns: ['businessName', 'kind', 'commissionRate', 'status'],
+  searchFields: ['businessName', 'contactName', 'enquiryRef'],
+  filters: ['status', 'kind'],
+  defaultSort: { field: 'updatedAt', dir: 'desc' },
+  sensitive: false,
+  fields: [
+    { name: 'businessName', label: 'Business', type: 'text', required: true, max: 160, section: 'Basics' },
+    { name: 'placeId', label: 'Linked Explore listing', type: 'place', section: 'Basics' },
+    { name: 'enquiryRef', label: 'Partnership enquiry reference', type: 'text', max: 40, section: 'Basics' },
+    { name: 'kind', label: 'Kind of agreement', type: 'select', options: opts(AGREEMENT_KINDS, AGREEMENT_KIND_LABELS), default: 'REFERRAL', section: 'Terms' },
+    { name: 'commissionRate', label: 'Commission (%)', type: 'number', min: 0, max: 100, section: 'Terms' },
+    f.currency(),
+    { name: 'fixedFee', label: 'Fixed fee', type: 'money', currencyField: 'currency', section: 'Terms' },
+    { name: 'terms', label: 'What was agreed', type: 'textarea', max: 8000, section: 'Terms', wide: true },
+    { name: 'startsOn', label: 'Starts', type: 'date', section: 'Terms' },
+    { name: 'endsOn', label: 'Ends', type: 'date', section: 'Terms' },
+    { name: 'contactName', label: 'Contact person', type: 'text', max: 120, section: 'Contact', private: true },
+    { name: 'contactPhone', label: 'Contact phone', type: 'phone', section: 'Contact', private: true },
+    { name: 'status', label: 'Status', type: 'select', options: opts(AGREEMENT_STATUSES), default: 'NEGOTIATING', section: 'Visibility' },
+  ],
+};
+
 /** Every resource the generic admin manages, in menu order. */
 export const RESOURCES: ResourceDef[] = [
   TRIP_RESOURCE,
   ACTIVITY_RESOURCE,
+  COMMUNITY_RESOURCE,
+  TOURNAMENT_RESOURCE,
   EVENT_RESOURCE,
   PLACE_RESOURCE,
   EXPERIENCE_RESOURCE,
@@ -996,6 +1152,7 @@ export const RESOURCES: ResourceDef[] = [
   COUNTRY_RESOURCE,
   CITY_RESOURCE,
   PAYMENT_METHOD_RESOURCE,
+  AGREEMENT_RESOURCE,
 ];
 
 export function resourceByKey(key: string): ResourceDef | undefined {

@@ -55,6 +55,10 @@ model User {
   lastLoginAt       DateTime?
   /// Why an account was suspended, for the record.
   statusReason      String?
+  /// Two-factor sign-in (authenticator app, TOTP). The secret is stored
+  /// encrypted with the server's key; it is never sent back to a browser.
+  totpSecret        String?
+  totpEnabled       Boolean   @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -81,6 +85,10 @@ model User {
   customTripRequests   CustomTripRequest[]
   verificationsHandled OrganizerVerification[] @relation("VerificationReviewer")
   moderatedTrips       Trip[]                  @relation("TripReviewer")
+  communityMemberships CommunityMember[]
+  tournamentEntries    TournamentEntry[]
+  teamMemberships      TournamentTeamMember[]
+  sessionRegistrations SessionRegistration[]
 
   @@index([role])
   @@index([status])
@@ -274,6 +282,9 @@ model Trip {
   accommodation       String?
   transport           String?
   minParticipants     Int?
+  maxParticipants     Int?
+  /// Where the trip stands operationally — see TRIP_STAGES in @enhakkore/shared.
+  stage               String  @default("REGISTRATION_OPEN")
   /// JSON array of { label, note, amount, currency } — separate prices, never conversions.
   priceTiers          String  @default("[]")
   /// JSON string array of items still being confirmed.
@@ -526,9 +537,11 @@ model Review {
 /// Every departure gets exactly one private group. Membership is derived from
 /// confirmed bookings — there is no way to join a conversation without one.
 model Conversation {
-  id         String @id @default(cuid())
-  tripDateId String @unique
+  id         String    @id @default(cuid())
+  tripDateId String    @unique
   title      String
+  /// After this the group is read-only. History is kept.
+  archivedAt DateTime?
 
   createdAt DateTime @default(now())
 
@@ -786,6 +799,8 @@ model Country {
   deals       Deal[]
   polls       Poll[]
   challenges  Challenge[]
+  communities Community[]
+  tournaments Tournament[]
 
   @@index([status])
 }
@@ -818,6 +833,8 @@ model City {
   deals       Deal[]
   polls       Poll[]
   challenges  Challenge[]
+  communities Community[]
+  tournaments Tournament[]
 
   @@unique([countryId, slug])
   @@index([status])
@@ -832,6 +849,9 @@ model Category {
   name        String
   slug        String
   group       String?
+  /// Which part of the site lists it: for ACTIVITY/EVENT categories one of the
+  /// eight Experiences sections, for PLACE categories one of the Explore sections.
+  section     String?
   description String?
   icon        String?
   /// Shown as a main category rather than inside a list.
@@ -846,6 +866,8 @@ model Category {
   places      Place[]
   experiences Experience[]
   events      Event[]
+  tournaments Tournament[] @relation("TournamentGame")
+  communities Community[]
 
   @@unique([kind, slug])
   @@index([kind, status])
@@ -873,10 +895,18 @@ model Activity {
   onlineDetails String?
   platformName  String?
 
-  startsAt   DateTime?
-  endsAt     DateTime?
-  timezone   String    @default("Africa/Dar_es_Salaam")
-  recurrence String?
+  startsAt             DateTime?
+  endsAt               DateTime?
+  timezone             String    @default("Africa/Dar_es_Salaam")
+  recurrence           String?
+  /// Applications close at this moment (UTC).
+  registrationDeadline DateTime?
+  eligibility          String?
+  rules                String?
+  cancellationTerms    String?
+  /// STANDARD | ENHANCED — large, paid or higher-risk activities need enhanced review.
+  reviewLevel          String    @default("STANDARD")
+  communityId          String?
 
   capacity     Int?
   spotsTaken   Int     @default(0)
@@ -911,6 +941,8 @@ model Activity {
   country      Country?              @relation(fields: [countryId], references: [id], onDelete: SetNull)
   city         City?                 @relation(fields: [cityId], references: [id], onDelete: SetNull)
   participants ActivityParticipant[]
+  sessions     ActivitySession[]
+  community    Community?            @relation(fields: [communityId], references: [id], onDelete: SetNull)
 
   @@index([status, startsAt])
   @@index([countryId, cityId])
@@ -1208,8 +1240,11 @@ model Enquiry {
   message       String
   /// JSON object of extra answers (dietary needs, location…).
   details       String    @default("{}")
-  /// NEW | CONTACTED | IN_PROGRESS | CONVERTED | CLOSED | SPAM
+  /// See ENQUIRY_STATUSES in @enhakkore/shared.
   status        String    @default("NEW")
+  /// Automatic WhatsApp notice to the team: NOT_REQUIRED | NOT_CONFIGURED | SENT | FAILED
+  notifyStatus  String    @default("NOT_REQUIRED")
+  notifyError   String?
   internalNotes String?
   handledById   String?
   createdAt     DateTime  @default(now())
@@ -1585,4 +1620,257 @@ model FinanceTransaction {
   @@index([type, status])
   @@index([relatedType, relatedId])
   @@index([division])
+}
+
+// ---------------------------------------------------------------------------
+// Experiences: recurring sessions, communities, gaming
+// ---------------------------------------------------------------------------
+
+/// One dated session of a recurring activity (e.g. one Saturday's jog).
+model ActivitySession {
+  id           String    @id @default(cuid())
+  activityId   String
+  startsAt     DateTime
+  endsAt       DateTime?
+  meetingPoint String?
+  route        String?
+  capacity     Int?
+  /// SCHEDULED | CHANGED | CANCELLED | COMPLETED
+  status       String    @default("SCHEDULED")
+  /// Shown to registered members when the plan changes.
+  notice       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  activity      Activity              @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  registrations SessionRegistration[]
+
+  @@index([activityId, startsAt])
+}
+
+model SessionRegistration {
+  id        String   @id @default(cuid())
+  sessionId String
+  userId    String
+  /// REGISTERED | CANCELLED
+  status    String   @default("REGISTERED")
+  attended  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  session ActivitySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+}
+
+model Community {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  summary     String?
+  description String?
+  categoryId  String?
+  countryId   String?
+  cityId      String?
+  coverImage  String?
+  rules       String?
+  /// PENDING_REVIEW | DRAFT | PUBLISHED | REJECTED | ARCHIVED
+  status      String  @default("DRAFT")
+  reviewNotes String?
+  createdById String?
+  featured    Boolean @default(false)
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  category      Category?               @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  country       Country?                @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  city          City?                   @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  members       CommunityMember[]
+  announcements CommunityAnnouncement[]
+  activities    Activity[]
+
+  @@index([status])
+}
+
+model CommunityMember {
+  id          String   @id @default(cuid())
+  communityId String
+  userId      String
+  /// MEMBER | MODERATOR
+  role        String   @default("MEMBER")
+  joinedAt    DateTime @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, userId])
+  @@index([userId])
+}
+
+model CommunityAnnouncement {
+  id          String   @id @default(cuid())
+  communityId String
+  authorId    String?
+  title       String
+  body        String
+  createdAt   DateTime @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, createdAt])
+}
+
+/// A gaming tournament or a console gaming session. Free at launch.
+model Tournament {
+  id                   String    @id @default(cuid())
+  slug                 String    @unique
+  title                String
+  /// A category of kind GAME.
+  gameId               String?
+  /// ONLINE | CONSOLE
+  kind                 String    @default("ONLINE")
+  /// SOLO | DUO | SQUAD | TEAM
+  format               String    @default("SOLO")
+  teamSize             Int       @default(1)
+  summary              String?
+  description          String?
+  startsAt             DateTime?
+  timezone             String    @default("Africa/Dar_es_Salaam")
+  registrationDeadline DateTime?
+  server               String?
+  region               String?
+  venue                String?
+  countryId            String?
+  cityId               String?
+  slots                Int?
+  entryRequirements    String?
+  rules                String?
+  disputeProcedure     String?
+  minAge               Int?
+  organiserName        String    @default("Enhakkore")
+  /// JSON array of { round, match, result } rows.
+  bracket              String    @default("[]")
+  results              String?
+  coverImage           String?
+  /// DRAFT | REGISTRATION_OPEN | REGISTRATION_CLOSED | IN_PROGRESS | COMPLETED | CANCELLED | ARCHIVED
+  status               String    @default("DRAFT")
+  featured             Boolean   @default(false)
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  game    Category?         @relation("TournamentGame", fields: [gameId], references: [id], onDelete: SetNull)
+  country Country?          @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  city    City?             @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  entries TournamentEntry[]
+
+  @@index([status, startsAt])
+}
+
+/// One registration: a solo player, or a team led by its captain.
+model TournamentEntry {
+  id           String   @id @default(cuid())
+  reference    String   @unique
+  tournamentId String
+  captainId    String
+  teamName     String?
+  playerName   String
+  gameUid      String
+  server       String?
+  /// Members join a team with this code.
+  inviteCode   String?  @unique
+  agreedRules  Boolean  @default(false)
+  /// REGISTERED | CONFIRMED | WAITLIST | DISQUALIFIED | WITHDRAWN
+  status       String   @default("REGISTERED")
+  adminNotes   String?
+  createdAt    DateTime @default(now())
+
+  tournament Tournament             @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  captain    User                   @relation(fields: [captainId], references: [id], onDelete: Cascade)
+  members    TournamentTeamMember[]
+
+  @@unique([tournamentId, captainId])
+  @@index([tournamentId, status])
+}
+
+model TournamentTeamMember {
+  id         String   @id @default(cuid())
+  entryId    String
+  userId     String
+  playerName String
+  gameUid    String
+  joinedAt   DateTime @default(now())
+
+  entry TournamentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, userId])
+}
+
+// ---------------------------------------------------------------------------
+// Partnerships, popularity, notification delivery
+// ---------------------------------------------------------------------------
+
+/// What Enhakkore agreed with a business: editorial, sponsored or referral.
+model PartnerAgreement {
+  id             String    @id @default(cuid())
+  businessName   String
+  placeId        String?
+  enquiryRef     String?
+  /// EDITORIAL | SPONSORED | REFERRAL | VENUE | GAMING | OTHER
+  kind           String    @default("REFERRAL")
+  commissionRate Float?
+  fixedFee       Int?
+  currency       String    @default("TZS")
+  terms          String?
+  startsOn       DateTime?
+  endsOn         DateTime?
+  contactName    String?
+  contactPhone   String?
+  /// NEGOTIATING | ACTIVE | ENDED | CANCELLED
+  status         String    @default("NEGOTIATING")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([status])
+}
+
+/// One engagement signal. A visitor is counted once per kind, item and day,
+/// so refreshing a page does not raise its ranking.
+model EngagementEvent {
+  id          String   @id @default(cuid())
+  subjectType String
+  subjectId   String
+  /// VIEW | SAVE | SHARE | REGISTER | ENQUIRY
+  kind        String
+  visitor     String
+  day         String
+  createdAt   DateTime @default(now())
+
+  @@unique([subjectType, subjectId, kind, visitor, day])
+  @@index([subjectType, subjectId])
+  @@index([createdAt])
+}
+
+/// Every attempt to send an email or WhatsApp notice, and what happened.
+model NotificationDelivery {
+  id          String   @id @default(cuid())
+  /// WHATSAPP | EMAIL
+  channel     String
+  recipient   String
+  subjectType String?
+  subjectId   String?
+  summary     String
+  /// SENT | FAILED | NOT_CONFIGURED
+  status      String
+  providerId  String?
+  error       String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([status])
 }

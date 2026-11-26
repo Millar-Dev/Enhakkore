@@ -22,6 +22,7 @@ import { textContains } from '../lib/search';
 import { toPublic, type Row } from '../services/resources/engine';
 import { ENHAKKORE_ORGANIZER_SLUG } from '../services/resources/hooks';
 import { getSettings } from '../services/settings';
+import { rankByPopularity } from '../services/popularity';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -48,6 +49,8 @@ function geoWhere(req: Request): Row {
   if (category) where.category = { slug: category.toLowerCase() };
   const group = str(req.query.group);
   if (group) where.category = { ...(where.category ?? {}), group };
+  const section = str(req.query.section);
+  if (section) where.category = { ...(where.category ?? {}), section: section.toUpperCase() };
   return where;
 }
 
@@ -96,7 +99,7 @@ publicRouter.get(
 
 /* -------------------------------- Catalogue -------------------------------- */
 
-const LIVE = {
+export const LIVE = {
   activity: { status: { in: ACTIVITY_PUBLIC_STATUSES } },
   place: { status: 'PUBLISHED' },
   experience: { status: 'PUBLISHED' },
@@ -222,7 +225,7 @@ function dateRange(req: Request, field: string): Row | undefined {
   };
 }
 
-function toActivity(row: Row): Row {
+export function toActivity(row: Row): Row {
   const out = toPublic(ACTIVITY_RESOURCE, row);
   out.spacesLeft = row.capacity === null ? null : Math.max(0, row.capacity - row.spotsTaken);
   delete out.organiserUserId;
@@ -300,13 +303,18 @@ publicRouter.get(
       prisma.place.findMany({
         where,
         include: GEO,
-        orderBy: [{ sponsored: 'desc' }, { featured: 'desc' }, { name: 'asc' }],
+        orderBy:
+          str(req.query.sort) === 'recent'
+            ? [{ publishedAt: 'desc' }]
+            : [{ featured: 'desc' }, { name: 'asc' }],
         skip: page.skip,
         take: page.take,
       }),
       prisma.place.count({ where }),
     ]);
-    res.json(paginated(rows.map((row) => { const out = toPublic(PLACE_RESOURCE, row); delete out.managerId; return out; }), total, page));
+    // Sponsored listings are labelled and never ranked by popularity; organic order comes from real engagement.
+    const ordered = str(req.query.sort) === 'popular' ? await rankByPopularity('PLACE', rows) : rows;
+    res.json(paginated(ordered.map((row) => { const out = toPublic(PLACE_RESOURCE, row); delete out.managerId; return out; }), total, page));
   }),
 );
 
@@ -369,7 +377,7 @@ publicRouter.get(
 
 /* --------------------------------- Events --------------------------------- */
 
-function toEvent(row: Row): Row {
+export function toEvent(row: Row): Row {
   const out = toPublic(EVENT_RESOURCE, row);
   delete out.managerId;
   if (row.tickets) {
@@ -433,14 +441,14 @@ publicRouter.get(
 
 /* ------------------------------ Enhakkore trips ---------------------------- */
 
-const TRIP_PUBLIC_INCLUDE = {
+export const TRIP_PUBLIC_INCLUDE = {
   country: true,
   city: true,
   departures: { orderBy: { startDate: 'asc' as const } },
   itinerary: { orderBy: { dayNumber: 'asc' as const } },
 };
 
-function toTrip(row: Row, full = false): Row {
+export function toTrip(row: Row, full = false): Row {
   const now = Date.now();
   const departures = (row.departures ?? []).map((departure: Row) => {
     const deadline = departure.bookingDeadline ? new Date(departure.bookingDeadline).getTime() + 86400000 : null;
@@ -479,6 +487,7 @@ function toTrip(row: Row, full = false): Row {
     priceTiers: parseObjects(row.priceTiers),
     heroImage: row.heroImage,
     featured: row.featured,
+    stage: row.stage ?? 'REGISTRATION_OPEN',
     departures,
     nextDeparture: upcoming[0] ?? null,
     isPast: departures.length > 0 && upcoming.length === 0,
@@ -490,6 +499,7 @@ function toTrip(row: Row, full = false): Row {
       accommodation: row.accommodation,
       transport: row.transport,
       minParticipants: row.minParticipants,
+      maxParticipants: row.maxParticipants,
       includes: parseList(row.includes),
       excludes: parseList(row.excludes),
       toConfirm: parseList(row.toConfirm),
@@ -706,7 +716,7 @@ publicRouter.get(
     const [newActivities, newPlaces, newEvents, newExperiences] = newest;
     const whatsNew = [
       ...newActivities.map((row) => ({ kind: 'Activity', title: row.title, href: `/activities/${row.slug}`, at: row.publishedAt, image: row.coverImage })),
-      ...newPlaces.map((row) => ({ kind: 'Place', title: row.name, href: `/discover/${row.slug}`, at: row.publishedAt, image: row.coverImage })),
+      ...newPlaces.map((row) => ({ kind: 'Place', title: row.name, href: `/explore/${row.slug}`, at: row.publishedAt, image: row.coverImage })),
       ...newEvents.map((row) => ({ kind: 'Event', title: row.title, href: `/events/${row.slug}`, at: row.publishedAt, image: row.poster })),
       ...newExperiences.map((row) => ({ kind: 'Experience', title: row.title, href: `/experiences/${row.slug}`, at: row.publishedAt, image: row.coverImage })),
     ]
@@ -761,7 +771,7 @@ publicRouter.get(
         ...activities.map((row) => ({ kind: 'Activity', title: row.title, href: `/activities/${row.slug}`, where: place(row), image: row.coverImage })),
         ...events.map((row) => ({ kind: 'Event', title: row.title, href: `/events/${row.slug}`, where: place(row), image: row.poster })),
         ...experiences.map((row) => ({ kind: 'Experience', title: row.title, href: `/experiences/${row.slug}`, where: place(row), image: row.coverImage })),
-        ...places.map((row) => ({ kind: 'Place', title: row.name, href: `/discover/${row.slug}`, where: place(row), image: row.coverImage })),
+        ...places.map((row) => ({ kind: 'Place', title: row.name, href: `/explore/${row.slug}`, where: place(row), image: row.coverImage })),
         ...cities.map((row) => ({ kind: 'City', title: row.name, href: `/destinations/${row.country.slug}/${row.slug}`, where: row.country.name, image: row.heroImage })),
         ...countries.map((row) => ({ kind: 'Country', title: row.name, href: `/destinations/${row.slug}`, where: row.region ?? '', image: row.heroImage })),
       ],

@@ -5,6 +5,8 @@ import { ApiError, route } from '../lib/http';
 import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
 import { notifyMany } from '../services/notifications';
+import { audit } from '../services/audit';
+import { parseList, parseObjects } from '../lib/json';
 import { broadcastMessage } from '../realtime/socket';
 import { toConversationMember, toMessage, toTripDate } from '../serializers';
 
@@ -26,7 +28,7 @@ async function authorize(
   const conversation = await prisma.conversation.findUnique({
     where: { id: conversationId },
     include: {
-      departure: { include: { trip: { include: { organizer: true, destination: true } } } },
+      departure: { include: { trip: { include: { organizer: true, destination: true, itinerary: { orderBy: { dayNumber: 'asc' } } } } } },
       members: { include: { user: true } },
     },
   });
@@ -48,7 +50,15 @@ async function authorize(
     throw ApiError.notFound('That trip group does not exist.');
   }
 
-  return { conversation, isOrganizer, isMember, isAdmin, organizerUserId };
+  const canModerate = isOrganizer || viewer.role === 'ADMIN' || hasPermission(viewer.permissions ?? [], 'trips.edit');
+  return { conversation, isOrganizer, isMember, isAdmin, canModerate, organizerUserId, readOnly: isReadOnly(conversation) };
+}
+
+/** A group becomes read-only when archived, or 30 days after its departure ends. History is kept. */
+const ARCHIVE_AFTER_DAYS = 30;
+function isReadOnly(conversation: { archivedAt: Date | null; departure: { endDate: Date } }): boolean {
+  if (conversation.archivedAt) return true;
+  return conversation.departure.endDate.getTime() + ARCHIVE_AFTER_DAYS * 86400000 < Date.now();
 }
 
 /** Every trip group the viewer belongs to. */
@@ -118,17 +128,25 @@ conversationsRouter.get(
   '/:id',
   route(async (req, res) => {
     const viewer = req.auth!;
-    const { conversation, isOrganizer, isMember, isAdmin, organizerUserId } = await authorize(
+    const { conversation, isOrganizer, isMember, isAdmin, canModerate, organizerUserId, readOnly } = await authorize(
       req.params.id,
       viewer,
     );
 
     const trip = conversation.departure.trip;
-    const pinned = await prisma.message.findMany({
-      where: { conversationId: conversation.id, pinned: true },
-      include: { author: true },
-      orderBy: { createdAt: 'desc' },
-    });
+    const [pinned, documents] = await Promise.all([
+      prisma.message.findMany({
+        where: { conversationId: conversation.id, pinned: true },
+        include: { author: true },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.message.findMany({
+        where: { conversationId: conversation.id, kind: { in: ['DOCUMENT', 'IMAGE'] } },
+        include: { author: true },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+      }),
+    ]);
 
     res.json({
       id: conversation.id,
@@ -142,8 +160,26 @@ conversationsRouter.get(
       lastMessage: null,
       members: conversation.members.map(toConversationMember),
       pinned: pinned.map((message) => toMessage(message, organizerUserId)),
+      documents: documents.map((message) => toMessage(message, organizerUserId)),
+      trip: {
+        title: trip.title,
+        summary: trip.summary,
+        destination: trip.destinationLabel,
+        meetingPoint: trip.meetingPoint,
+        departureCity: trip.departureCity,
+        accommodation: trip.accommodation,
+        transport: trip.transport,
+        includes: parseList(trip.includes),
+        excludes: parseList(trip.excludes),
+        toConfirm: parseList(trip.toConfirm),
+        stage: trip.stage,
+        itinerary: trip.itinerary.map((day) => ({ dayNumber: day.dayNumber, title: day.title, label: day.label, summary: day.summary, accommodation: day.accommodation, stops: parseObjects(day.stops) })),
+      },
+      readOnly,
+      archivedAt: conversation.archivedAt,
       // Admins can read for moderation but do not post into traveller groups.
-      canPost: isMember || isOrganizer,
+      canPost: (isMember || isOrganizer) && !readOnly,
+      canModerate,
       viewerIsOrganizer: isOrganizer,
       viewerIsAdmin: isAdmin,
     });
@@ -159,10 +195,13 @@ conversationsRouter.get(
     const take = Math.min(100, Number(req.query.limit ?? 50) || 50);
     const before = typeof req.query.before === 'string' ? new Date(req.query.before) : undefined;
 
+    // Messages from people the viewer has blocked are not shown to them.
+    const blocked = (await prisma.block.findMany({ where: { blockerId: viewer.id }, select: { blockedId: true } })).map((row) => row.blockedId);
     const messages = await prisma.message.findMany({
       where: {
         conversationId: conversation.id,
         ...(before ? { createdAt: { lt: before } } : {}),
+        ...(blocked.length ? { userId: { notIn: blocked } } : {}),
       },
       include: { author: true },
       orderBy: { createdAt: 'desc' },
@@ -184,7 +223,7 @@ conversationsRouter.get(
 
 const postSchema = z.object({
   body: z.string().trim().min(1, 'Write a message.').max(2000),
-  kind: z.enum(['TEXT', 'ANNOUNCEMENT', 'IMAGE']).default('TEXT'),
+  kind: z.enum(['TEXT', 'ANNOUNCEMENT', 'IMAGE', 'DOCUMENT']).default('TEXT'),
   attachments: z.array(z.string().url()).max(6).default([]),
 });
 
@@ -193,10 +232,14 @@ conversationsRouter.post(
   route(async (req, res) => {
     const viewer = req.auth!;
     const input = postSchema.parse(req.body);
-    const { conversation, isOrganizer, isMember, organizerUserId } = await authorize(req.params.id, viewer);
+    const { conversation, isOrganizer, isMember, organizerUserId, readOnly } = await authorize(req.params.id, viewer);
 
     if (!isMember && !isOrganizer) {
       throw ApiError.forbidden('Only travellers on this departure can post here.');
+    }
+    if (readOnly) throw ApiError.forbidden('This trip group has been archived. You can still read its history.');
+    if ((input.kind === 'IMAGE' || input.kind === 'DOCUMENT') && input.attachments.length === 0) {
+      throw ApiError.badRequest('Attach the file first.');
     }
     // Announcements carry organizer authority, so only the organizer may send one.
     if (input.kind === 'ANNOUNCEMENT' && !isOrganizer) {
@@ -225,8 +268,20 @@ conversationsRouter.post(
         type: 'ANNOUNCEMENT',
         title: `Announcement · ${conversation.title}`,
         body: input.body.slice(0, 160),
-        link: `/trips/groups/${conversation.id}`,
+        link: `/account/groups/${conversation.id}`,
       });
+    } else {
+      // A chat notice for members who have not opened the group since it was last quiet,
+      // and only one unread notice per group — never one per message.
+      const recipients = conversation.members.filter((member) => member.userId !== viewer.id && !member.muted).map((member) => member.userId);
+      const link = `/account/groups/${conversation.id}`;
+      const alreadyNotified = new Set(
+        (await prisma.notification.findMany({ where: { userId: { in: recipients }, link, read: false, type: 'CHAT_MESSAGE' }, select: { userId: true } })).map((row) => row.userId),
+      );
+      await notifyMany(
+        recipients.filter((userId) => !alreadyNotified.has(userId)),
+        { type: 'CHAT_MESSAGE', title: `New messages · ${conversation.title}`, body: `${message.author.name.split(' ')[0]}: ${input.body.slice(0, 120)}`, link },
+      );
     }
 
     res.status(201).json(dto);
@@ -239,7 +294,7 @@ conversationsRouter.post(
     const viewer = req.auth!;
     const { conversation, isOrganizer, organizerUserId } = await authorize(req.params.id, viewer);
 
-    if (!isOrganizer && viewer.role !== 'ADMIN') {
+    if (!isOrganizer && viewer.role !== 'ADMIN' && !hasPermission(viewer.permissions ?? [], 'trips.edit')) {
       throw ApiError.forbidden('Only the organizer can pin messages.');
     }
 
@@ -268,5 +323,65 @@ conversationsRouter.post(
       data: { lastReadAt: new Date() },
     });
     res.json({ ok: true });
+  }),
+);
+
+/** Any participant can report a message. It goes to Reviews & reports. */
+conversationsRouter.post(
+  '/:id/messages/:messageId/report',
+  route(async (req, res) => {
+    const viewer = req.auth!;
+    const { conversation } = await authorize(req.params.id, viewer);
+    const input = z.object({ reason: z.string().trim().min(3, 'Say briefly what is wrong.').max(200), details: z.string().max(2000).optional() }).parse(req.body);
+    const message = await prisma.message.findFirst({ where: { id: req.params.messageId, conversationId: conversation.id } });
+    if (!message) throw ApiError.notFound('That message does not exist.');
+    await prisma.report.create({
+      data: { reporterId: viewer.id, targetType: 'MESSAGE', targetId: message.id, reason: input.reason, details: `${conversation.title}: “${message.body.slice(0, 300)}”${input.details ? `\n${input.details}` : ''}` },
+    });
+    res.status(201).json({ reported: true });
+  }),
+);
+
+/** Moderators remove a message. The removal is recorded in the audit log. */
+conversationsRouter.delete(
+  '/:id/messages/:messageId',
+  route(async (req, res) => {
+    const viewer = req.auth!;
+    const { conversation, canModerate } = await authorize(req.params.id, viewer);
+    const message = await prisma.message.findFirst({ where: { id: req.params.messageId, conversationId: conversation.id } });
+    if (!message) throw ApiError.notFound('That message does not exist.');
+    if (!canModerate && message.userId !== viewer.id) throw ApiError.forbidden('Only moderators can remove other people’s messages.');
+    await prisma.message.delete({ where: { id: message.id } });
+    await audit(req, { action: 'delete', entityType: 'messages', entityId: message.id, summary: `Removed a message in ${conversation.title}`, before: { body: message.body, userId: message.userId } });
+    res.json({ removed: true });
+  }),
+);
+
+/** Moderators remove a participant from the group, with a reason for the record. */
+conversationsRouter.post(
+  '/:id/members/:userId/remove',
+  route(async (req, res) => {
+    const viewer = req.auth!;
+    const { conversation, canModerate } = await authorize(req.params.id, viewer);
+    if (!canModerate) throw ApiError.forbidden('Only the travel team can remove participants.');
+    const input = z.object({ reason: z.string().trim().min(5, 'Give a reason — it is kept in the audit log.').max(500) }).parse(req.body);
+    const removed = await prisma.conversationMember.deleteMany({ where: { conversationId: conversation.id, userId: req.params.userId } });
+    if (removed.count === 0) throw ApiError.notFound('That person is not in this group.');
+    await audit(req, { action: 'update', entityType: 'conversations', entityId: conversation.id, summary: `Removed a participant from ${conversation.title}: ${input.reason}`, before: { userId: req.params.userId } });
+    res.json({ removed: true });
+  }),
+);
+
+/** Archive (read-only) or reopen a group. */
+conversationsRouter.post(
+  '/:id/archive',
+  route(async (req, res) => {
+    const viewer = req.auth!;
+    const { conversation, canModerate } = await authorize(req.params.id, viewer);
+    if (!canModerate) throw ApiError.forbidden('Only the travel team can archive a group.');
+    const archive = req.body?.archive !== false;
+    await prisma.conversation.update({ where: { id: conversation.id }, data: { archivedAt: archive ? new Date() : null } });
+    await audit(req, { action: 'update', entityType: 'conversations', entityId: conversation.id, summary: `${archive ? 'Archived' : 'Reopened'} the group ${conversation.title}` });
+    res.json({ archived: archive });
   }),
 );

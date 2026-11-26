@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { PAYMENT_RECORD_METHODS, departureStatus, toMinor } from '@enhakkore/shared';
+import { ENQUIRY_STATUSES, ENQUIRY_STATUS_LABELS, PAYMENT_RECORD_METHODS, departureStatus, toMinor } from '@enhakkore/shared';
+import { notifyEnquiry } from '../../services/whatsapp';
 import { ApiError, pageParams, paginated, route } from '../../lib/http';
 import { paymentReference } from '../../lib/ids';
 import { parseRecord } from '../../lib/json';
@@ -54,7 +55,7 @@ operationsRouter.patch(
     assertPermission(req, 'enquiries.edit');
     const input = z
       .object({
-        status: z.enum(['NEW', 'CONTACTED', 'IN_PROGRESS', 'CONVERTED', 'CLOSED', 'SPAM']).optional(),
+        status: z.enum(ENQUIRY_STATUSES).optional(),
         internalNotes: z.string().max(5000).optional(),
       })
       .parse(req.body);
@@ -71,7 +72,29 @@ operationsRouter.patch(
       before: { status: before.status, internalNotes: before.internalNotes },
       after: { status: enquiry.status, internalNotes: enquiry.internalNotes },
     });
+    // The customer sees the new status in their account, and gets an in-app notice.
+    if (input.status && input.status !== before.status && enquiry.userId && input.status !== 'SPAM') {
+      await notify({
+        userId: enquiry.userId,
+        type: enquiry.type === 'PARTNERSHIP' ? 'PARTNERSHIP_UPDATE' : 'ENQUIRY_UPDATE',
+        title: `${enquiry.reference}: ${ENQUIRY_STATUS_LABELS[input.status] ?? input.status}`,
+        body: enquiry.subjectTitle ?? 'Your enquiry was updated.',
+        link: '/account/enquiries',
+      });
+    }
     res.json(enquiry);
+  }),
+);
+
+/** Retries the automatic WhatsApp notice for one enquiry. */
+operationsRouter.post(
+  '/enquiries/:id/notify',
+  route(async (req, res) => {
+    assertPermission(req, 'enquiries.edit');
+    const enquiry = await prisma.enquiry.findUniqueOrThrow({ where: { id: req.params.id } });
+    const outcome = await notifyEnquiry({ ...enquiry, type: enquiry.type });
+    const fresh = await prisma.enquiry.findUniqueOrThrow({ where: { id: enquiry.id } });
+    res.json({ notifyStatus: outcome === 'NOT_REQUIRED' ? fresh.notifyStatus : outcome, notifyError: fresh.notifyError });
   }),
 );
 

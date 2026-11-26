@@ -136,6 +136,15 @@ coreRouter.get(
       prisma.story.count({ where: { status: 'PENDING_REVIEW' } }),
       prisma.donation.count({ where: { status: { in: ['PLEDGED', 'PENDING'] }, NOT: { project: { isDemo: true } } } }),
       prisma.placeReview.count({ where: { status: 'PENDING' } }),
+      prisma.enquiry.count({ where: { type: 'ROOM', status: { in: ['NEW', 'CONTACTED', 'AWAITING_BUSINESS', 'ALTERNATIVE_OFFERED'] } } }),
+      prisma.enquiry.count({ where: { type: 'TABLE', status: { in: ['NEW', 'CONTACTED', 'AWAITING_BUSINESS', 'ALTERNATIVE_OFFERED'] } } }),
+      prisma.enquiry.count({ where: { type: 'PARTNERSHIP', status: { notIn: ['PUBLISHED', 'DECLINED', 'SPAM'] } } }),
+      prisma.enquiry.count({ where: { type: 'EVENT_PLAN', status: { notIn: ['CONVERTED', 'CLOSED', 'DECLINED', 'CANCELLED', 'SPAM'] } } }),
+      prisma.activity.count({ where: { status: 'PENDING_REVIEW', source: 'COMMUNITY' } }),
+      prisma.community.count({ where: { status: 'PENDING_REVIEW' } }),
+      prisma.tournament.count({ where: { status: { in: ['REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'IN_PROGRESS'] } } }),
+      prisma.enquiry.count({ where: { notifyStatus: { in: ['FAILED', 'NOT_CONFIGURED'] }, status: 'NEW' } }),
+      prisma.trip.count({ where: { organizer: { slug: 'enhakkore' }, status: { not: 'PUBLISHED' }, departures: { some: { startDate: { gte: now } } } } }),
     ]);
     const [
       members,
@@ -153,6 +162,15 @@ coreRouter.get(
       pendingStories,
       unverifiedDonations,
       pendingReviews,
+      hotelEnquiries,
+      restaurantReservations,
+      partnershipApplications,
+      eventPlanRequests,
+      organiserSubmissions,
+      pendingCommunities,
+      liveTournaments,
+      unsentNotices,
+      tripsAwaitingVerification,
     ] = counts;
 
     // Money only for those allowed to see it, and always per currency.
@@ -199,6 +217,16 @@ coreRouter.get(
     if (!storageDurable && process.env.NODE_ENV === 'production' && can(req, 'media.view')) {
       alerts.push({ tone: 'warning', message: 'No image service is connected: uploads will be lost on the next deploy.', href: '/admin/media' });
     }
+    if (unsentNotices > 0 && can(req, 'enquiries.view')) {
+      alerts.push({
+        tone: 'warning',
+        message: `${unsentNotices} new enquir${unsentNotices === 1 ? 'y has' : 'ies have'} no automatic WhatsApp notice (not configured or failed). Open them and use the WhatsApp button.`,
+        href: '/admin/enquiries',
+      });
+    }
+    if (tripsAwaitingVerification > 0 && can(req, 'trips.view')) {
+      alerts.push({ tone: 'info', message: `${tripsAwaitingVerification} upcoming trip${tripsAwaitingVerification === 1 ? ' is' : 's are'} waiting for your final check before publishing.`, href: '/admin/r/trips?status=DRAFT' });
+    }
     if (failedLogins && failedLogins >= 10) {
       alerts.push({ tone: 'warning', message: `${failedLogins} failed sign-in attempts in the last 24 hours.`, href: '/admin/security' });
     }
@@ -220,6 +248,16 @@ coreRouter.get(
         pendingStories,
         unverifiedDonations,
         pendingReviews,
+        hotelEnquiries,
+        restaurantReservations,
+        partnershipApplications,
+        eventPlanRequests,
+        organiserSubmissions,
+        pendingCommunities,
+        liveTournaments,
+        unsentNotices,
+        tripsAwaitingVerification,
+        pendingApprovals: pendingActivities + pendingCommunities + pendingStories + pendingReviews,
       },
       money: { monthStart: monthStart.toISOString(), income, expenses, donations },
       visitors: process.env.ANALYTICS_DASHBOARD_URL ? { dashboardUrl: process.env.ANALYTICS_DASHBOARD_URL } : null,

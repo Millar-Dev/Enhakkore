@@ -67,10 +67,16 @@ describe('permissions', () => {
 
   describe('a trip’s private group', () => {
     async function mikumiGroup() {
-      return prisma.conversation.findFirstOrThrow({
+      const group = await prisma.conversation.findFirstOrThrow({
         where: { departure: { trip: { slug: 'mikumi-adventure' } }, members: { some: {} } },
-        include: { members: true },
+        include: { members: true, departure: true },
       });
+      // Groups turn read-only 30 days after the trip; keep this one current for the tests.
+      if (group.departure.endDate.getTime() < Date.now()) {
+        const start = new Date(Date.now() + 20 * 86400000);
+        await prisma.tripDate.update({ where: { id: group.tripDateId }, data: { startDate: start, endDate: new Date(start.getTime() + 3 * 86400000) } });
+      }
+      return group;
     }
 
     test('is invisible to a traveller without a booking on that departure — 404, not 403', async () => {

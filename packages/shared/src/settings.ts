@@ -1,3 +1,4 @@
+import { LEGAL_DRAFTS, type LegalKey } from './legal';
 /**
  * Website settings an administrator changes from the control centre.
  *
@@ -78,11 +79,9 @@ export interface SiteSettings {
   navigation: {
     primary: { label: string; href: string }[];
   };
-  legal: {
-    terms: string;
-    privacy: string;
-    cancellation: string;
-    safety: string;
+  legal: Record<LegalKey, string> & {
+    /** Tick only after a lawyer has reviewed the pages. Until then each page is marked as a draft. */
+    reviewed: boolean;
   };
   impact: {
     donationIntro: string;
@@ -113,19 +112,14 @@ export const WHATSAPP_CONTEXTS = [
 export type WhatsAppContext = (typeof WHATSAPP_CONTEXTS)[number];
 
 export const HOMEPAGE_SECTION_KEYS = [
-  'search',
-  'weekend',
-  'activities',
-  'people',
-  'places',
-  'trips',
-  'events',
-  'experiences',
-  'catering',
-  'globe',
-  'stories',
+  'discover',
+  'happening',
+  'interests',
+  'destinations',
+  'upcoming',
+  'trending',
   'impact',
-  'updates',
+  'join',
 ] as const;
 export type HomepageSectionKey = (typeof HOMEPAGE_SECTION_KEYS)[number];
 
@@ -137,26 +131,21 @@ export interface HomepageSection {
 }
 
 export const HOMEPAGE_SECTION_LABELS: Record<HomepageSectionKey, string> = {
-  search: 'Search and discovery',
-  weekend: 'What’s happening this weekend',
-  activities: 'Explore activities',
-  people: 'Find your people',
-  places: 'Discover places',
-  trips: 'Upcoming Enhakkore trips',
-  events: 'Upcoming events',
-  experiences: 'Experiences worth trying',
-  catering: 'Catering & lunchboxes',
-  globe: 'Explore the world (globe)',
-  stories: 'Community stories',
-  impact: 'Impact projects',
-  updates: 'Community updates sign-up',
+  discover: 'Discover Enhakkore (four category panels)',
+  happening: 'What’s happening now',
+  interests: 'Explore by interest',
+  destinations: 'Featured destinations',
+  upcoming: 'Upcoming experiences and trips',
+  trending: 'Trending across Enhakkore',
+  impact: 'Impact corner (WSC)',
+  join: 'Join Enhakkore',
 };
 
 export const DEFAULT_SETTINGS: SiteSettings = {
   brand: {
     name: 'ENHAKKORE TRAVEL & IMPACT',
     shortName: 'Enhakkore',
-    slogan: 'Explore. Connect. Create impact.',
+    slogan: 'Travel Further. Connect Deeper. Create Impact.',
     description:
       'An international platform connecting people to destinations, experiences, events, communities and opportunities to create positive change.',
     logoUrl: '/partners/enhakkore-wordmark.webp',
@@ -167,7 +156,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     accentColor: '',
   },
   seo: {
-    title: 'Enhakkore Travel & Impact — Explore. Connect. Create impact.',
+    title: 'Enhakkore Travel & Impact — Travel Further. Connect Deeper. Create Impact.',
     description:
       'Discover trips, places, experiences, events and community activities around the world, meet people who share your interests, and support real community projects.',
     keywords: ['travel', 'experiences', 'events', 'Dar es Salaam', 'Tanzania', 'community activities', 'group trips', 'social impact'],
@@ -231,51 +220,36 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   homepage: {
     hero: {
       eyebrow: 'Enhakkore Travel & Impact',
-      title: 'Explore. Connect. Create impact.',
+      title: 'Travel Further. Connect Deeper. Create Impact.',
       subtitle:
-        'Trips, places, experiences, events and people who share your interests — in Dar es Salaam and around the world.',
-      primaryLabel: 'Explore activities',
-      primaryHref: '/activities',
-      secondaryLabel: 'Upcoming trips',
-      secondaryHref: '/travel',
+        'Discover places, join experiences, organise activities, travel together and make meaningful connections — starting in Dar es Salaam and reaching around the world.',
+      primaryLabel: 'Explore the World',
+      primaryHref: '/explore',
+      secondaryLabel: 'Join Enhakkore',
+      secondaryHref: '/join',
       imageUrl: '/media/hero/safari-tourist-poster-v1.jpg',
       videoEnabled: true,
     },
     sections: [
-      { key: 'search', enabled: true, title: 'Where to next?', subtitle: '' },
-      { key: 'weekend', enabled: true, title: 'What’s happening this weekend', subtitle: 'Activities, events and experiences in the next few days.' },
-      { key: 'activities', enabled: true, title: 'Explore activities', subtitle: 'Basketball, running, gaming and more — organised by the community and by Enhakkore.' },
-      { key: 'trips', enabled: true, title: 'Upcoming Enhakkore trips', subtitle: 'Travel together with a small group.' },
-      { key: 'events', enabled: true, title: 'Upcoming events', subtitle: 'Hosted by Enhakkore and by others we list.' },
-      { key: 'people', enabled: true, title: 'Find your people', subtitle: 'Meet others who share your interests, in your city and beyond.' },
-      { key: 'places', enabled: true, title: 'Discover places', subtitle: 'Hotels, restaurants, beaches and hidden gems.' },
-      { key: 'experiences', enabled: true, title: 'Experiences worth trying', subtitle: '' },
-      { key: 'catering', enabled: true, title: 'Good journeys deserve good food', subtitle: 'Lunchboxes, group catering and private chefs for travellers.' },
-      { key: 'globe', enabled: true, title: 'Explore the world', subtitle: 'Countries with something to discover.' },
-      { key: 'stories', enabled: true, title: 'Community stories', subtitle: '' },
-      { key: 'impact', enabled: true, title: 'Impact', subtitle: 'Community projects, with We Save Children (WSC).' },
-      { key: 'updates', enabled: true, title: 'Stay in the loop', subtitle: 'Follow us for new trips, activities and events.' },
+      { key: 'discover', enabled: true, title: 'Discover Enhakkore', subtitle: 'Four ways in.' },
+      { key: 'happening', enabled: true, title: 'What’s happening now?', subtitle: 'Upcoming activities, events and trips.' },
+      { key: 'interests', enabled: true, title: 'Explore by interest', subtitle: '' },
+      { key: 'destinations', enabled: true, title: 'Featured destinations', subtitle: '' },
+      { key: 'upcoming', enabled: true, title: 'Upcoming experiences and trips', subtitle: '' },
+      { key: 'trending', enabled: true, title: 'Trending across Enhakkore', subtitle: 'What members are viewing, saving and joining.' },
+      { key: 'impact', enabled: true, title: 'Impact corner', subtitle: 'Community projects with WSC — We Save Children.' },
+      { key: 'join', enabled: true, title: 'Join Enhakkore', subtitle: 'A free member account lets you join activities, communities, trips and tournaments.' },
     ],
   },
   navigation: {
     primary: [
-      { label: 'Travel', href: '/travel' },
-      { label: 'Discover', href: '/discover' },
+      { label: 'Explore', href: '/explore' },
       { label: 'Experiences', href: '/experiences' },
-      { label: 'Catering', href: '/catering' },
-      { label: 'Events', href: '/events' },
-      { label: 'Activities', href: '/activities' },
-      { label: 'Connect', href: '/connect' },
+      { label: 'Travel', href: '/travel' },
       { label: 'Impact', href: '/impact' },
     ],
   },
-  legal: {
-    terms: '',
-    privacy: '',
-    cancellation: '',
-    safety:
-      'Meet in public places, especially the first time. Tell a friend where you are going. Never share your home address or live location with people you have not met. Activities are reviewed before they are published, but Enhakkore does not supervise community-organised activities — use your own judgement, and report anything that feels wrong.',
-  },
+  legal: { ...LEGAL_DRAFTS, reviewed: false },
   impact: {
     donationIntro:
       'Donations support community projects carried out with We Save Children (WSC) — such as outreach days with children in villages around Dar es Salaam.',

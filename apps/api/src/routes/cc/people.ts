@@ -24,6 +24,7 @@ const str = (value: unknown) => (typeof value === 'string' && value.trim() ? val
 
 const MEMBER_SELECT = {
   id: true,
+  totpEnabled: true,
   name: true,
   email: true,
   phone: true,

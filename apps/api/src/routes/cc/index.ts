@@ -5,6 +5,7 @@ import { financeRouter } from './finance';
 import { operationsRouter } from './operations';
 import { peopleRouter } from './people';
 import { resourcesRouter } from './resources';
+import { ccExperiencesRouter } from './experiences';
 
 /**
  * The control centre's API. Every route requires a signed-in team member, and
@@ -16,5 +17,6 @@ controlCentreRouter.use(requireAuth, requireStaff);
 controlCentreRouter.use('/r', resourcesRouter);
 controlCentreRouter.use('/finance', financeRouter);
 controlCentreRouter.use('/people', peopleRouter);
+controlCentreRouter.use(ccExperiencesRouter);
 controlCentreRouter.use(operationsRouter);
 controlCentreRouter.use(coreRouter);

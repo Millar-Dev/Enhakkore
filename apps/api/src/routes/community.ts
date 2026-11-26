@@ -10,6 +10,8 @@ import { prisma } from '../lib/prisma';
 import { textContains } from '../lib/search';
 import { requireAuth } from '../middleware/auth';
 import { notify } from '../services/notifications';
+import { recordEngagement } from '../services/popularity';
+import { notifyEnquiry } from '../services/whatsapp';
 import { ENHAKKORE_ORGANIZER_SLUG } from '../services/resources/hooks';
 import { decideParticipant } from './cc/operations';
 
@@ -70,7 +72,36 @@ const enquirySchema = z
     message: z.string().trim().min(5, 'Tell us a little more.').max(4000),
     details: z.record(z.string().max(60), z.string().max(1000)).optional(),
   })
-  .refine((value) => !!value.phone || !!value.email, { message: 'Give a phone number or an email so we can reply.', path: ['phone'] });
+  .refine((value) => !!value.phone || !!value.email, { message: 'Give a phone number or an email so we can reply.', path: ['phone'] })
+  .superRefine((value, ctx) => {
+    // Hotel and restaurant requests need their essentials, and a WhatsApp/phone number.
+    if ((value.type === 'ROOM' || value.type === 'TABLE') && !value.phone) {
+      ctx.addIssue({ code: 'custom', path: ['phone'], message: 'Give a phone or WhatsApp number so we can confirm.' });
+    }
+    if (value.type === 'ROOM') {
+      if (!value.startDate) ctx.addIssue({ code: 'custom', path: ['startDate'], message: 'Choose your check-in date.' });
+      if (!value.endDate) ctx.addIssue({ code: 'custom', path: ['endDate'], message: 'Choose your check-out date.' });
+      if (value.startDate && value.endDate && value.endDate <= value.startDate) {
+        ctx.addIssue({ code: 'custom', path: ['endDate'], message: 'Check-out must be after check-in.' });
+      }
+    }
+    if (value.type === 'TABLE') {
+      if (!value.startDate) ctx.addIssue({ code: 'custom', path: ['startDate'], message: 'Choose a date.' });
+      if (!value.details?.time) ctx.addIssue({ code: 'custom', path: ['time'], message: 'Choose a time.' });
+      if (!value.people) ctx.addIssue({ code: 'custom', path: ['people'], message: 'How many guests?' });
+    }
+    if (value.type === 'PARTNERSHIP' && !value.details?.businessName) {
+      ctx.addIssue({ code: 'custom', path: ['businessName'], message: 'Give the business name.' });
+    }
+  });
+
+const ENQUIRY_THANKS: Record<string, string> = {
+  ROOM: 'Thank you — your hotel enquiry has reached the Enhakkore team. This is a request, not a booking: no room is reserved until the property confirms availability and price.',
+  TABLE: 'Thank you — your reservation request has reached the Enhakkore team. Your table is not confirmed until the restaurant accepts it; we will tell you as soon as it does.',
+  EVENT_PLAN: 'Thank you — your event-planning request has reached the Enhakkore team. Sending it is free; we will contact you to discuss your event and, if you wish, a quotation.',
+  PARTNERSHIP: 'Thank you — your application has reached the Enhakkore team. We review every business before anything is published, and will contact you.',
+  VOLUNTEER: 'Thank you for offering your time. The impact team will contact you about upcoming opportunities.',
+};
 
 communityRouter.post(
   '/enquiries',
@@ -96,9 +127,23 @@ communityRouter.post(
         details: JSON.stringify(input.details ?? {}),
       },
     });
+    const notice = await notifyEnquiry(enquiry);
+    if (enquiry.userId) {
+      await notify({
+        userId: enquiry.userId,
+        type: 'ENQUIRY_RECEIVED',
+        title: `Enquiry ${enquiry.reference} received`,
+        body: enquiry.subjectTitle ? `About ${enquiry.subjectTitle}. We will reply soon.` : 'We will reply soon.',
+        link: '/account/enquiries',
+      });
+    }
+    if (enquiry.subjectType && enquiry.subjectId) await recordEngagement(req, enquiry.subjectType, enquiry.subjectId, 'ENQUIRY');
     res.status(201).json({
       reference: enquiry.reference,
-      message: 'Thank you — your enquiry has reached the Enhakkore team. This is not a confirmed booking: we will reply to confirm availability and details.',
+      notice,
+      message:
+        ENQUIRY_THANKS[enquiry.type] ??
+        'Thank you — your enquiry has reached the Enhakkore team. This is not a confirmed booking: we will reply to confirm availability and details.',
     });
   }),
 );

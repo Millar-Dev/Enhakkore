@@ -17,6 +17,7 @@ import { uploadsRouter } from './uploads';
 import { controlCentreRouter } from './cc';
 import { communityRouter } from './community';
 import { publicRouter } from './public';
+import { experiencesMember, experiencesPublic } from './experiences';
 
 export const apiRouter = Router();
 
@@ -68,5 +69,7 @@ apiRouter.use('/uploads', uploadsRouter);
 apiRouter.use('/me', meRouter);
 apiRouter.use('/admin', adminRouter);
 apiRouter.use('/public', publicRouter);
+apiRouter.use('/public', experiencesPublic);
+apiRouter.use('/community', experiencesMember);
 apiRouter.use('/community', communityRouter);
 apiRouter.use('/cc', controlCentreRouter);

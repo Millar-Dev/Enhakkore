@@ -165,6 +165,20 @@ describe('activities in more than one country', () => {
 });
 
 describe('Enhakkore trips: price, applications, payment and profit', () => {
+  test('Arusha Escape is held as a draft for the owner’s final check, with what is still provisional', async () => {
+    const trip = await prisma.trip.findUniqueOrThrow({ where: { slug: 'arusha-escape' } });
+    if (trip.status === 'DRAFT') {
+      const hidden = await api.request('GET', '/public/trips/arusha-escape');
+      assert.equal(hidden.status, 404, 'a draft trip is not public');
+    }
+    assert.match(trip.accommodation ?? '', /not been booked/);
+    assert.ok(JSON.parse(trip.toConfirm).some((item: string) => /Meals/.test(item)), 'meals are listed as provisional');
+    assert.equal(trip.maxParticipants, 28);
+    // The owner verifies, then publishes from the control centre.
+    const published = await api.request('POST', `/cc/r/trips/${trip.id}/status`, { token: owner, body: { status: 'PUBLISHED' } });
+    assert.ok([200, 201].includes(published.status), JSON.stringify(published.body));
+  });
+
   test('Arusha Escape and Napuru Gateway were moved into the database as they were published', async () => {
     const upcoming = await api.request('GET', '/public/trips');
     const arusha = upcoming.body.items.find((trip: { slug: string }) => trip.slug === 'arusha-escape');

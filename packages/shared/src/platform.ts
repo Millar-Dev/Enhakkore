@@ -62,7 +62,7 @@ export const STATUS_LABELS: Record<string, string> = {
 /* ------------------------------------------------------------------------- */
 
 /** Which part of the site a category belongs to. */
-export const CATEGORY_KINDS = ['ACTIVITY', 'PLACE', 'EXPERIENCE', 'EVENT', 'INTEREST'] as const;
+export const CATEGORY_KINDS = ['ACTIVITY', 'PLACE', 'EXPERIENCE', 'EVENT', 'INTEREST', 'GAME'] as const;
 export type CategoryKind = (typeof CATEGORY_KINDS)[number];
 
 export const CATEGORY_KIND_LABELS: Record<CategoryKind, string> = {
@@ -71,7 +71,39 @@ export const CATEGORY_KIND_LABELS: Record<CategoryKind, string> = {
   EXPERIENCE: 'Experiences',
   EVENT: 'Events',
   INTEREST: 'Member interests',
+  GAME: 'Games (gaming hub)',
 };
+
+/* ------------------------------------------------------------------------- */
+/* The four main parts of the website                                         */
+/* ------------------------------------------------------------------------- */
+
+/** The eight sections of Experiences. A category's `section` places it in one. */
+export const EXPERIENCE_SECTIONS = [
+  { key: 'PARTIES', label: 'Parties & social events', icon: '🎉', blurb: 'Nights out, parties and social gatherings.' },
+  { key: 'COMMUNITIES', label: 'Communities & meetups', icon: '🤝', blurb: 'Regular meetups and interest groups.' },
+  { key: 'SPORTS', label: 'Sports & fitness', icon: '🏀', blurb: 'Basketball, jogging, football, fitness.' },
+  { key: 'GAMING', label: 'Gaming & esports', icon: '🎮', blurb: 'Online tournaments and console sessions.' },
+  { key: 'ARTS', label: 'Arts & culture', icon: '🎨', blurb: 'Art, music, culture and creativity.' },
+  { key: 'OUTDOOR', label: 'Outdoor & adventure', icon: '🏞️', blurb: 'Hikes, beaches, nature and adventure.' },
+  { key: 'LEARNING', label: 'Workshops & learning', icon: '📚', blurb: 'Workshops, classes and talks.' },
+  { key: 'OTHER', label: 'Other experiences', icon: '✨', blurb: 'Everything else worth doing.' },
+] as const;
+export type ExperienceSection = (typeof EXPERIENCE_SECTIONS)[number]['key'];
+
+/** The four sections of Explore, with the kinds of place each holds. */
+export const EXPLORE_SECTIONS = [
+  { key: 'STAYS', label: 'Stays & accommodation', icon: '🛏️', kinds: ['Hotels', 'Resorts', 'Apartments', 'Villas', 'Holiday homes', 'Guesthouses', 'Other accommodation'] },
+  { key: 'FOOD', label: 'Food & dining', icon: '🍽️', kinds: ['Restaurants', 'Cafes', 'Food outlets', 'Catering', 'Trip lunchboxes'] },
+  { key: 'VENUES', label: 'Venues & event spaces', icon: '🏛️', kinds: ['Wedding venues', 'Conference halls', 'Party venues', 'Gardens', 'Rooftops', 'Private event spaces'] },
+  { key: 'ATTRACTIONS', label: 'Places & attractions', icon: '🗺️', kinds: ['Tourist attractions', 'Entertainment', 'Recreation centres', 'Nature', 'Places worth visiting'] },
+] as const;
+export type ExploreSection = (typeof EXPLORE_SECTIONS)[number]['key'];
+
+export const SECTION_OPTIONS = [
+  ...EXPERIENCE_SECTIONS.map((section) => ({ value: section.key, label: `Experiences — ${section.label}` })),
+  ...EXPLORE_SECTIONS.map((section) => ({ value: section.key, label: `Explore — ${section.label}` })),
+];
 
 export const ACTIVITY_MODES = ['IN_PERSON', 'ONLINE'] as const;
 export const ACTIVITY_MODE_LABELS: Record<string, string> = { IN_PERSON: 'In person', ONLINE: 'Online' };
@@ -132,6 +164,8 @@ export const ENQUIRY_TYPES = [
   'PLACE',
   'TABLE',
   'ROOM',
+  'EVENT_PLAN',
+  'VOLUNTEER',
   'EXPERIENCE',
   'EVENT',
   'ACTIVITY',
@@ -146,8 +180,10 @@ export const ENQUIRY_TYPE_LABELS: Record<string, string> = {
   TRIP: 'Trip',
   PRIVATE_TRIP: 'Private trip',
   PLACE: 'Place',
-  TABLE: 'Table enquiry',
-  ROOM: 'Room enquiry',
+  TABLE: 'Restaurant reservation',
+  ROOM: 'Hotel / stay enquiry',
+  EVENT_PLAN: 'Event planning request',
+  VOLUNTEER: 'Volunteer',
   EXPERIENCE: 'Experience',
   EVENT: 'Event',
   ACTIVITY: 'Activity',
@@ -156,7 +192,112 @@ export const ENQUIRY_TYPE_LABELS: Record<string, string> = {
   DONATION: 'Donation confirmation',
   PARTNERSHIP: 'Partnership / listing',
 };
-export const ENQUIRY_STATUSES = ['NEW', 'CONTACTED', 'IN_PROGRESS', 'CONVERTED', 'CLOSED', 'SPAM'] as const;
+export const ENQUIRY_STATUSES = [
+  'NEW',
+  'CONTACTED',
+  'AWAITING_BUSINESS',
+  'ALTERNATIVE_OFFERED',
+  'NEGOTIATING',
+  'AWAITING_VERIFICATION',
+  'AWAITING_AGREEMENT',
+  'IN_PROGRESS',
+  'APPROVED',
+  'PUBLISHED',
+  'CONFIRMED',
+  'CONVERTED',
+  'DECLINED',
+  'CANCELLED',
+  'UNSUCCESSFUL',
+  'CLOSED',
+  'SPAM',
+] as const;
+export const ENQUIRY_STATUS_LABELS: Record<string, string> = {
+  NEW: 'New',
+  CONTACTED: 'Contacted',
+  AWAITING_BUSINESS: 'Awaiting business response',
+  ALTERNATIVE_OFFERED: 'Alternative offered',
+  NEGOTIATING: 'Negotiating',
+  AWAITING_VERIFICATION: 'Awaiting verification',
+  AWAITING_AGREEMENT: 'Awaiting agreement / payment',
+  IN_PROGRESS: 'In progress',
+  APPROVED: 'Approved',
+  PUBLISHED: 'Published',
+  CONFIRMED: 'Confirmed',
+  CONVERTED: 'Converted',
+  DECLINED: 'Declined',
+  CANCELLED: 'Cancelled',
+  UNSUCCESSFUL: 'Unsuccessful',
+  CLOSED: 'Closed',
+  SPAM: 'Spam',
+};
+/** The statuses that make sense for each kind of enquiry. */
+export function enquiryStatusesFor(type: string): string[] {
+  if (type === 'ROOM' || type === 'TABLE') {
+    return ['NEW', 'CONTACTED', 'AWAITING_BUSINESS', 'ALTERNATIVE_OFFERED', 'CONFIRMED', 'DECLINED', 'CANCELLED', 'UNSUCCESSFUL', 'SPAM'];
+  }
+  if (type === 'PARTNERSHIP') {
+    return ['NEW', 'CONTACTED', 'NEGOTIATING', 'AWAITING_VERIFICATION', 'AWAITING_AGREEMENT', 'APPROVED', 'PUBLISHED', 'DECLINED', 'SPAM'];
+  }
+  return ['NEW', 'CONTACTED', 'IN_PROGRESS', 'CONFIRMED', 'CONVERTED', 'DECLINED', 'CANCELLED', 'CLOSED', 'SPAM'];
+}
+/** Enquiry types that send the team an automatic WhatsApp notice. */
+export const NOTIFY_ENQUIRY_TYPES = ['ROOM', 'TABLE', 'EVENT_PLAN', 'PARTNERSHIP', 'PRIVATE_TRIP', 'CATERING', 'PRIVATE_CHEF'];
+
+/** Where a trip stands — shown on the trip page, set by the travel team. */
+export const TRIP_STAGES = [
+  'REGISTRATION_OPEN',
+  'MINIMUM_NOT_REACHED',
+  'MINIMUM_REACHED',
+  'SUPPLIER_CONFIRMATION',
+  'TRIP_CONFIRMED',
+  'DEPARTURE_READY',
+  'COMPLETED',
+  'CANCELLED',
+] as const;
+export const TRIP_STAGE_LABELS: Record<string, string> = {
+  REGISTRATION_OPEN: 'Registration open',
+  MINIMUM_NOT_REACHED: 'Minimum group size not reached yet',
+  MINIMUM_REACHED: 'Minimum group size reached',
+  SUPPLIER_CONFIRMATION: 'Confirming with suppliers',
+  TRIP_CONFIRMED: 'Trip confirmed',
+  DEPARTURE_READY: 'Ready to depart',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+};
+
+/* Gaming */
+export const TOURNAMENT_KINDS = ['ONLINE', 'CONSOLE'] as const;
+export const TOURNAMENT_KIND_LABELS: Record<string, string> = { ONLINE: 'Online tournament', CONSOLE: 'PlayStation / console session' };
+export const TOURNAMENT_FORMATS = ['SOLO', 'DUO', 'SQUAD', 'TEAM'] as const;
+export const TOURNAMENT_FORMAT_LABELS: Record<string, string> = { SOLO: 'Solo', DUO: 'Duo', SQUAD: 'Squad', TEAM: 'Team' };
+export const TOURNAMENT_STATUSES = ['DRAFT', 'REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ARCHIVED'] as const;
+export const TOURNAMENT_PUBLIC_STATUSES = ['REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+export const ENTRY_STATUSES = ['REGISTERED', 'CONFIRMED', 'WAITLIST', 'DISQUALIFIED', 'WITHDRAWN'] as const;
+
+/* Communities */
+export const COMMUNITY_STATUSES = ['PENDING_REVIEW', 'DRAFT', 'PUBLISHED', 'REJECTED', 'ARCHIVED'] as const;
+export const SESSION_STATUSES = ['SCHEDULED', 'CHANGED', 'CANCELLED', 'COMPLETED'] as const;
+
+/* Partnerships */
+export const AGREEMENT_KINDS = ['EDITORIAL', 'SPONSORED', 'REFERRAL', 'VENUE', 'GAMING', 'OTHER'] as const;
+export const AGREEMENT_KIND_LABELS: Record<string, string> = {
+  EDITORIAL: 'Editorial (selected by Enhakkore, unpaid)',
+  SPONSORED: 'Sponsored placement (paid, labelled)',
+  REFERRAL: 'Referral / booking commission',
+  VENUE: 'Venue partnership',
+  GAMING: 'Gaming partnership / sponsorship',
+  OTHER: 'Other',
+};
+export const AGREEMENT_STATUSES = ['NEGOTIATING', 'ACTIVE', 'ENDED', 'CANCELLED'] as const;
+export const PARTNER_CATEGORIES = [
+  'Hotels & accommodation',
+  'Restaurants & cafes',
+  'Venues & event spaces',
+  'Events & experiences',
+  'Gaming & esports',
+  'Sponsors',
+  'Other partnerships',
+];
 
 export const PARTICIPANT_STATUSES = ['REQUESTED', 'APPROVED', 'WAITLIST', 'DECLINED', 'CANCELLED'] as const;
 
@@ -293,6 +434,10 @@ export const PERMISSION_MODULES = [
   { key: 'trips', label: 'Travel — trips & departures' },
   { key: 'bookings', label: 'Trip applications & bookings' },
   { key: 'activities', label: 'Community activities' },
+  { key: 'communities', label: 'Communities' },
+  { key: 'gaming', label: 'Gaming & tournaments' },
+  { key: 'partnerships', label: 'Business partnerships & agreements' },
+  { key: 'analytics', label: 'Reports & analytics' },
   { key: 'places', label: 'Discover — places & businesses' },
   { key: 'experiences', label: 'Experiences' },
   { key: 'events', label: 'Events & registrations' },
@@ -357,6 +502,21 @@ export const DEFAULT_ROLES: { name: string; description: string; permissions: st
     name: 'Events Manager',
     description: 'Events, ticket types, registrations and check-in.',
     permissions: [all('events'), all('media'), 'enquiries.view', 'enquiries.edit', 'catalogue.view'],
+  },
+  {
+    name: 'Explore Manager',
+    description: 'Explore listings — stays, food, venues and attractions — and hotel and restaurant enquiries.',
+    permissions: [all('places'), all('enquiries'), all('partnerships'), all('media'), 'catalogue.view'],
+  },
+  {
+    name: 'Experiences Manager',
+    description: 'Experiences, events, activities, sessions and communities.',
+    permissions: [all('experiences'), all('events'), all('activities'), all('communities'), all('media'), 'enquiries.view', 'enquiries.edit', 'catalogue.view'],
+  },
+  {
+    name: 'Gaming Manager',
+    description: 'Games, tournaments, console sessions, entries, brackets and results.',
+    permissions: [all('gaming'), all('media'), 'catalogue.view', 'members.view'],
   },
   {
     name: 'Content Manager',

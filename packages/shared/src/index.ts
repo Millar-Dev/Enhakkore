@@ -6,3 +6,4 @@ export * from './platform';
 export * from './settings';
 export * from './resources';
 export * from './countries';
+export * from './legal';

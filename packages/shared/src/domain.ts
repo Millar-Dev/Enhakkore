@@ -85,7 +85,7 @@ export type ImpactCategory = (typeof IMPACT_CATEGORIES)[number];
 export const PROJECT_STATUSES = ['DRAFT', 'ACTIVE', 'FUNDED', 'COMPLETED', 'PAUSED'] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
-export const MESSAGE_KINDS = ['TEXT', 'ANNOUNCEMENT', 'SYSTEM', 'IMAGE'] as const;
+export const MESSAGE_KINDS = ['TEXT', 'ANNOUNCEMENT', 'SYSTEM', 'IMAGE', 'DOCUMENT'] as const;
 export type MessageKind = (typeof MESSAGE_KINDS)[number];
 
 export const NOTIFICATION_TYPES = [
@@ -99,6 +99,14 @@ export const NOTIFICATION_TYPES = [
   'IMPACT_UPDATE',
   'ORGANIZER_STATUS',
   'TRIP_STATUS',
+  'ENQUIRY_RECEIVED',
+  'ENQUIRY_UPDATE',
+  'REGISTRATION_RECEIVED',
+  'REGISTRATION_CONFIRMED',
+  'EVENT_CHANGE',
+  'COMMUNITY_ANNOUNCEMENT',
+  'ORGANISER_APPROVAL',
+  'PARTNERSHIP_UPDATE',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

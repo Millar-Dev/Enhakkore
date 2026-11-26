@@ -8,6 +8,8 @@ import { uniqueSlug } from '../lib/ids';
 import { prisma } from '../lib/prisma';
 import { issueSession, requireAuth } from '../middleware/auth';
 import { recordLogin, sessionPayload } from '../services/sessions';
+import { audit } from '../services/audit';
+import { decryptSecret, encryptSecret, generateSecret, otpauthUrl, verifyTotp } from '../lib/totp';
 import { toOrganizerSummary, toPublicUser } from '../serializers';
 import { env } from '../env';
 import {
@@ -103,6 +105,8 @@ authRouter.post(
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email('Enter a valid email address.'),
   password: z.string().min(1, 'Enter your password.'),
+  /** The 6-digit code from an authenticator app, for accounts with two-factor sign-in on. */
+  code: z.string().trim().max(10).optional(),
 });
 
 authRouter.post(
@@ -134,6 +138,17 @@ authRouter.post(
     if (user.status === 'SUSPENDED') {
       await recordLogin(req, input.email, user.id, false, 'suspended');
       throw ApiError.forbidden('This account is suspended. Contact Enhakkore on WhatsApp if you think this is a mistake.');
+    }
+
+    if (user.totpEnabled && user.totpSecret) {
+      if (!input.code) {
+        throw new ApiError(401, 'Enter the 6-digit code from your authenticator app.', 'two_factor_required');
+      }
+      const secret = decryptSecret(user.totpSecret);
+      if (!secret || !verifyTotp(secret, input.code)) {
+        await recordLogin(req, input.email, user.id, false, 'bad_2fa_code');
+        throw new ApiError(401, 'That code is not right. Check your authenticator app and try again.', 'two_factor_invalid');
+      }
     }
 
     await recordLogin(req, input.email, user.id, true, 'ok');
@@ -279,5 +294,62 @@ authRouter.post(
       data: { revokedAt: new Date(), revokedBy: req.auth!.id },
     });
     res.json({ ok: true });
+  }),
+);
+
+/* ------------------------------ Two-factor sign-in ----------------------------- */
+
+/** Starts setup: a new secret, shown once so it can be added to an authenticator app. */
+authRouter.post(
+  '/2fa/setup',
+  requireAuth,
+  credentialLimiter,
+  route(async (req, res) => {
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: req.auth!.id } });
+    if (user.totpEnabled) throw ApiError.conflict('Two-factor sign-in is already on. Turn it off first to set up a new device.');
+    const secret = generateSecret();
+    await prisma.user.update({ where: { id: user.id }, data: { totpSecret: encryptSecret(secret), totpEnabled: false } });
+    res.json({ secret, otpauthUrl: otpauthUrl(secret, user.email) });
+  }),
+);
+
+authRouter.post(
+  '/2fa/enable',
+  requireAuth,
+  credentialLimiter,
+  route(async (req, res) => {
+    const { code } = z.object({ code: z.string().trim().min(6).max(10) }).parse(req.body);
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: req.auth!.id } });
+    const secret = user.totpSecret ? decryptSecret(user.totpSecret) : null;
+    if (!secret) throw ApiError.badRequest('Start the setup again.');
+    if (!verifyTotp(secret, code)) throw new ApiError(422, 'That code is not right.', 'validation_error', { code: 'That code is not right. Codes change every 30 seconds.' });
+    await prisma.user.update({ where: { id: user.id }, data: { totpEnabled: true } });
+    await audit(req, { action: 'security', entityType: 'users', entityId: user.id, summary: 'Turned on two-factor sign-in', sensitive: true });
+    res.json({ enabled: true });
+  }),
+);
+
+authRouter.post(
+  '/2fa/disable',
+  requireAuth,
+  credentialLimiter,
+  route(async (req, res) => {
+    const input = z.object({ password: z.string().min(1), code: z.string().trim().min(6).max(10) }).parse(req.body);
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: req.auth!.id } });
+    if (!(await bcrypt.compare(input.password, user.passwordHash))) throw ApiError.badRequest('Your password is not correct.');
+    const secret = user.totpSecret ? decryptSecret(user.totpSecret) : null;
+    if (user.totpEnabled && (!secret || !verifyTotp(secret, input.code))) throw ApiError.badRequest('That code is not right.');
+    await prisma.user.update({ where: { id: user.id }, data: { totpEnabled: false, totpSecret: null } });
+    await audit(req, { action: 'security', entityType: 'users', entityId: user.id, summary: 'Turned off two-factor sign-in', sensitive: true });
+    res.json({ enabled: false });
+  }),
+);
+
+authRouter.get(
+  '/2fa',
+  requireAuth,
+  route(async (req, res) => {
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: req.auth!.id }, select: { totpEnabled: true } });
+    res.json({ enabled: user.totpEnabled });
   }),
 );
