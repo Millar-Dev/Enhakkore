@@ -99,6 +99,7 @@ export const MENU: MenuGroup[] = [
       { href: '/admin/settings', label: 'Website settings', permission: 'settings.view', keywords: 'brand logo seo legal terms privacy navigation menu' },
       { href: '/admin/settings?group=legal', label: 'Policies', permission: 'settings.view', keywords: 'terms privacy cookie gaming donation partner legal' },
       { href: '/admin/security', label: 'Security & audit', permission: 'security.view', keywords: 'sessions logins history log' },
+      { href: '/admin/help', label: 'Help & manual', permission: '', keywords: 'manual guide instructions how to help pdf' },
       { href: '/admin/two-factor', label: 'My two-factor sign-in', permission: '', keywords: '2fa authenticator code security' },
     ],
   },

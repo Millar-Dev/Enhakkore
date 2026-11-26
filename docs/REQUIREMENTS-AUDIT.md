@@ -6,8 +6,8 @@ checked against the code on this branch.
 **Status:** ✅ built and tested · 🟡 built, needs the owner's input or an external
 account · 🔜 deliberately a later phase · ❌ not done (reason given)
 
-Tested: **109 automated API tests** (including 16 for this rebuild) and **62
-browser checks on an emulated Android phone** (every public page loads with no
+Tested: **117 automated API tests** and **112 browser checks on an emulated
+phone** (62 for the rebuild plus 50 for the critical final requirements) (every public page loads with no
 errors and no sideways scrolling; hotel enquiry, member sign-up, team
 tournament registration, joining a community, publishing an activity, event
 planning, My Experiences, notifications, and every new admin screen).
@@ -128,6 +128,24 @@ planning, My Experiences, notifications, and every new admin screen).
 full logo, @2x, navigation and footer sizes, emblem, square social images, on-dark plates,
 favicons and app icons, WSC equivalents). No SVG: a faithful vector would have to be
 redrawn by a designer, which needs your approval.
+
+## Critical final requirements (round 3) and founder setup
+
+| Requirement | Status |
+|---|---|
+| Compact mobile redesign, 2×2 category grid, header that hides on scroll, navy tab bar | ✅ |
+| Compact search with suggestions; filters only on demand; "X in Y" understood | ✅ |
+| Interactive globe (MapLibre): spin, tap a country or city to fly in, becomes a street map when zoomed, HUD read-out; falls back to a simple globe without WebGL | ✅ |
+| Worldwide countries and searchable city pickers (GeoNames) | ✅ |
+| Arusha Escape published with full package page; "Request this trip" + WhatsApp by enquiry type | ✅ (accommodation still being confirmed — 🟡) |
+| Private real-time trip chat: documents, report, remove, archive, read-only after the trip | ✅ |
+| Experiences page order; gaming hero image editable in settings | ✅ |
+| Demo content (activities, tournaments, communities, trip) labelled DEMO, not joinable, not counted as popular; bulk archive/delete | ✅ |
+| Real researched Explore listings with source and check date, no invented details | ✅ (11 places; verification 🟡) |
+| WSC impact band redesign | ✅ |
+| Policy Centre: 25 versioned drafts, acceptance recorded at sign-up | ✅ (legal review 🟡) |
+| Admin User Manual: document, in-admin Help page, PDF, 22 screenshots | ✅ |
+| One-time founder Super Admin setup (`SETUP_TOKEN`, `/admin/setup`), closes after use, no default credentials, invite-only team, 2FA, password reset | ✅ (reset emails need `RESEND_API_KEY` 🟡) |
 
 ## Later phases
 

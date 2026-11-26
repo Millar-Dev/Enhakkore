@@ -86,51 +86,50 @@ Cloudinary uploads, and real devices — this was done in a development copy.
 
 ## 3. What still needs you (approval, accounts or decisions)
 
-1. **Create your owner account on the live site.** Demonstration accounts
-   cannot sign in on the live site. In Render → the API service → Environment,
-   add `OWNER_EMAIL`, `OWNER_PASSWORD` (12+ characters, unique) and optionally
-   `OWNER_NAME`, then redeploy. Then turn on two-factor sign-in at
-   `/admin/two-factor`.
-2. **Check and publish the Arusha Escape.** As the brief asked, it was imported
-   as a **draft awaiting your final verification**: accommodation is marked "not
-   yet booked", transport and meals "provisional", maximum 28 travellers,
-   departure Mlimani City on Friday morning. Until you publish it (Travel —
-   trips → Arusha Escape → Publish), the Travel page shows no upcoming trip.
-3. **Saturday Community Jog** is a draft too. Add the beach, the route distance
-   and the meeting instructions, add the Saturday sessions (Events & activities
-   → the jog → Sessions → repeat weekly), then publish.
-4. **Automatic WhatsApp notices** need the WhatsApp Business Platform (Meta):
-   a Meta Business account, a WhatsApp Business number registered for the
-   Cloud API, a permanent access token and an approved message template with
-   one body variable. Put `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`
-   and `WHATSAPP_TEMPLATE_NAME` on the API in Render. Until then every enquiry is
-   still saved and shown, marked "Automatic WhatsApp not set up", and the
-   Notifications screen says so.
-5. **Connect Cloudinary** (free plan) so uploaded photos, videos and chat files
+1. **Create your founder (Super Admin) account — once.** No default admin
+   account exists and there is no public admin sign-up. In Render → the API
+   service → Environment, add `SETUP_TOKEN` (a random secret of 24+
+   characters) and let it redeploy. Then open `/admin/setup` on the website,
+   enter the token, your name, email and a 12+ character password. The setup
+   closes permanently as soon as your account exists; remove `SETUP_TOKEN`
+   afterwards. (Alternative: `OWNER_EMAIL` + `OWNER_PASSWORD`, also once only.)
+   Then turn on two-factor sign-in at `/admin/two-factor`. Full steps with
+   screenshots: **Admin User Manual** — `docs/ADMIN-MANUAL.md`, the control
+   centre's **Help & manual** page (`/admin/help`) and the PDF at
+   `/manual/Enhakkore-Admin-Manual.pdf`.
+2. **Arusha Escape is published** with registration open. Accommodation and some
+   transport/meal details are still listed under "Still being confirmed" — update
+   them in Travel — trips when booked.
+3. **Demo content must go before launch.** Example activities, 8 gaming
+   tournaments, 4 communities and a draft demo trip are marked **DEMO** everywhere,
+   cannot be joined, and never count as popular. In any list: *DEMO only* →
+   *Archive all DEMO* or *Delete all DEMO*.
+4. **Researched Explore listings** (11 real places in Dar es Salaam, Arusha and
+   Zanzibar) show their public source and check date and are marked "Not yet
+   verified". No phone numbers, hours or prices were added. Contact each business
+   before calling anything a partnership.
+5. **Saturday Community Jog** is a draft (demo version is shown meanwhile). Add the
+   beach, distance and meeting point, add weekly sessions, then publish.
+6. **Automatic WhatsApp notices** need the WhatsApp Business Platform (Meta):
+   a Meta Business account, a number registered for the Cloud API, a permanent
+   access token and an approved template with one body variable. Set
+   `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` and
+   `WHATSAPP_TEMPLATE_NAME` on the API. Until then enquiries are still saved and
+   marked "Automatic WhatsApp not set up". Which number gets which enquiry type:
+   Contacts & social → Routing.
+7. **Password-reset emails** need `RESEND_API_KEY` on the API (Resend, free plan).
+8. **Connect Cloudinary** (free plan) so uploaded photos, videos and chat files
    survive deploys — `docs/DEPLOYMENT.md` Part G.
-6. **Confirm the donation account** (Settings → Impact & donations) and
-   **review the twelve policy drafts** with a lawyer (Settings → Legal), then tick
-   "Reviewed".
-7. **Add real Explore listings, games and communities.** None were invented.
-   The games list (Free Fire, PUBG Mobile, eFootball, EA SPORTS FC…) is ready under
-   Categories & games.
-8. **Send the missing media**: Mkuranga videos, Meru Eco Camp, Cultural Heritage
-   and AIM Mall photos and their dates.
-6. **Seats already sold off-site.** Arusha Escape starts with 0 seats taken.
-   If you have sold places by WhatsApp, set "Seats taken" on the departure.
-7. **Meru Eco Camp.** There was no separate Meru Eco Camp trip record in the
-   project — only as a stop on the Arusha Escape itinerary. If it was a
-   separate past trip, add it under Travel with its date and photos and it
-   will appear as a past trip.
-8. **Napuru Gateway photo.** No photo of that day was supplied; it uses the
-   credited Napuru Waterfalls photograph. Replace it with your own.
-9. **Visitor analytics** is not connected. Vercel Web Analytics is the simplest
-   (Vercel → project → Analytics → Enable). Set `ANALYTICS_DASHBOARD_URL` on the
-   API to show a link on the overview.
-10. **Existing demonstration data** in the live database is hidden from the
-    public site and from the control centre's counts and money totals, but
-    still stored. Removing it is a separate, permanent step — ask a developer
-    when you want it done.
+9. **Confirm the donation account** (Settings → Impact & donations) and have the
+   **25 policy documents** reviewed by a lawyer under Tanzanian law (Settings →
+   Policies), then tick "Reviewed". They are drafts — not legal advice.
+10. **Send the missing media**: Mkuranga videos, Meru Eco Camp, Cultural Heritage
+    and AIM Mall photos and their dates; a photo for the Napuru Gateway day.
+11. **Seats already sold off-site**: set "Seats taken" on the departure.
+12. **Visitor analytics**: Vercel → project → Analytics → Enable.
+13. **Duplicate Vercel project.** Two Vercel projects build from this repository:
+    `enhakkore_` (the live site, enhakkore-one.vercel.app) and `enhakkore`. The
+    second one only uses up build time — delete it in Vercel → Settings.
 
 ## 4. Paid services
 
@@ -234,3 +233,10 @@ name ("WhatsApp", "prices", "expenses").
   removed from the website and operator sign-up is closed; the database and API
   keep the groundwork (set `ENABLE_MARKETPLACE=true` on the API to reopen it).
 - The mobile app is not built; the API is ready to serve one.
+- The globe's close-up street map uses CARTO's free map tiles (© OpenStreetMap,
+  © CARTO) loaded from the internet; country outlines are bundled. Phones
+  without WebGL get a simpler animated globe.
+- Worldwide city choice uses the GeoNames dataset (≈135,000 places, CC BY 4.0);
+  a missing village can be added by name.
+- Scheduled publishing dates are not available — publish by hand.
+- The 25 policy documents are drafts and have not been reviewed by a lawyer.

@@ -47,6 +47,11 @@ services:
         sync: false
       - key: OWNER_NAME
         sync: false
+      # One-time founder setup at /admin/setup (alternative to OWNER_*): a random
+      # secret of 24+ characters. Setup closes for good once the founder's
+      # account exists; remove this variable afterwards.
+      - key: SETUP_TOKEN
+        sync: false
       # WhatsApp Business Platform (Meta Cloud API) — automatic enquiry notices
       # to the team numbers in Settings → Contacts. Leave unset until configured.
       - key: WHATSAPP_ACCESS_TOKEN

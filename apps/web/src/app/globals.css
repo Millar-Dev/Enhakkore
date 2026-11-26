@@ -516,3 +516,22 @@ body {
 .enh-hud .maplibregl-ctrl-attrib a { color: #cfe8f5; }
 .enh-hud .maplibregl-cooperative-gesture-screen { font-size: 14px; }
 @media (prefers-reduced-motion: reduce) { .enh-marker-ring { animation: none; } }
+
+/* Admin User Manual (/admin/help) */
+.manual { font-size: 0.9375rem; line-height: 1.6; color: #1f2a37; }
+.manual h1 { font-family: var(--font-display, serif); font-size: 1.8rem; color: #0a2540; margin: 0 0 0.75rem; }
+.manual h2 { font-family: var(--font-display, serif); font-size: 1.35rem; color: #0a2540; margin: 2rem 0 0.5rem; scroll-margin-top: 5rem; border-top: 1px solid #e5e7eb; padding-top: 1.25rem; }
+.manual h3 { font-weight: 700; margin: 1.25rem 0 0.4rem; }
+.manual p, .manual ul, .manual ol, .manual table { margin: 0.6rem 0; }
+.manual ul { list-style: disc; padding-left: 1.25rem; }
+.manual ol { list-style: decimal; padding-left: 1.25rem; }
+.manual li { margin: 0.25rem 0; }
+.manual code { background: #f3f4f6; border-radius: 0.35rem; padding: 0.05rem 0.35rem; font-size: 0.85em; }
+.manual a { color: #0f4a76; text-decoration: underline; }
+.manual hr { margin: 1.25rem 0; border-color: #e5e7eb; }
+.manual figure { margin: 0.9rem 0; max-width: 22rem; }
+.manual figure img { width: 100%; border-radius: 0.9rem; border: 1px solid #e5e7eb; box-shadow: 0 4px 16px rgba(10, 37, 64, 0.08); }
+.manual figcaption { font-size: 0.75rem; color: #6b7280; margin-top: 0.3rem; }
+.manual table { width: 100%; border-collapse: collapse; font-size: 0.875rem; display: block; overflow-x: auto; }
+.manual th, .manual td { border: 1px solid #e5e7eb; padding: 0.45rem 0.6rem; text-align: left; vertical-align: top; }
+.manual th { background: #f8f6f1; }
