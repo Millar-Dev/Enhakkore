@@ -298,7 +298,7 @@ function HomeSection({
                 <div className="absolute inset-0 flex flex-col justify-between p-3 md:p-5">
                   <span className="text-clay-400"><Icon d={pillar.icon} size={30} /></span>
                   <div>
-                    <p className="text-[clamp(1.15rem,4.6vw,1.75rem)] font-bold leading-none">{pillar.title}</p>
+                    <p className="text-[clamp(1.05rem,4.4vw,1.75rem)] font-bold leading-none [overflow-wrap:anywhere]">{pillar.title}</p>
                     <p className="mt-1 line-clamp-2 text-[0.6875rem] leading-snug text-white/85 md:text-sm">{pillar.line}</p>
                   </div>
                 </div>

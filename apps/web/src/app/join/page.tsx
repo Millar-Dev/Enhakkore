@@ -74,7 +74,7 @@ function JoinForm() {
         <Logo size="md" withDescriptor />
       </Link>
 
-      <h1 className="mt-10 text-h1 text-balance">
+      <h1 className="mt-10 text-h1 text-balance [overflow-wrap:anywhere]">
         Join Enhakkore
       </h1>
       <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink-muted">

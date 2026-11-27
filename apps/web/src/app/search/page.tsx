@@ -45,7 +45,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
           </form>
           <div className="mt-3 flex items-center gap-3 text-xs">
             <Link href={link({ filters: showFilters ? undefined : '1' })} className="inline-flex min-h-10 items-center font-semibold text-clay-400">{showFilters ? 'Hide filters' : 'Filters'}</Link>
-            {active && <Link href="/search" className="inline-flex min-h-10 items-center text-white/70 underline">Clear</Link>}
+            {active && <Link href="/search" className="inline-flex min-h-10 min-w-10 items-center justify-center px-2 text-white/70 underline">Clear</Link>}
           </div>
           {showFilters && (
             <form action="/search" className="mt-3 grid grid-cols-2 gap-2 rounded-2xl bg-white/10 p-2 sm:grid-cols-4">

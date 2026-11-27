@@ -113,7 +113,7 @@ export default async function ExperiencesHub({ searchParams }: { searchParams: P
                 </>
               )}
               <span className="relative text-2xl md:text-3xl" aria-hidden>{section.icon}</span>
-              <span className="relative font-semibold leading-tight">{section.label}</span>
+              <span className="relative min-w-0 font-semibold leading-tight [overflow-wrap:anywhere]">{section.label}</span>
             </Link>
           ))}
         </div>

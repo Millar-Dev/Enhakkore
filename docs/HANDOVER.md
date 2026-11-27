@@ -127,7 +127,12 @@ Cloudinary uploads, and real devices — this was done in a development copy.
     and AIM Mall photos and their dates; a photo for the Napuru Gateway day.
 11. **Seats already sold off-site**: set "Seats taken" on the departure.
 12. **Visitor analytics**: Vercel → project → Analytics → Enable.
-13. **Duplicate Vercel project.** Two Vercel projects build from this repository:
+13. **Logo for dark backgrounds (optional).** The phone header is dark navy, as
+    in your mockups. Your original logo is navy, so it sits on a small cream
+    badge there. If your designer supplies an official light/gold version, upload
+    it in the Media library and paste its address into Settings → Brand & logos →
+    "Logo on dark URL"; the phone header and footer will use it.
+14. **Duplicate Vercel project.** Two Vercel projects build from this repository:
     `enhakkore_` (the live site, enhakkore-one.vercel.app) and `enhakkore`. The
     second one only uses up build time — delete it in Vercel → Settings.
 
@@ -240,3 +245,10 @@ name ("WhatsApp", "prices", "expenses").
   a missing village can be added by name.
 - Scheduled publishing dates are not available — publish by hand.
 - The 25 policy documents are drafts and have not been reviewed by a lawyer.
+- "Stay connected" sign-ups arrive as enquiries marked "Updates sign-up" in All
+  enquiries; there is no separate mailing-list service.
+- Responsive testing: 49 pages × 20 screen configurations (11 sizes from 320×568
+  to 2560×1080, phone and tablet landscape, browser zoom 80/125/150 %, larger
+  text) checked automatically for sideways scrolling, cut-off text, covered
+  controls, distorted images and tap-target size. Real phones were not
+  available; emulated devices were used.
