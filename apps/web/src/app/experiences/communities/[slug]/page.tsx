@@ -37,7 +37,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
       <section className="relative bg-acacia-700 text-white">
         {c.coverImage && <SmartImage src={c.coverImage} alt="" fill sizes="100vw" className="object-cover opacity-35" />}
         <div className="shell relative py-12 md:py-16">
-          <Link href="/experiences/communities" className="kicker !text-clay-400">← Communities</Link>
+          <Link href="/experiences/communities" className="kicker !text-clay-400 inline-flex min-h-10 items-center">← Communities</Link>
           <h1 className="display-lg mt-3">{c.name}</h1>
           {c.summary && <p className="mt-3 max-w-2xl text-white/80">{c.summary}</p>}
           <p className="mt-3 text-sm text-white/70">{[c.category?.name, [c.city?.name, c.country?.name].filter(Boolean).join(', '), `${c.memberCount} members`].filter(Boolean).join(' · ')}</p>

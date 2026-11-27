@@ -110,9 +110,9 @@ function framing(element: HTMLElement, background: boolean) {
     const radius = Math.min(height * 0.46, width * 0.3);
     return { padding: { top: 0, bottom: 0, left: Math.round(width * 0.42), right: 0 }, zoom: Math.log2(radius / 81.5) };
   }
-  // Words on top, globe rising from the lower part of the hero.
-  const radius = Math.min(width * 0.55, height * 0.36);
-  return { padding: { top: Math.round(height * 0.5), bottom: 0, left: 0, right: 0 }, zoom: Math.log2(radius / 81.5) };
+  // Phones and tablets: headline above, buttons below, the globe between them.
+  const radius = Math.max(90, Math.min(width * 0.42, height * 0.23));
+  return { padding: { top: 0, bottom: Math.round(height * 0.08), left: 0, right: 0 }, zoom: Math.log2(radius / 81.5) };
 }
 
 export function WorldMap({ catalogue, home, className = '', background = false }: { catalogue: Catalogue; home?: { lat: number; lng: number }; className?: string; background?: boolean }) {
@@ -389,7 +389,7 @@ export function WorldMap({ catalogue, home, className = '', background = false }
         </div>
       )}
       {!target && ready && (
-        <button type="button" onClick={worldView} className={`absolute z-[4] rounded-full border border-[#46c8ff]/40 bg-[#04182a]/80 px-3 py-1 font-mono text-[0.625rem] uppercase tracking-[0.18em] text-[#7fdcff] ${background ? 'bottom-3 left-3' : 'right-3 top-3'}`}>
+        <button type="button" onClick={worldView} className={`absolute z-[4] inline-flex h-10 items-center rounded-full border border-[#46c8ff]/40 bg-[#04182a]/80 px-3 font-mono text-[0.625rem] uppercase tracking-[0.18em] text-[#7fdcff] ${background ? 'left-3 top-[34%] lg:bottom-3 lg:top-auto' : 'right-3 top-3'}`}>
           ↺ World view
         </button>
       )}

@@ -1,75 +1,169 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import type { HomepageSectionKey } from '@enhakkore/shared';
 import { formatInZone, formatMoney } from '@enhakkore/shared';
 import { WorldMap } from '@/components/home/WorldMap';
-import type { HomeData, HubData, TrendingItem } from '@/components/home/types';
+import type { HomeData, HubData, TrendingItem, UpcomingCard } from '@/components/home/types';
 import { PublicShell } from '@/components/layout/PublicShell';
 import { ListingCard } from '@/components/public/Cards';
 import { tripDates, type TripListing } from '@/components/public/listings';
 import { SmartImage } from '@/components/public/SmartImage';
 import { WscLogo } from '@/components/site/BrandLogo';
+import { SocialIcon } from '@/components/site/SocialIcon';
 import { apiGet } from '@/lib/api';
 import { getCatalogue, type Catalogue } from '@/lib/public';
 import { getSite, type Site } from '@/lib/site';
 
 export const revalidate = 60;
 
-/** The four ways in — photographs from Enhakkore's own trips and projects. */
+/**
+ * The homepage — one dark navy design that rearranges itself for each screen:
+ * a single column with sideways rails on phones, two or three columns on
+ * tablets, and full grids on computers. Nothing is a desktop page shrunk to a
+ * phone, or a phone page stretched across a monitor.
+ */
+
+const ICON = {
+  pin: 'M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z M12 12.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+  users: 'M16 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 17.5V19 M10 10.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z M20 19v-1.5a3.5 3.5 0 0 0-2.6-3.4 M15.5 3.6a3.5 3.5 0 0 1 0 6.8',
+  plane: 'M2.5 19h19M4 15l6-1 7-9 2 .5-3.5 8.5 4.5-.5 1 2-14 3-3-3.5Z',
+  heart: 'M12 20s-7.5-4.6-9.2-9.3C1.6 7.3 3.9 4 7.2 4c2 0 3.6 1.2 4.8 3 1.2-1.8 2.8-3 4.8-3 3.3 0 5.6 3.3 4.4 6.7C19.5 15.4 12 20 12 20Z',
+  calendar: 'M4 6.5h16v13H4z M4 10.5h16 M8 3.5v4 M16 3.5v4',
+  fire: 'M12 21c-3.9 0-6.5-2.6-6.5-6.2 0-3.4 2.6-5.4 3.9-8.3.5 1.7 1.4 2.8 2.6 3.4.2-2.8 1.6-5 3.3-6.4-.2 2.6.9 4.4 2.2 6.1 1 1.3 1.9 2.9 1.9 5.2C19.4 18.4 16 21 12 21Z',
+  sparkle: 'M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6-4.5-4.2 6.1-.7L12 3Z',
+  handshake: 'M3 11l4-4 5 2 5-2 4 4-7 7-2-2 M8 13l3 3 M10.5 11.5l3 3',
+  send: 'M21 3 3 10.5l7 2.5 2.5 7L21 3Z M10 13l4.5-4.5',
+};
+
+function Icon({ d, size = 20, className }: { d: string; size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={className}>
+      <path d={d} />
+    </svg>
+  );
+}
+
+/** The four ways in. Each has its own colour so they can be told apart at a glance. */
 const PILLARS = [
-  { href: '/explore', title: 'Explore', line: 'Stays, food & places', image: '/packages/arusha/arusha-city.webp', icon: 'M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z M12 12.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z' },
-  { href: '/experiences', title: 'Experiences', line: 'Events, sport & gaming', image: '/packages/arusha/chemka-1.webp', icon: 'M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6-4.5-4.2 6.1-.7L12 3Z' },
-  { href: '/travel', title: 'Travel', line: 'Group trips & safaris', image: '/packages/arusha/mount-meru.webp', icon: 'M2.5 19h19M4 15l6-1 7-9 2 .5-3.5 8.5 4.5-.5 1 2-14 3-3-3.5Z' },
-  { href: '/impact', title: 'Impact', line: 'WSC & community projects', image: '/impact/mkuranga/cover.webp', icon: 'M12 20s-7.5-4.6-9.2-9.3C1.6 7.3 3.9 4 7.2 4c2 0 3.6 1.2 4.8 3 1.2-1.8 2.8-3 4.8-3 3.3 0 5.6 3.3 4.4 6.7C19.5 15.4 12 20 12 20Z' },
+  { href: '/explore', title: 'Explore', line: 'Places, stays, dining & attractions', image: '/packages/arusha/arusha-city.webp', icon: ICON.pin, tint: 'from-[#0b3a78]/95 via-[#0b3a78]/55' },
+  { href: '/experiences', title: 'Experiences', line: 'Events, activities, communities & gaming', image: '/media/gaming/gaming-hero.jpg', icon: ICON.users, tint: 'from-[#4a1f7a]/95 via-[#4a1f7a]/55' },
+  { href: '/travel', title: 'Travel', line: 'Group trips, safaris & custom journeys', image: '/packages/arusha/mount-meru.webp', icon: ICON.plane, tint: 'from-[#0b5c5a]/95 via-[#0b5c5a]/55' },
+  { href: '/impact', title: 'Impact', line: 'WSC, community projects & giving', image: '/impact/mkuranga/cover.webp', icon: ICON.heart, tint: 'from-[#6b4310]/95 via-[#6b4310]/55' },
 ];
 
 const INTERESTS = [
-  { label: 'Parties & social', icon: '🎉', href: '/experiences/c/parties' },
-  { label: 'Sports & fitness', icon: '🏀', href: '/experiences/c/sports' },
-  { label: 'Gaming', icon: '🎮', href: '/experiences/gaming' },
-  { label: 'Art & culture', icon: '🎨', href: '/experiences/c/arts' },
-  { label: 'Nature & adventure', icon: '🏞️', href: '/experiences/c/outdoor' },
-  { label: 'Food & dining', icon: '🍽️', href: '/explore?section=FOOD' },
-  { label: 'Travel', icon: '🧭', href: '/travel' },
-  { label: 'Community & giving', icon: '🤝', href: '/impact' },
+  { label: 'Parties', icon: '🎉', href: '/experiences/c/parties', tone: 'bg-[#3a1d5c] ring-[#a66bf0]/40' },
+  { label: 'Sports', icon: '🏀', href: '/experiences/c/sports', tone: 'bg-[#123f2a] ring-[#3ccf7e]/40' },
+  { label: 'Gaming', icon: '🎮', href: '/experiences/gaming', tone: 'bg-[#2a1a5e] ring-[#8f7bff]/40' },
+  { label: 'Adventure', icon: '⛰️', href: '/experiences/c/outdoor', tone: 'bg-[#0e4636] ring-[#38c7a0]/40' },
+  { label: 'Arts', icon: '🎨', href: '/experiences/c/arts', tone: 'bg-[#4d2333] ring-[#f07ca0]/40' },
+  { label: 'Food', icon: '🍽️', href: '/explore?section=FOOD', tone: 'bg-[#4a3410] ring-[#e8b14a]/40' },
+  { label: 'Travel', icon: '✈️', href: '/travel', tone: 'bg-[#0f3557] ring-[#5fb4ff]/40' },
+  { label: 'Community', icon: '🤝', href: '/impact', tone: 'bg-[#3d2a12] ring-[#cb9a3c]/40' },
 ];
 
-const Icon = ({ d, size = 18 }: { d: string; size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d={d} />
-  </svg>
-);
+/** Enhakkore's own photographs for places that have no picture set yet. */
+const PLACE_PHOTOS: Record<string, string> = {
+  arusha: '/packages/arusha/arusha-city.webp',
+  tanzania: '/packages/arusha/mount-meru.webp',
+  mkuranga: '/impact/mkuranga/village.webp',
+};
 
-type Tone = 'ivory' | 'white' | 'gold' | 'navy' | 'gaming';
-const DARK: Tone[] = ['navy', 'gaming'];
+/** A dark section band. Two navy shades alternate, with a gold line between. */
+function Band({ tone, children, id }: { tone: 'a' | 'b'; children: ReactNode; id?: string }) {
+  return (
+    <section id={id} className={`band band-dark-${tone} text-white`}>
+      <div className="shell py-7 md:py-12 xl:py-16">{children}</div>
+    </section>
+  );
+}
+
+function Head({ icon, title, href, linkLabel = 'See all', sub }: { icon: string; title: string; href?: string; linkLabel?: string; sub?: string }) {
+  return (
+    <div className="mb-3.5 flex items-end justify-between gap-3 md:mb-6">
+      <div className="min-w-0">
+        <h2 className="flex items-center gap-2 font-display text-[clamp(1.3rem,4.6vw,2.2rem)] leading-tight">
+          <span className="shrink-0 text-clay-400"><Icon d={icon} size={22} /></span>
+          <span className="min-w-0">{title}</span>
+        </h2>
+        {sub && <p className="mt-1 text-[0.8125rem] text-white/60 md:text-sm">{sub}</p>}
+      </div>
+      {href && (
+        <Link href={href} className="inline-flex min-h-10 shrink-0 items-center text-[0.8125rem] font-semibold text-clay-400 hover:text-white md:text-sm">
+          {linkLabel} →
+        </Link>
+      )}
+    </div>
+  );
+}
 
 /**
- * A titled row in its own colour band, so each part of the page reads as its
- * own place while scrolling. Scrolls sideways inside itself on phones (never
- * the page), a grid on larger screens.
+ * Sideways rail on phones (it scrolls inside itself — the page never moves),
+ * a grid from tablets up. Class names are written out in full so Tailwind
+ * can see them.
  */
-function Rail({ title, kicker, href, linkLabel = 'See all', tone = 'white', image, children }: { title: string; kicker?: string; href?: string; linkLabel?: string; tone?: Tone; image?: string; children: React.ReactNode }) {
-  const dark = DARK.includes(tone);
+const RAIL = {
+  cards: 'md:grid-cols-3 xl:grid-cols-4 [&>*]:w-[72vw] [&>*]:max-w-[17rem] sm:[&>*]:w-[46vw]',
+  listings: 'md:grid-cols-3 xl:grid-cols-4 [&>*]:w-[60vw] [&>*]:max-w-[15rem] sm:[&>*]:w-[40vw]',
+  tiles: 'md:grid-cols-4 xl:grid-cols-8 [&>*]:w-[30vw] [&>*]:max-w-[9rem] sm:[&>*]:w-[22vw]',
+};
+function Rail({ children, kind = 'cards' }: { children: ReactNode; kind?: keyof typeof RAIL }) {
   return (
-    <section className={`band band-${tone}`}>
-      {image && (
-        <>
-          <SmartImage src={image} alt="" fill sizes="100vw" className="object-cover opacity-25" />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0b0a24]/80 to-[#04121e]/95" />
-        </>
-      )}
-      <div className="shell relative py-7 md:py-12">
-        <div className="mb-3 flex items-end justify-between gap-3 md:mb-5">
-          <div className="min-w-0">
-            {kicker && <p className={`band-kicker ${dark ? 'text-clay-400' : 'text-clay-600'}`}>{kicker}</p>}
-            <h2 className={`font-display text-[1.45rem] leading-tight md:text-[2rem] ${dark ? 'text-white' : 'text-acacia-700'}`}>{title}</h2>
-          </div>
-          {href && <Link href={href} className={`shrink-0 text-[0.8125rem] font-semibold ${dark ? 'text-clay-400' : 'text-acacia-600'}`}>{linkLabel} →</Link>}
-        </div>
-        <div className="no-scrollbar -mx-5 flex snap-x gap-3 overflow-x-auto overscroll-x-contain px-5 pb-1 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-4 [&>*]:w-[44vw] [&>*]:max-w-[16rem] [&>*]:shrink-0 [&>*]:snap-start md:[&>*]:w-auto md:[&>*]:max-w-none">
-          {children}
+    <div className={`no-scrollbar -mx-5 flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5 pb-1 md:mx-0 md:grid md:gap-5 md:overflow-visible md:px-0 [&>*]:shrink-0 [&>*]:snap-start md:[&>*]:w-auto md:[&>*]:max-w-none ${RAIL[kind]}`}>
+      {children}
+    </div>
+  );
+}
+
+function when(item: { startsAt?: string | null; recurrence?: string | null }) {
+  return item.startsAt ? formatInZone(item.startsAt, 'Africa/Dar_es_Salaam', 'datetime') : item.recurrence ?? '';
+}
+
+/** A picture card for something on the calendar. */
+function HappeningCard({ item }: { item: UpcomingCard }) {
+  return (
+    <Link href={item.href} className="card-lift group block overflow-hidden rounded-2xl border border-white/10 bg-[#0d2240]">
+      <div className="relative aspect-[16/10] overflow-hidden bg-[#0a1a2e]">
+        {item.image && <SmartImage src={item.image} alt="" fill sizes="(max-width:768px) 72vw, (max-width:1280px) 33vw, 25vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.05]" />}
+        <div className="absolute left-2.5 top-2.5 flex flex-wrap gap-1">
+          <span className="rounded-full bg-[#4b2a8a]/90 px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wide text-white">{item.kind}</span>
+          {item.isDemo && <span className="rounded-full bg-white/90 px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wide text-[#4b2a8a]">Demo</span>}
         </div>
       </div>
-    </section>
+      <div className="flex items-end gap-2 p-3">
+        <div className="min-w-0 flex-1">
+          <p className="line-clamp-2 font-semibold leading-snug">{item.title}</p>
+          <p className="mt-1 truncate text-xs text-white/65">📅 {when(item)}</p>
+          {item.where && <p className="truncate text-xs text-white/55">📍 {item.where}</p>}
+        </div>
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-clay-400 text-acacia-700" aria-hidden>→</span>
+      </div>
+    </Link>
+  );
+}
+
+/** The featured trip: a large picture card with the facts that matter. */
+function TripBanner({ trip }: { trip: TripListing }) {
+  const next = trip.nextDeparture;
+  return (
+    <Link href={`/travel/${trip.slug}`} className="card-lift group relative block min-h-[15rem] overflow-hidden rounded-2xl border border-white/10 sm:min-h-[18rem]">
+      <SmartImage src={trip.heroImage} alt="" fill sizes="(max-width:1024px) 100vw, 50vw" className="object-cover object-[center_35%] transition-transform duration-700 group-hover:scale-[1.04]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#04121e] via-[#04121e]/70 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 flex items-end gap-3 p-4 md:p-5">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-display text-[clamp(1.35rem,5vw,1.9rem)] leading-tight">{trip.title}</h3>
+            <span className="rounded-full bg-[#5b3aa8] px-2.5 py-0.5 text-[0.6875rem] font-bold">Group trip</span>
+          </div>
+          <ul className="mt-1.5 space-y-0.5 text-[0.8125rem] text-white/85">
+            {next && <li>📅 {tripDates(next.startDate, next.endDate)} · {trip.durationDays} days{trip.durationNights ? ` / ${trip.durationNights} nights` : ''}</li>}
+            {next && <li>👥 {next.seatsLeft} places left</li>}
+            {next && <li className="text-base font-bold text-white">💳 {formatMoney({ amount: next.price, currency: trip.currency })} <span className="text-xs font-normal text-white/70">/ person</span></li>}
+          </ul>
+        </div>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-clay-400 text-lg text-acacia-700" aria-hidden>→</span>
+      </div>
+    </Link>
   );
 }
 
@@ -86,61 +180,68 @@ export default async function HomePage() {
   const homeBanners = site.banners.filter((banner) => banner.placement === 'HOME');
   const launch = catalogue.countries.find((country) => country.code === settings.launch.countryCode);
   const homePoint = launch?.latitude != null && launch.longitude != null ? { lat: launch.latitude, lng: launch.longitude } : { lat: -6.8, lng: 39.28 };
+  // "Travel Further. Connect Deeper. Create Impact." — the last sentence in gold.
+  const sentences = hero.title.split(/(?<=\.)\s+/);
+  const lead = sentences.length > 1 ? sentences.slice(0, -1).join(' ') : hero.title;
+  const gold = sentences.length > 1 ? sentences[sentences.length - 1] : null;
+  const experiencesHere = launch ? launch.counts.experiences + launch.counts.activities + launch.counts.events : 0;
+  const launchFacts = launch
+    ? [experiencesHere > 0 && `${experiencesHere} experiences`, launch.counts.trips > 0 && `${launch.counts.trips} trip${launch.counts.trips === 1 ? '' : 's'}`, launch.counts.places > 0 && `${launch.counts.places} places`].filter(Boolean).join(' · ')
+    : '';
+  let tone = 0;
+  const nextTone = () => (tone++ % 2 === 0 ? 'a' : 'b') as 'a' | 'b';
 
   return (
     <PublicShell>
-      {/* Hero: the live globe is the whole background; the words sit over it.
-          Fills the screen on any phone, tablet or computer (svh = the visible
-          height, so browser toolbars never push content off). */}
+      {/* Hero: the live globe is the whole background. Phones and tablets:
+          headline above, globe between, buttons below. Computers: words left,
+          globe right. The height follows the visible screen (svh) but grows
+          when the content needs more room, so nothing is ever cut off. */}
       <section className="band-hero relative isolate overflow-hidden text-white">
-        <div className="relative h-[max(27rem,calc(100svh-10.5rem))] max-h-[60rem] md:h-[max(32rem,calc(100svh-9rem))]">
+        <div className="relative flex min-h-[max(34rem,calc(100svh-7rem))] md:min-h-[max(38rem,calc(100svh-4.5rem))] lg:min-h-[max(34rem,min(calc(100svh-4.5rem),56rem))]">
           <WorldMap catalogue={catalogue} home={homePoint} background />
-          {/* Shade so the words stay readable over the globe. */}
-          <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(4,18,30,0.92)_0%,rgba(4,18,30,0.55)_38%,rgba(4,18,30,0)_62%)] lg:bg-[linear-gradient(90deg,rgba(4,18,30,0.94)_0%,rgba(4,18,30,0.7)_34%,rgba(4,18,30,0)_58%)]" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-16 bg-gradient-to-t from-[#04121e] to-transparent" />
-          <div className="shell pointer-events-none relative z-[3] flex h-full flex-col pt-5 md:pt-10 lg:justify-center lg:pt-0">
-            <div className="max-w-xl [&_a]:pointer-events-auto">
+          <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(4,18,30,0.95)_0%,rgba(4,18,30,0.55)_26%,rgba(4,18,30,0)_42%,rgba(4,18,30,0)_58%,rgba(4,18,30,0.8)_74%,rgba(4,18,30,0.97)_100%)] lg:bg-[linear-gradient(90deg,rgba(4,18,30,0.95)_0%,rgba(4,18,30,0.75)_34%,rgba(4,18,30,0)_56%)]" />
+          <div className="shell pointer-events-none relative z-[3] flex w-full flex-col justify-between gap-[clamp(9rem,34svh,22rem)] py-6 text-center md:py-10 lg:justify-center lg:gap-8 lg:py-12 lg:text-left [&_a]:pointer-events-auto">
+            <div className="mx-auto max-w-xl lg:mx-0">
               <p className="text-[0.625rem] font-bold uppercase tracking-[0.22em] text-clay-400 md:text-xs">{hero.eyebrow}</p>
-              <h1 className="mt-1.5 font-display text-[clamp(1.75rem,7.2vw,4.2rem)] leading-[1.04]">{hero.title}</h1>
-              <p className="mt-2 line-clamp-3 max-w-lg text-[0.8125rem] leading-snug text-white/80 md:mt-3 md:text-lg md:leading-relaxed">{hero.subtitle}</p>
-              <div className="mt-3.5 flex flex-wrap items-center gap-2 md:mt-6 md:gap-2.5">
-                <Link href={hero.primaryHref} className="inline-flex h-10 items-center rounded-full bg-clay-400 px-4 text-[0.8125rem] font-bold text-acacia-700 shadow-lg transition hover:bg-clay-500 hover:text-white md:h-12 md:px-7 md:text-sm">
+              <h1 className="mt-2 font-display text-[clamp(1.9rem,8vw,4.4rem)] leading-[1.04]">
+                {lead}
+                {gold && <span className="block text-clay-400">{gold}</span>}
+              </h1>
+              <p className="mx-auto mt-2.5 max-w-md text-[0.875rem] leading-snug text-white/80 md:text-lg md:leading-relaxed lg:mx-0">{hero.subtitle}</p>
+            </div>
+            <div className="mx-auto grid w-full max-w-sm gap-2.5 sm:max-w-xl lg:mx-0">
+              {launch && (
+                <Link href={`/destinations/${launch.slug}`} className="flex items-center gap-3 rounded-full border border-white/15 bg-[#04121e]/60 py-1.5 pl-1.5 pr-4 text-left backdrop-blur hover:border-clay-400 sm:w-fit">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-clay-400 text-acacia-700"><Icon d={ICON.pin} size={18} /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold leading-tight">{launch.name}</span>
+                    <span className="block truncate text-[0.6875rem] text-white/65">{launchFacts || 'Our home — see what is on'}</span>
+                  </span>
+                  <span aria-hidden>→</span>
+                </Link>
+              )}
+              <div className="grid gap-2.5 sm:grid-cols-3 sm:gap-2">
+                <Link href={hero.primaryHref} className="inline-flex h-12 items-center justify-center rounded-full bg-clay-400 px-4 text-sm font-bold text-acacia-700 shadow-lg transition hover:bg-clay-500 hover:text-white">
                   {hero.primaryLabel} →
                 </Link>
-                <Link href={hero.secondaryHref} className="inline-flex h-10 items-center rounded-full border border-white/40 bg-[#04121e]/30 px-4 text-[0.8125rem] font-semibold backdrop-blur hover:bg-white/10 md:h-12 md:px-7 md:text-sm">
+                <Link href={hero.secondaryHref} className="inline-flex h-12 items-center justify-center rounded-full border border-white/45 bg-[#04121e]/40 px-4 text-sm font-semibold backdrop-blur hover:bg-white/10">
                   {hero.secondaryLabel}
                 </Link>
-                <Link href="/donate" className="px-1 text-[0.8125rem] font-semibold text-clay-400 underline-offset-4 hover:underline md:text-sm">Donate</Link>
+                <Link href="/impact" className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/45 bg-[#04121e]/40 px-4 text-sm font-semibold backdrop-blur hover:bg-white/10">
+                  <Icon d={ICON.heart} size={16} /> Support WSC
+                </Link>
               </div>
-              {/* WSC: part of the hero, not a sticker on it. */}
-              <Link href="/impact" className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full border border-white/15 bg-[#04121e]/40 py-0.5 pl-0.5 pr-3 text-[0.6875rem] text-white/85 backdrop-blur transition hover:bg-white/[0.12] md:mt-5 md:text-[0.75rem]">
-                <span className="shrink-0 rounded-full bg-white px-1.5 py-0.5"><WscLogo src="/brand/refined/wsc-logo.png" height={16} /></span>
-                <span className="truncate">Impact work with <strong className="font-semibold text-white">WSC — We Save Children</strong></span>
-              </Link>
             </div>
-          </div>
-        </div>
-        <div className="relative z-[3] border-t border-clay-400/30 bg-[#04121e]">
-          <div className="shell grid grid-cols-3 divide-x divide-white/10 py-3 text-center">
-            {[
-              ['Explore', 'Travel further'],
-              ['Connect', 'Meet, share, belong'],
-              ['Create impact', 'Together, better'],
-            ].map(([title, line]) => (
-              <div key={title} className="min-w-0 px-2">
-                <p className="truncate font-display text-[0.95rem] uppercase tracking-wide text-clay-400 md:text-lg">{title}</p>
-                <p className="truncate text-[0.625rem] text-white/60 md:text-xs">{line}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
 
       {homeBanners.map((banner) => (
-        <section key={banner.id} className="shell pt-5">
-          <div className="flex flex-col gap-2 rounded-2xl bg-[color:var(--color-cream)] p-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="font-display text-xl text-acacia-700">{banner.message}</p>
-            {banner.linkUrl && <Link href={banner.linkUrl} className="inline-flex h-10 shrink-0 items-center rounded-full bg-acacia-600 px-4 text-sm font-bold text-white">{banner.linkLabel || 'Find out more'}</Link>}
+        <section key={banner.id} className="band band-dark-b text-white">
+          <div className="shell flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-display text-xl">{banner.message}</p>
+            {banner.linkUrl && <Link href={banner.linkUrl} className="inline-flex h-11 shrink-0 items-center justify-center rounded-full bg-clay-400 px-5 text-sm font-bold text-acacia-700">{banner.linkLabel || 'Find out more'}</Link>}
           </div>
         </section>
       ))}
@@ -148,31 +249,9 @@ export default async function HomePage() {
       {settings.homepage.sections
         .filter((section) => section.enabled)
         .map((section) => (
-          <HomeSection key={section.key} sectionKey={section.key} title={section.title} subtitle={section.subtitle} home={home} hub={hub} trending={trending?.items ?? []} site={site} catalogue={catalogue} />
+          <HomeSection key={section.key} sectionKey={section.key} title={section.title} subtitle={section.subtitle} home={home} hub={hub} trending={trending?.items ?? []} site={site} catalogue={catalogue} tone={nextTone} />
         ))}
     </PublicShell>
-  );
-}
-
-function TripFeature({ trip }: { trip: TripListing }) {
-  const next = trip.nextDeparture;
-  return (
-    <Link href={`/travel/${trip.slug}`} className="card-lift group grid overflow-hidden rounded-2xl border border-line bg-white sm:grid-cols-[1.1fr_1fr]">
-      <div className="relative aspect-[16/10] sm:aspect-auto sm:min-h-[13rem]">
-        <SmartImage src={trip.heroImage} alt="" fill sizes="(max-width:640px) 100vw, 30vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.04]" />
-      </div>
-      <div className="p-4">
-        <p className="text-[0.625rem] font-bold uppercase tracking-[0.16em] text-clay-600">{trip.destinationLabel}</p>
-        <h3 className="mt-1 font-display text-[1.35rem] leading-tight text-acacia-700">{trip.title}</h3>
-        <ul className="mt-2 space-y-1 text-[0.8125rem] text-ink-soft">
-          {next && <li>📅 {tripDates(next.startDate, next.endDate)}</li>}
-          <li>⏱ {trip.durationDays} days{trip.durationNights ? ` / ${trip.durationNights} nights` : ''}</li>
-          {next && <li>💳 {formatMoney({ amount: next.price, currency: trip.currency })} per person</li>}
-          {next && <li>👥 {next.seatsLeft} places left</li>}
-        </ul>
-        <span className="mt-3 inline-flex h-9 items-center rounded-full bg-clay-400 px-4 text-[0.8125rem] font-bold text-acacia-700">View trip →</span>
-      </div>
-    </Link>
   );
 }
 
@@ -185,6 +264,7 @@ function HomeSection({
   trending,
   site,
   catalogue,
+  tone,
 }: {
   sectionKey: HomepageSectionKey;
   title: string;
@@ -194,141 +274,141 @@ function HomeSection({
   trending: TrendingItem[];
   site: Site;
   catalogue: Catalogue;
+  tone: () => 'a' | 'b';
 }) {
   const { settings } = site;
   switch (sectionKey) {
     case 'discover':
       return (
-        <section className="band band-ivory">
-          <div className="shell py-6 md:py-12">
-          <p className="band-kicker mb-2.5 text-clay-600">Four ways in</p>
-          <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-4">
+        <Band tone={tone()}>
+          <Head icon={ICON.sparkle} title="Discover Enhakkore" />
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-5">
             {PILLARS.map((pillar) => (
-              <Link key={pillar.href} href={pillar.href} className="group relative block h-[8.5rem] overflow-hidden rounded-2xl md:h-[13rem]">
-                <SmartImage src={pillar.image} alt="" fill sizes="(max-width:768px) 50vw, 25vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.06]" />
-                <div className="absolute inset-0 bg-gradient-to-t from-acacia-900/90 via-acacia-900/30 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3 text-white md:p-4">
+              <Link key={pillar.href} href={pillar.href} className="card-lift group relative block aspect-[4/3.6] overflow-hidden rounded-2xl border border-white/10 sm:aspect-[16/10] lg:aspect-[4/4.4]">
+                <SmartImage src={pillar.image} alt="" fill sizes="(max-width:1024px) 50vw, 25vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.06]" />
+                <div className={`absolute inset-0 bg-gradient-to-t ${pillar.tint} to-transparent`} />
+                <div className="absolute inset-0 flex flex-col justify-between p-3 md:p-5">
+                  <span className="text-clay-400"><Icon d={pillar.icon} size={26} /></span>
                   <div>
-                    <span className="text-clay-400"><Icon d={pillar.icon} /></span>
-                    <p className="mt-0.5 font-display text-[1.25rem] leading-none md:text-[1.6rem]">{pillar.title}</p>
-                    <p className="mt-1 text-[0.6875rem] text-white/75 md:text-xs">{pillar.line}</p>
+                    <p className="font-display text-[clamp(1.2rem,4.6vw,1.9rem)] leading-none">{pillar.title}</p>
+                    <p className="mt-1 line-clamp-2 text-[0.6875rem] text-white/85 md:text-sm">{pillar.line}</p>
                   </div>
-                  <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/50 text-sm transition group-hover:bg-clay-400 group-hover:text-acacia-700">→</span>
                 </div>
               </Link>
             ))}
           </div>
-          </div>
-        </section>
+        </Band>
       );
     case 'happening': {
       const trips = (home?.trips ?? []).filter((trip) => trip.nextDeparture);
       const events = hub?.upcoming ?? [];
       return (
-        <section className="band band-white">
-        <div className="shell grid grid-cols-[minmax(0,1fr)] gap-6 py-7 md:py-12 lg:grid-cols-2 lg:gap-10 [&>*]:min-w-0">
-          <div>
-            <div className="mb-3 flex items-end justify-between">
-              <h2 className="font-display text-[1.45rem] text-acacia-700 md:text-[2rem]">✈ Upcoming trips</h2>
-              <Link href="/travel" className="text-[0.8125rem] font-semibold text-acacia-600">See all trips →</Link>
-            </div>
-            {trips.length ? <div className="grid gap-3">{trips.slice(0, 2).map((trip) => <TripFeature key={trip.slug} trip={trip} />)}</div> : <p className="rounded-2xl bg-[color:var(--color-cream)] p-4 text-sm text-ink-muted">The next trip is being prepared.</p>}
-          </div>
-          <div>
-            <div className="mb-3 flex items-end justify-between">
-              <h2 className="font-display text-[1.45rem] text-acacia-700 md:text-[2rem]">📅 {title}</h2>
-              <Link href="/experiences#upcoming" className="text-[0.8125rem] font-semibold text-acacia-600">See all →</Link>
-            </div>
-            <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white">
-              {events.slice(0, 5).map((item) => (
-                <li key={`${item.kind}-${item.id}`}>
-                  <Link href={item.href} className="flex items-center gap-3 p-2.5 hover:bg-sand">
-                    <div className="relative h-14 w-16 shrink-0 overflow-hidden rounded-lg bg-acacia-700">{item.image && <SmartImage src={item.image} alt="" fill sizes="64px" className="object-cover" />}</div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[0.625rem] font-bold uppercase tracking-wider text-clay-600">{item.kind}{item.category ? ` · ${item.category}` : ''}{item.isDemo ? ' · demo' : ''}</p>
-                      <p className="truncate font-semibold text-ink">{item.title}</p>
-                      <p className="truncate text-xs text-ink-muted">{item.startsAt ? formatInZone(item.startsAt, 'Africa/Dar_es_Salaam', 'datetime') : item.recurrence ?? ''}{item.where ? ` · ${item.where}` : ''}</p>
-                    </div>
-                    <span className="text-ink-faint">›</span>
-                  </Link>
-                </li>
-              ))}
-              {!events.length && <li className="p-4 text-sm text-ink-muted">Nothing scheduled yet. <Link href="/experiences/publish" className="font-semibold text-acacia-600 underline">Publish an activity</Link>.</li>}
-            </ul>
-          </div>
-        </div>
-        </section>
+        <>
+          <Band tone={tone()}>
+            <Head icon={ICON.calendar} title={title} href="/experiences#upcoming" />
+            {events.length ? (
+              <Rail>{events.slice(0, 8).map((item) => <HappeningCard key={`${item.kind}-${item.id}`} item={item} />)}</Rail>
+            ) : (
+              <p className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm text-white/70">Nothing scheduled yet. <Link href="/experiences/publish" className="font-semibold text-clay-400 underline">Publish an activity</Link>.</p>
+            )}
+          </Band>
+          <Band tone={tone()}>
+            <Head icon={ICON.plane} title="Upcoming trips" href="/travel" />
+            {trips.length ? (
+              <div className="grid gap-3 lg:grid-cols-2 lg:gap-5">{trips.slice(0, 2).map((trip) => <TripBanner key={trip.slug} trip={trip} />)}</div>
+            ) : (
+              <p className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm text-white/70">The next trip is being prepared.</p>
+            )}
+          </Band>
+        </>
       );
     }
     case 'interests':
       return (
-        <section className="band band-navy">
-          <div className="shell py-6 md:py-9">
-            <p className="band-kicker mb-2.5 text-clay-400">{title}</p>
-            <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto overscroll-x-contain px-5 md:mx-0 md:flex-wrap md:px-0">
-              {INTERESTS.map((interest) => (
-                <Link key={interest.href} href={interest.href} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-2 text-[0.8125rem] font-semibold text-white hover:border-clay-400">
-                  <span aria-hidden>{interest.icon}</span>
-                  {interest.label}
-                </Link>
-              ))}
-            </div>
+        <Band tone={tone()}>
+          <Head icon={ICON.sparkle} title={title} />
+          <div className="grid grid-cols-4 gap-2 sm:gap-3 lg:grid-cols-8">
+            {INTERESTS.map((interest) => (
+              <Link key={interest.label} href={interest.href} className={`flex aspect-square min-h-[4.25rem] flex-col items-center justify-center gap-1 rounded-2xl p-1 ring-1 transition hover:ring-clay-400 sm:aspect-[5/4] ${interest.tone}`}>
+                <span className="text-[clamp(1.3rem,5.5vw,1.9rem)] leading-none" aria-hidden>{interest.icon}</span>
+                <span className="w-full truncate text-center text-[0.6875rem] font-semibold sm:text-sm">{interest.label}</span>
+              </Link>
+            ))}
           </div>
-        </section>
+        </Band>
       );
     case 'destinations': {
-      const countries = catalogue.countries.filter((country) => country.total > 0 || country.featured);
-      const cities = countries.flatMap((country) => country.cities.filter((city) => city.total > 0).map((city) => ({ city, country }))).slice(0, 8);
-      if (!cities.length && !countries.length) return null;
+      const cities = catalogue.countries
+        .flatMap((country) => country.cities.filter((city) => city.total > 0 || city.featured).map((city) => ({ city, country })))
+        .sort((a, b) => b.city.total - a.city.total)
+        .slice(0, 8);
+      if (!cities.length) return null;
       return (
-        <Rail title={title} kicker="Destinations" href="/destinations" tone="gold">
-          {(cities.length ? cities : countries.map((country) => ({ city: null, country }))).map(({ city, country }) => (
-            <Link key={city?.slug ?? country.slug} href={city ? `/destinations/${country.slug}/${city.slug}` : `/destinations/${country.slug}`} className="card-lift block rounded-2xl border border-line bg-white p-3.5">
-              <p className="text-[0.625rem] font-bold uppercase tracking-wider text-clay-600">{country.name}</p>
-              <p className="mt-0.5 font-display text-[1.25rem] leading-tight text-acacia-700">{city?.name ?? country.name}</p>
-              <p className="mt-1 text-xs text-ink-muted">{(city ?? country).total} listing{(city ?? country).total === 1 ? '' : 's'}</p>
-            </Link>
-          ))}
-        </Rail>
+        <Band tone={tone()}>
+          <Head icon={ICON.pin} title={title} href="/destinations" />
+          <Rail kind="tiles">
+            {cities.map(({ city, country }) => {
+              const photo = city.heroImage ?? PLACE_PHOTOS[city.slug] ?? country.heroImage ?? null;
+              return (
+                <Link key={city.slug} href={`/destinations/${country.slug}/${city.slug}`} className="card-lift group relative block aspect-[3/4] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#16456b] to-[#0a1a2e]">
+                  {photo && <SmartImage src={photo} alt="" fill sizes="(max-width:768px) 30vw, 12vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.06]" />}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#04121e]/95 via-transparent to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-2.5">
+                    <p className="truncate font-semibold leading-tight">{city.name}</p>
+                    <p className="truncate text-[0.625rem] text-white/65">{country.name} · {city.total} listing{city.total === 1 ? '' : 's'}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </Rail>
+        </Band>
       );
     }
     case 'upcoming': {
       const places = home?.places ?? [];
       if (!places.length) return null;
       return (
-        <Rail title="Featured places" kicker="Explore" href="/explore" tone="white">
-          {places.slice(0, 8).map((item) => (
-            <ListingCard
-              key={item.id}
-              href={`/explore/${item.slug}`}
-              image={item.coverImage}
-              kicker={item.category?.name}
-              title={String(item.name)}
-              meta={[[item.city?.name, item.country?.name].filter(Boolean).join(', '), item.infoSource === 'VERIFIED' ? 'Verified' : 'Not yet verified']}
-              badges={item.isDemo ? [{ label: 'Demo', tone: 'demo' }] : item.sponsored ? [{ label: 'Sponsored', tone: 'gold' }] : []}
-            />
-          ))}
-        </Rail>
+        <Band tone={tone()}>
+          <Head icon={ICON.pin} title="Featured places" href="/explore" />
+          <Rail kind="listings">
+            {places.slice(0, 8).map((item) => (
+              <ListingCard
+                key={item.id}
+                href={`/explore/${item.slug}`}
+                image={item.coverImage}
+                kicker={item.category?.name}
+                title={String(item.name)}
+                meta={[[item.city?.name, item.country?.name].filter(Boolean).join(', '), item.infoSource === 'VERIFIED' ? 'Verified by Enhakkore' : 'Not yet verified']}
+                badges={item.isDemo ? [{ label: 'Demo', tone: 'demo' }] : item.sponsored ? [{ label: 'Sponsored', tone: 'gold' }] : []}
+              />
+            ))}
+          </Rail>
+        </Band>
       );
     }
     case 'trending': {
-      const items = trending.length ? trending : [];
       const gaming = (hub?.upcoming ?? []).filter((item) => item.kind === 'Gaming').slice(0, 4);
       return (
         <>
-          {items.length > 0 && (
-            <Rail title={title} kicker="Trending" tone="ivory">
-              {items.slice(0, 8).map((item) => (
-                <ListingCard key={item.href} href={item.href} image={item.image} kicker={item.kind} title={item.title} meta={[item.where]} badges={item.sponsored ? [{ label: 'Sponsored', tone: 'gold' }] : []} />
-              ))}
-            </Rail>
+          {trending.length > 0 && (
+            <Band tone={tone()}>
+              <Head icon={ICON.fire} title={title} sub="Ranked by what members actually view, save and join." />
+              <Rail kind="listings">
+                {trending.slice(0, 8).map((item) => (
+                  <ListingCard key={item.href} href={item.href} image={item.image} kicker={item.kind} title={item.title} meta={[item.where]} badges={item.sponsored ? [{ label: 'Sponsored', tone: 'gold' }] : []} />
+                ))}
+              </Rail>
+            </Band>
           )}
           {gaming.length > 0 && (
-            <Rail title="Gaming & esports" kicker="Free tournaments" href="/experiences/gaming" tone="gaming" image={settings.gaming.heroImage}>
-              {gaming.map((item) => (
-                <ListingCard key={item.id} href={item.href} image={item.image} kicker={item.category} title={item.title} meta={[item.startsAt ? formatInZone(item.startsAt, 'Africa/Dar_es_Salaam', 'datetime') : null, item.where]} badges={[...(item.isDemo ? [{ label: 'Demo', tone: 'demo' as const }] : []), { label: 'Free', tone: 'green' as const }]} />
-              ))}
-            </Rail>
+            <section className="band band-gaming relative text-white">
+              <SmartImage src={settings.gaming.heroImage} alt="" fill sizes="100vw" className="object-cover opacity-25" />
+              <div className="absolute inset-0 bg-gradient-to-b from-[#0b0a24]/80 to-[#04121e]/95" />
+              <div className="shell relative py-7 md:py-12">
+                <Head icon={ICON.sparkle} title="Gaming & esports" href="/experiences/gaming" sub="Free tournaments, squads and console nights." />
+                <Rail>{gaming.map((item) => <HappeningCard key={item.id} item={item} />)}</Rail>
+              </div>
+            </section>
           )}
         </>
       );
@@ -336,51 +416,71 @@ function HomeSection({
     case 'impact': {
       const project = home?.impact?.[0];
       return (
-        <section className="band band-impact">
-          <div className="grid lg:grid-cols-[1fr_1.2fr_0.8fr]">
-            <div className="relative h-44 sm:h-56 lg:h-auto">
-              <SmartImage src={project?.heroImage ?? '/impact/mkuranga/cover.webp'} alt="Mkuranga outreach with WSC" fill sizes="(max-width:1024px) 100vw, 33vw" className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#f3e3bd] via-transparent to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-[#f6e9c8]" />
+        <Band tone={tone()}>
+          <Head icon={ICON.heart} title={title} sub="WSC — We Save Children" />
+          <div className="grid overflow-hidden rounded-2xl border border-clay-400/40 bg-[#0d2240] md:grid-cols-[1.1fr_1fr]">
+            <div className="relative aspect-[16/10] md:aspect-auto md:min-h-[18rem]">
+              <SmartImage src={project?.heroImage ?? '/impact/mkuranga/cover.webp'} alt="Community outreach with WSC" fill sizes="(max-width:768px) 100vw, 50vw" className="object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0d2240] to-transparent md:bg-gradient-to-r md:from-transparent md:to-[#0d2240]" />
             </div>
-            <div className="px-5 py-7 text-center lg:py-12">
-              <p className="band-kicker text-clay-700">Enhakkore Impact</p>
-              <h2 className="mt-2 font-display text-[1.7rem] leading-tight text-acacia-700 md:text-[2.3rem]">{title}</h2>
-              <p className="mx-auto mt-2 max-w-md text-sm text-ink-soft">{subtitle}</p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                <Link href="/donate" className="inline-flex h-10 items-center rounded-full bg-acacia-700 px-5 text-sm font-bold text-white">Donate now →</Link>
-                {project && <Link href={`/impact/${project.slug}`} className="inline-flex h-10 max-w-full items-center truncate rounded-full border border-acacia-700/30 px-5 text-sm font-semibold text-acacia-700">{project.title}</Link>}
+            <div className="flex flex-col justify-center gap-3 p-5 md:p-8">
+              <span className="w-fit rounded-xl bg-white p-1.5"><WscLogo src="/brand/refined/wsc-logo.png" height={38} /></span>
+              <p className="text-[0.9375rem] leading-relaxed text-white/85 md:text-lg">{subtitle}</p>
+              <div className="flex flex-wrap gap-2">
+                <Link href="/impact" className="inline-flex h-11 items-center rounded-full bg-clay-400 px-5 text-sm font-bold text-acacia-700">See our impact →</Link>
+                <Link href="/donate" className="inline-flex h-11 items-center rounded-full border border-white/40 px-5 text-sm font-semibold">Donate</Link>
               </div>
             </div>
-            <div className="flex items-center justify-center gap-3 border-t border-clay-400/40 px-5 py-5 lg:border-l lg:border-t-0">
-              <span className="rounded-xl bg-white p-2 shadow-sm"><WscLogo src="/brand/refined/wsc-logo.png" height={44} /></span>
-              <p className="text-sm text-ink-soft">In partnership with<br /><strong className="text-acacia-700">WSC — We Save Children</strong></p>
-            </div>
           </div>
-        </section>
+        </Band>
       );
     }
     case 'join':
       return (
-        <section className="band band-white">
-          <div className="shell grid grid-cols-[minmax(0,1fr)] gap-4 py-8 md:grid-cols-2 md:items-center md:py-12">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl" aria-hidden>🤝</span>
-              <div className="min-w-0">
-                <p className="font-display text-xl text-acacia-700 md:text-2xl">Partner with Enhakkore</p>
-                <p className="text-sm text-ink-muted">List your hotel, restaurant, venue or event.</p>
+        <Band tone={tone()}>
+          <div className="grid gap-4 lg:grid-cols-3 lg:gap-5">
+            <div className="rounded-2xl border border-white/10 bg-[#0d2240] p-5">
+              <Head icon={ICON.users} title={title} />
+              <p className="text-sm text-white/75">Free — join activities, communities, trips and tournaments.</p>
+              <div className="mt-4 grid grid-cols-3 divide-x divide-white/10 text-center text-xs">
+                {[
+                  [ICON.sparkle, 'Discover more'],
+                  [ICON.users, 'Meet people'],
+                  [ICON.heart, 'Create impact'],
+                ].map(([d, label]) => (
+                  <div key={label} className="flex flex-col items-center gap-1 px-1">
+                    <span className="text-clay-400"><Icon d={d!} size={22} /></span>
+                    {label}
+                  </div>
+                ))}
               </div>
-              <Link href="/partner" className="ml-auto inline-flex h-10 shrink-0 items-center rounded-full bg-acacia-700 px-4 text-sm font-bold text-white">Partner →</Link>
+              <Link href="/join" className="mt-4 flex h-12 items-center justify-center rounded-full bg-clay-400 text-sm font-bold text-acacia-700">Create free account →</Link>
             </div>
-            <div className="flex items-center gap-3 md:border-l md:border-clay-400/40 md:pl-6">
-              <span className="text-3xl" aria-hidden>✨</span>
-              <div className="min-w-0">
-                <p className="font-display text-xl text-acacia-700 md:text-2xl">{title}</p>
-                <p className="text-sm text-ink-muted">Free — join activities, communities, trips and tournaments.</p>
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 p-5">
+              <SmartImage src="/packages/arusha/cultural-heritage-centre.webp" alt="" fill sizes="(max-width:1024px) 100vw, 33vw" className="object-cover opacity-40" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#0d2240] via-[#0d2240]/85 to-[#0d2240]/40" />
+              <div className="relative">
+                <Head icon={ICON.handshake} title="Partner with us" />
+                <p className="text-sm text-white/80">Hotels, restaurants, venues, event organisers and sponsors — list your business or work with us.</p>
+                <Link href="/partner" className="mt-4 inline-flex h-11 items-center rounded-full border border-white/50 px-5 text-sm font-semibold hover:bg-white/10">Partner with Enhakkore →</Link>
               </div>
-              <Link href="/join" className="ml-auto inline-flex h-10 shrink-0 items-center rounded-full bg-clay-400 px-4 text-sm font-bold text-acacia-700">Join →</Link>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-[#0d2240] p-5">
+              <Head icon={ICON.send} title="Stay connected" />
+              <p className="text-sm text-white/75">Trip updates, new events and impact stories — follow us.</p>
+              <ul className="mt-4 flex flex-wrap gap-2" aria-label="Social media">
+                {settings.social.map((link) => (
+                  <li key={link.url} className="max-w-full">
+                    <a href={link.url} target="_blank" rel="noreferrer noopener" className="inline-flex h-11 max-w-full items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3.5 text-[0.8125rem] font-semibold hover:border-clay-400">
+                      <SocialIcon platform={link.platform} size={16} />
+                      <span className="truncate">{link.handle || link.label}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
-        </section>
+        </Band>
       );
     default:
       return null;

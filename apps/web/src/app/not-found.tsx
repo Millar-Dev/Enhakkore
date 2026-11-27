@@ -44,7 +44,7 @@ export default function NotFound() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-ink-muted transition-colors hover:text-acacia-700"
+                className="inline-flex min-h-10 items-center text-ink-muted transition-colors hover:text-acacia-700"
               >
                 {link.label}
               </Link>

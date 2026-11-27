@@ -86,7 +86,7 @@ export default async function GamingPage({ searchParams }: { searchParams: Promi
             {['Online esports', 'Squad competitions', 'PS & console nights', 'Gaming communities'].map((label) => <span key={label} className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5">{label}</span>)}
           </div>
           <form action="/experiences/gaming" className="mt-7 flex flex-col gap-2 rounded-[1.2rem] bg-white p-3 sm:flex-row">
-            <input name="q" defaultValue={params.q} placeholder="Search a game — e.g. Free Fire" className="field h-12 flex-1 text-ink" aria-label="Search gaming" />
+            <input name="q" defaultValue={params.q} placeholder="Search a game — e.g. Free Fire" className="field h-12 w-full sm:flex-1 text-ink" aria-label="Search gaming" />
             <button className="h-12 rounded-[var(--radius-field)] bg-clay-400 px-6 font-bold text-acacia-700">Search</button>
           </form>
         </div>

@@ -19,7 +19,8 @@ const TABS = [
   { href: '/explore', label: 'Explore', icon: Icon.pin },
   { href: '/experiences', label: 'Experiences', icon: Icon.users },
   { href: '/travel', label: 'Travel', icon: Icon.compass },
-  { href: "/impact", label: "Impact", icon: Icon.heart },
+  // Impact stays one tap away in the header menu and on the homepage.
+  { href: '/account', label: 'Me', icon: Icon.user },
 ];
 
 // Screens with their own pinned bottom action, or their own navigation.
@@ -58,7 +59,7 @@ export function MobileTabBar() {
                 href={tab.href}
                 aria-current={active ? 'page' : undefined}
                 className={cx(
-                  'flex h-14 flex-col items-center justify-center gap-0.5 text-[0.625rem] font-semibold tracking-wide transition-colors',
+                  'flex h-14 min-w-0 flex-col items-center justify-center gap-0.5 truncate px-0.5 text-[0.625rem] font-semibold tracking-wide transition-colors',
                   active ? 'text-clay-400' : 'text-white/65',
                 )}
               >

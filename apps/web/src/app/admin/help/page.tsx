@@ -25,7 +25,7 @@ export default function AdminHelpPage() {
             <ol className="mt-2 grid gap-1 text-sm">
               {toc.map((item) => (
                 <li key={item.id}>
-                  <a href={`#${item.id}`} className="block rounded-lg px-2 py-1 text-ink-soft hover:bg-sand-50 hover:text-acacia-700">{item.title}</a>
+                  <a href={`#${item.id}`} className="flex min-h-10 items-center rounded-lg px-2 py-1 text-ink-soft hover:bg-sand-50 hover:text-acacia-700">{item.title}</a>
                 </li>
               ))}
             </ol>

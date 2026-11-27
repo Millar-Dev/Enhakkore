@@ -145,6 +145,7 @@ publicRouter.get(
               timezone: true,
               latitude: true,
               longitude: true,
+              heroImage: true,
               _count: {
                 select: {
                   activities: { where: LIVE.activity },

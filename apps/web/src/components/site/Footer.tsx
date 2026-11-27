@@ -91,7 +91,26 @@ export function Footer({ settings }: { settings: SiteSettings }) {
             </ul>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 [&>*]:min-w-0">
+          {/* Phones: each group folds open, so the footer stays short. */}
+          <div className="divide-y divide-white/10 border-y border-white/10 sm:hidden">
+            {COLUMNS.map((column) => (
+              <details key={column.title} className="group">
+                <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between text-[0.9375rem] font-semibold text-white [&::-webkit-details-marker]:hidden">
+                  {column.title}
+                  <span className="text-clay-400 transition-transform group-open:rotate-45" aria-hidden>+</span>
+                </summary>
+                <ul className="grid grid-cols-2 gap-x-4 pb-3">
+                  {column.links.map((link) => (
+                    <li key={link.href}>
+                      <Link href={link.href} className="flex min-h-10 items-center text-[0.875rem] text-white/75 hover:text-clay-400">{link.label}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ))}
+          </div>
+
+          <div className="hidden grid-cols-3 gap-8 sm:grid [&>*]:min-w-0">
             {COLUMNS.map((column) => (
               <div key={column.title}>
                 <p className="kicker">{column.title}</p>

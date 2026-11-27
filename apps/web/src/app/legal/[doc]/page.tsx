@@ -27,7 +27,7 @@ export default async function LegalPage({ params }: { params: Promise<{ doc: str
   return (
     <PublicShell>
       <article className="shell max-w-3xl py-14">
-        <Link href="/legal" className="kicker hover:text-acacia-600">Policy Centre · {page.group}</Link>
+        <Link href="/legal" className="kicker inline-flex min-h-10 items-center hover:text-acacia-600">Policy Centre · {page.group}</Link>
         <h1 className="display-md mt-3 text-acacia-700">{page.title}</h1>
         <p className="mt-2 text-xs text-ink-muted">Version {LEGAL_VERSION}</p>
         {!settings.legal.reviewed && (

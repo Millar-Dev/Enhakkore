@@ -55,7 +55,7 @@ export interface CatalogueCountry {
   timezone: string;
   total: number;
   counts: { activities: number; places: number; experiences: number; events: number; trips: number };
-  cities: { id: string; name: string; slug: string; featured: boolean; total: number; latitude?: number | null; longitude?: number | null; counts: CatalogueCountry['counts'] }[];
+  cities: { id: string; name: string; slug: string; featured: boolean; total: number; latitude?: number | null; longitude?: number | null; heroImage?: string | null; counts: CatalogueCountry['counts'] }[];
 }
 
 export interface Catalogue {

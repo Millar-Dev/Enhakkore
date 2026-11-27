@@ -592,3 +592,22 @@ section + .band::before {
   .grid > * { min-width: 0; }
   img, video, iframe, canvas, svg { max-width: 100%; }
 }
+
+/* Dark navy bands (homepage, Experiences): two shades alternate so each
+   section reads as its own place; the gold hairline marks each change. */
+.band-dark-a { background: linear-gradient(180deg, #071a2e 0%, #081d33 100%); }
+.band-dark-b { background: radial-gradient(ellipse at 85% 0%, #123a63 0%, #0b2340 45%, #0a1f38 100%); }
+
+/* Globe controls on phones and tablets sit beside the globe, never over the
+   hero's buttons. */
+@media (max-width: 1023px) {
+  .enh-hud-bg .maplibregl-ctrl-bottom-right { bottom: auto; top: 34%; }
+  .enh-hud-bg .maplibregl-ctrl-bottom-left { bottom: auto; top: 34%; }
+}
+
+/* Touch screens: every control is comfortable to tap. */
+@media (pointer: coarse) {
+  input[type='checkbox'], input[type='radio'] { width: 1.25rem; height: 1.25rem; }
+  summary { min-height: 2.75rem; padding-block: 0.5rem; }
+  label:has(> input[type='checkbox']), label:has(> input[type='radio']) { min-height: 2.75rem; }
+}

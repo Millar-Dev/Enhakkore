@@ -23,7 +23,7 @@ export default async function CommunitiesPage({ searchParams }: { searchParams: 
       <PageHero kicker="Experiences · Communities" title="Find your community" intro="Communities bring people together around what they love — a weekly run, a game, a sport, a craft. Join one to get its announcements and meetups." />
       <section className="shell py-8 md:py-12">
         <form action="/experiences/communities" className="flex flex-col gap-2 rounded-[1.1rem] border border-line bg-white p-3 sm:flex-row">
-          <input name="q" defaultValue={params.q} placeholder="Search communities" className="field h-12 flex-1" aria-label="Search communities" />
+          <input name="q" defaultValue={params.q} placeholder="Search communities" className="field h-12 w-full sm:flex-1" aria-label="Search communities" />
           <button className="h-12 rounded-[var(--radius-field)] bg-acacia-600 px-6 font-bold text-white">Search</button>
         </form>
         <div className="mt-8">

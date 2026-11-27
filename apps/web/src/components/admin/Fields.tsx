@@ -290,7 +290,7 @@ function TagInput({ value, onChange, placeholder }: { value: string[]; onChange:
           }}
           onBlur={add}
           placeholder={placeholder ?? 'Type and press Enter'}
-          className="min-w-32 flex-1 border-0 bg-transparent px-1 py-1 text-sm outline-none"
+          className="min-h-10 min-w-32 flex-1 border-0 bg-transparent px-1 py-1 text-sm outline-none"
         />
       </div>
     </div>

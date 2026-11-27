@@ -44,7 +44,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
             <button className="h-10 rounded-full bg-acacia-600 px-4 text-sm font-bold text-white">Search</button>
           </form>
           <div className="mt-3 flex items-center gap-3 text-xs">
-            <Link href={link({ filters: showFilters ? undefined : '1' })} className="font-semibold text-clay-400">{showFilters ? 'Hide filters' : 'Filters'}</Link>
+            <Link href={link({ filters: showFilters ? undefined : '1' })} className="inline-flex min-h-10 items-center font-semibold text-clay-400">{showFilters ? 'Hide filters' : 'Filters'}</Link>
             {active && <Link href="/search" className="text-white/70 underline">Clear</Link>}
           </div>
           {showFilters && (

@@ -48,7 +48,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
       <section className="relative overflow-hidden bg-[linear-gradient(135deg,#04182a,#0e4269)] text-white">
         {t.coverImage && <SmartImage src={t.coverImage} alt="" fill sizes="100vw" className="object-cover opacity-30" />}
         <div className="shell relative py-12 md:py-16">
-          <Link href="/experiences/gaming" className="kicker !text-clay-400">← Gaming & esports</Link>
+          <Link href="/experiences/gaming" className="kicker !text-clay-400 inline-flex min-h-10 items-center">← Gaming & esports</Link>
           <p className="mt-4 text-sm font-semibold text-clay-400">{t.game?.name} · {TOURNAMENT_KIND_LABELS[t.kind]} · {TOURNAMENT_FORMAT_LABELS[t.format]}{t.teamSize > 1 ? ` (${t.teamSize} players)` : ''}</p>
           <h1 className="display-lg mt-2">{t.title}</h1>
           <p className="mt-3 text-white/80">{when(t.startsAt) ?? 'Date to be announced'}</p>
@@ -112,7 +112,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
           <div>
             <p className="font-display text-xl text-acacia-700">Disputes and appeals</p>
             <Prose text={t.disputeProcedure ?? 'Raise any dispute with the organiser as soon as possible, with screenshots or a recording. See the gaming rules and disputes policy.'} className="mt-2" />
-            <Link href="/legal/gaming" className="mt-2 inline-block text-sm font-semibold text-acacia-600 underline">Gaming rules and disputes</Link>
+            <Link href="/legal/gaming" className="mt-1 inline-flex min-h-10 items-center text-sm font-semibold text-acacia-600 underline">Gaming rules and disputes</Link>
           </div>
         </div>
         <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">

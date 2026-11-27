@@ -125,7 +125,7 @@ export function AdminShell({ title, actions, children, permission }: { title?: s
                 <p className="font-semibold text-ink">{user.name}</p>
                 <p className="text-ink-muted">{user.adminRoleName ?? 'Owner'}</p>
               </div>
-              <button onClick={() => { signOut(); router.replace('/signin'); }} className="ml-1 text-xs font-semibold text-ink-muted hover:text-danger">Sign out</button>
+              <button onClick={() => { signOut(); router.replace('/signin'); }} className="ml-1 inline-flex min-h-10 items-center px-1 text-xs font-semibold text-ink-muted hover:text-danger">Sign out</button>
             </div>
           </div>
         </header>

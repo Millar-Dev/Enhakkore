@@ -89,7 +89,7 @@ export default function StaffPage() {
               <p className="text-xs text-ink-muted">{role.description}</p>
               {owner && (
                 <div className="mt-2 flex gap-2">
-                  <button className="text-xs font-semibold text-acacia-600 underline" onClick={() => setEditing({ ...role })}>Edit permissions</button>
+                  <button className="inline-flex min-h-10 items-center text-xs font-semibold text-acacia-600 underline" onClick={() => setEditing({ ...role })}>Edit permissions</button>
                   {role._count.users === 0 && <button className="text-xs font-semibold text-danger underline" onClick={async () => { if (window.confirm(`Delete the role “${role.name}”?`)) { await api.delete(`/cc/people/roles/${role.id}?confirm=yes`); await roles.reload(); } }}>Delete</button>}
                 </div>
               )}

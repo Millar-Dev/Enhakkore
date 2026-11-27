@@ -131,13 +131,13 @@ export function Empty({ title, body, action }: { title: string; body: string; ac
   );
 }
 
-export function SectionTitle({ kicker, title, subtitle, action }: { kicker?: string; title: string; subtitle?: string | null; action?: ReactNode }) {
+export function SectionTitle({ kicker, title, subtitle, action, dark = false }: { kicker?: string; title: string; subtitle?: string | null; action?: ReactNode; dark?: boolean }) {
   return (
-    <div className="mb-7 flex flex-col gap-3 md:mb-9 md:flex-row md:items-end md:justify-between">
-      <div className="max-w-2xl">
-        {kicker && <p className="kicker">{kicker}</p>}
-        <h2 className="display-md mt-3 text-acacia-700">{title}</h2>
-        {subtitle && <p className="mt-2 text-[0.9375rem] leading-relaxed text-ink-muted">{subtitle}</p>}
+    <div className="mb-5 flex flex-col gap-3 md:mb-9 md:flex-row md:items-end md:justify-between">
+      <div className="min-w-0 max-w-2xl">
+        {kicker && <p className={dark ? 'band-kicker text-clay-400' : 'kicker'}>{kicker}</p>}
+        <h2 className={`display-md mt-2 md:mt-3 ${dark ? 'text-white' : 'text-acacia-700'}`}>{title}</h2>
+        {subtitle && <p className={`mt-2 text-[0.9375rem] leading-relaxed ${dark ? 'text-white/65' : 'text-ink-muted'}`}>{subtitle}</p>}
       </div>
       {action}
     </div>
