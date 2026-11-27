@@ -52,7 +52,7 @@ export function ListingCard({
                 key={badge.label}
                 className={cx(
                   'rounded-full px-2 py-0.5 text-[0.5625rem] font-bold uppercase tracking-[0.06em] shadow-sm md:px-2.5 md:py-1 md:text-[0.6875rem]',
-                  badge.tone === 'demo' && 'bg-[#7c3aed] text-white',
+                  badge.tone === 'demo' && 'bg-[#fff1c9] text-[#7a5a14] ring-1 ring-[#e2c47a]',
                   badge.tone === 'gold' && 'bg-clay-400 text-acacia-700',
                   badge.tone === 'navy' && 'bg-acacia-600 text-white',
                   badge.tone === 'green' && 'bg-safari-500 text-white',

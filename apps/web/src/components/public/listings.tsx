@@ -126,7 +126,7 @@ export function TripPackageCard({ trip }: { trip: TripListing }) {
     <Link href={`/travel/${trip.slug}`} className="card-lift group block overflow-hidden rounded-2xl border border-line bg-white shadow-[0_10px_30px_-18px_rgba(4,18,30,0.5)]">
       <div className="relative aspect-[16/9] overflow-hidden bg-acacia-700">
         <SmartImage src={trip.heroImage} alt="" fill sizes="(max-width:768px) 100vw, (max-width:1280px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.04]" />
-        <span className="absolute left-3 top-3 rounded-full bg-[#5b3aa8] px-2.5 py-1 text-[0.6875rem] font-bold text-white">{trip.isPast ? 'Completed trip' : 'Group trip'}</span>
+        <span className="absolute left-3 top-3 rounded-full bg-[#0b2547] px-2.5 py-1 text-[0.6875rem] font-bold text-clay-400">{trip.isPast ? 'Completed trip' : 'Group trip'}</span>
       </div>
       <div className="p-4">
         <h3 className="text-[1.25rem] font-bold leading-tight text-acacia-700">{trip.title}</h3>

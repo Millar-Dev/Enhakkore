@@ -126,9 +126,13 @@ Trip **requests** (the "Request this trip" form) arrive in **All enquiries**, fi
 
 ![Applications](/manual/08-applications.webp)
 
-## 11. Trip group chats
+## 11. Group chats (trips, events, activities, communities)
 
-Menu → **Travel & Impact → Trip group chats**. Open a group to read it, post
+Menu → **Travel & Impact → Group chats**. Trip groups open automatically for
+confirmed travellers. Events, activities and communities get a chat only when the
+organiser (or a team member) switches **Group chat** on in the listing; members
+open it from the listing page or **My account → Group chats**. Switched off, the
+history stays readable but nobody can post. In trip groups you can open a group to read it, post
 announcements, **pin** messages, **remove** a message or a participant (a reason is
 required and recorded), or **Archive** it (read-only, history kept). Groups also
 become read-only 30 days after the trip. Only confirmed participants and authorised
@@ -140,7 +144,13 @@ team members can open a group.
 
 Menu → **Experiences → Events & activities → + Add activity**. Member submissions
 arrive as **Pending review** (large or paid ones are marked *Enhanced review* —
-verify the organiser first). Use **Publish**, **Unpublish** or **Archive**.
+verify the organiser first; the review note also says when the organiser is not yet
+approved for that category). Use **Publish**, **Unpublish** or **Archive**.
+
+Each activity and event has two R6 settings under **Participants**:
+**Entry check** (*None* by default; *Enhakkore Pass with QR code*; or *Manual
+check-in by reference*) and **Group chat for participants**. Keep *None* for ordinary
+free activities — passes are for paid or controlled entry.
 
 ![Activities](/manual/10-activities.webp)
 
@@ -169,6 +179,14 @@ picture is in **Website settings → Gaming**.
 Menu → **Experiences → Communities**. Members' applications arrive as *Pending
 review*. Open one → publish → use **Members & announcements** to post an
 announcement (every member gets a notification), make moderators or remove members.
+
+**Who can join** (section *Membership*): **Free** (anyone joins at once),
+**Private** (members send a short request) or **Paid membership** (members send a
+request; the fee, period, benefits and terms are shown on the page, kept separate from
+the cost of any event). Online payment is **not switched on**, so for paid communities
+the team arranges payment directly and then approves. Requests appear in **Members &
+announcements** marked *Request* — press **Approve** or **Decline**; the member is
+notified either way.
 
 ![Communities](/manual/12-communities.webp)
 
@@ -232,14 +250,21 @@ and are recorded; *Change history → Restore previous value* undoes a mistake.
 
 Menu → **Content → Homepage editor**: hero text and buttons (headline, introduction,
 "Explore Now" and "Discover Experiences"), and each section's title, order (↑ ↓) and
-on/off switch: Explore Our World, Upcoming Experiences, What's Happening Now,
-Upcoming Trips, Featured Destinations, Travel With Purpose, Enhakkore Impact,
-Discover & Review, Join the Community, Partner With Enhakkore.
+on/off switch: Explore Enhakkore (the four main categories and the *Discovering in …
+Change* bar), Upcoming Experiences, What's Happening Now, Upcoming Trips, Featured
+Destinations, Travel With Purpose, Discover & Review, Enhakkore Impact, Join the
+Community, Partner With Enhakkore.
 
 **The globe.** The homepage globe shows every published activity, event, trip,
 place, tournament, community and Impact project that has a city or coordinates.
-Visitors tap **Locate** to filter by category and open a card for each one. Rename,
-hide or reorder the Locate categories under **Settings → Homepage globe**. Something
+Visitors tap **Locate**, choose one of four groups — **Explore** (stays, food,
+venues, attractions), **Experiences** (the eight sections), **Travel** (group,
+private, safaris, beach & island, holiday packages, international) and **Impact**
+(community projects, children's initiatives, volunteering, donations, stories) —
+then a subcategory, and open a card for each pin. Subcategories with nothing on the
+map (volunteering, donations, stories, private trips) link to their pages instead.
+Scrolling past the globe closes Locate automatically. The subcategory comes from the
+listing itself: the category's section, the trip type, or the Impact project. Something
 missing from the globe? Give it a city (or exact coordinates for places and projects).
 
 **Page pictures.** The photographs at the top of Explore, Experiences, Travel and
@@ -255,7 +280,7 @@ logos → Logo on dark URL**.
 
 ## 24. Archiving and removing demo records
 
-Demo records show a purple **DEMO** label everywhere. In any list use **DEMO only**,
+Demo records show an amber **DEMO** label everywhere. In any list use **DEMO only**,
 then **Archive all DEMO** or **Delete all DEMO**, or tick rows and use the bulk bar
 (Publish / Unpublish / Archive / Delete). Deleting asks for confirmation and is logged.
 
@@ -296,7 +321,89 @@ Tanzanian law; then tick **Reviewed**. The public Policy Centre is at `/legal`.
 Menu → **Website settings**: brand (name, slogan, logos), search engines, menu,
 launch city, catering, gaming hero, impact wording and donation confirmation.
 
-## 30. Troubleshooting
+## 30. Organiser applications (Host & Organise)
+
+Members apply at **Experiences → Host & Organise** with their legal name, phone,
+email, country and city, the categories they want, past experience, a description,
+links and agreement to the organiser rules. Menu → **Experiences → Organiser
+applications** lists them by status: *Submitted*, *Under review*, *More information
+required*, *Approved*, *Rejected*, *Suspended*.
+
+1. Open an application and read it. Press **Mark under review**.
+2. **Check identity outside the website** — a phone or video call, or in person,
+   where you see an ID. In **How identity was checked**, write only what you did
+   (e.g. "Video call 12 Dec, national ID seen by Asha"). **Never type an ID number
+   and never upload a document.** Approving is refused until this is filled in.
+3. Tick the categories you approve — they may be fewer than asked for. Higher-risk
+   categories (large events, paid events, sports with physical risk) deserve more care.
+4. **Approve selected**, **Ask for more information** (write the note — the applicant
+   sees it), **Reject**, or later **Suspend**. The applicant is notified each time.
+
+Approval does not publish anything by itself: every experience an organiser submits
+is still reviewed. Organisers see their submissions, registrations, check-ins and
+chats in their **organiser dashboard** on the Host & Organise page.
+
+## 31. Enhakkore Pass and the check-in scanner
+
+A pass is created automatically, only where entry is controlled: an event or
+activity with **Entry check** set to QR or manual, a paid event registration, a trip
+booking once the trip's stage is **Trip confirmed** or **Departure ready**, and a
+hotel or restaurant enquiry once its status is **Confirmed** (that is, after the
+business accepted it). Members see passes under **My account → Enhakkore Pass**. The
+QR code contains only a random code — no name, phone, email or ID.
+
+If a booking is cancelled the pass shows *Cancelled*. If the date, time or place
+changes, the pass is re-issued with a new code and the old QR stops working — ask
+people to open the pass again.
+
+**At the entrance:** Menu → **Experiences → Check-in scanner & passes** (the same page
+as **My account → Check-in scanner**). Choose the event, then **Scan with camera**
+(works in Chrome on Android; other phones type the reference) or type the
+**PASS-…** reference. Results:
+
+| Result | Meaning |
+|---|---|
+| Valid — checked in | Let them in. |
+| Already checked in | The pass was used before — the time of first check-in is shown. |
+| Needs review | A typed reference for a QR pass. Confirm who they are, then press **Identity confirmed — check in**. |
+| Cancelled / Expired | Do not admit on this pass; check their booking. |
+| Not found | Wrong event or a fake code. |
+
+**Find someone on the list** searches by name, @username or reference for a manual
+check-in. Every scan is recorded with who scanned it and when.
+
+**Offline mode:** before the event, with a connection, switch on **Offline mode** and
+press **Download offline list** (valid 12 hours). It holds pass references and short
+names only, never QR codes. Results offline are **provisional**. When you are back
+online press **Sync** — each scan is checked again on the server and anything that
+did not hold (for example someone checked in at another door first) is reported.
+
+Organisers can scan only their own listings. Team members need edit permission for
+that kind of listing (events, activities, trips or places).
+
+## 32. Usernames, profiles and privacy
+
+Every member chooses a unique **username** when they sign up (with their country and
+city, which become their default discovery location). Other members and the public
+see usernames — never phone numbers or emails. Members choose who sees their bio,
+interests, location, communities and activities (Everyone / Members / Only me), can
+add a cover photo, and can hide their profile from search. A public card lives at
+`/u/<username>`. Reserved names (admin, enhakkore, support, staff and similar) cannot
+be taken by members.
+
+**Notifications:** members can switch off optional notices (chat messages,
+invitations, community announcements, Nearby, Impact updates). Booking, payment,
+cancellation, safety and pass notices are always sent.
+
+**Enhakkore Nearby** is off by default. Members can choose 4 m or 10 m, but the
+website says plainly that it does not work yet: telling 4 m from 10 m needs Bluetooth
+between phones, which browsers do not allow. It needs the future mobile app.
+
+**Invitations:** members can invite friends by link, WhatsApp, their phone's share
+sheet or by @username. An invitation is only a notification with a link — it never
+registers anyone or holds a place.
+
+## 33. Troubleshooting
 
 | Problem | What to do |
 |---|---|
@@ -306,4 +413,6 @@ launch city, catering, gaming hero, impact wording and donation confirmation.
 | Enquiries not arriving on WhatsApp | Check **Notifications** — "not configured" means the WhatsApp Business Platform is not connected yet. |
 | Uploaded photos disappeared after a deploy | Connect Cloudinary (handover). |
 | A page shows old content | Changes appear within about a minute. |
+| A member says their pass QR "does not work" | Ask them to reopen the pass: if the date or place changed, a new code was issued. Otherwise check in by reference. |
+| Camera scanning does not start | That phone's browser cannot read QR codes. Type the reference instead, or use Chrome on Android. |
 | Someone needs to be removed quickly | Security & audit → sign them out everywhere; Team & permissions → revoke. |

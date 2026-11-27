@@ -103,7 +103,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
       <section className="relative -mt-6 rounded-t-[1.75rem] bg-white px-5 pb-1 pt-5 md:hidden">
         <h1 className="text-[1.6rem] font-bold leading-tight text-acacia-700">{trip.title}</h1>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-[#ede7fb] px-2.5 py-0.5 text-xs font-bold text-[#5b3aa8]">{trip.isPast ? 'Past trip' : 'Group trip'}</span>
+          <span className="rounded-full bg-[#fff1c9] px-2.5 py-0.5 text-xs font-bold text-[#7a5a14]">{trip.isPast ? 'Past trip' : 'Group trip'}</span>
           {trip.stage && <span className="rounded-full bg-[#fdf4e3] px-2.5 py-0.5 text-xs font-bold text-warning">{TRIP_STAGE_LABELS[trip.stage] ?? trip.stage}</span>}
         </div>
         <ul className="mt-3 space-y-1.5 text-[0.9375rem] text-ink-soft">

@@ -86,13 +86,52 @@ Cloudinary uploads, and real devices — this was done in a development copy.
 
 ## Design (latest)
 
-The whole site follows the navy-and-gold references: a dark header with the original
+The whole site follows the navy-and-gold references (no purple anywhere: DEMO labels
+are amber, trip badges navy and gold): a dark header with the original
 emblem (prepared for dark backgrounds, artwork unchanged), a homepage hero whose
 background is a real WebGL globe (NASA night-Earth imagery served from the site, gold
-city lights and arcs, drag/pinch/wheel zoom), **Locate** mode with twelve categories,
+city lights and arcs, drag/pinch/wheel zoom), **Locate** mode with four groups and their subcategories,
 pins and detail cards, alternating navy and ivory sections, an Explore page with photo
 tiles, filters and a worldwide country → city location picker (also on Experiences,
 Travel, Gaming, Communities and Search), and a navy-and-gold control centre.
+
+## R6 — members, organisers, passes and chats
+
+- **Accounts:** sign-up asks for a unique **username**, country and city (the default
+  discovery location, changeable any time). Members are shown by @username; phone and
+  email are never shown. Profiles have a cover photo, image cropping, and per-field
+  visibility (Everyone / Members / Only me). Public card: `/u/<username>`.
+- **Account Centre** (`/account`): My Enhakkore, Messages, Host & organise, Profile &
+  settings — including **Notifications & Nearby** (optional notices, quiet hours) and
+  **Password & security**.
+- **Globe Locate**: four groups (Explore, Experiences, Travel, Impact) with
+  subcategories; leaves Locate automatically when the visitor scrolls on.
+- **Homepage**: Explore Enhakkore (four categories) with a *Discovering in … · Change*
+  bar; Discover & Review now comes before Enhakkore Impact.
+- **Experiences**: hero "Discover. Join. Create. Experience More." with three actions —
+  **Discover Experiences** (`/experiences/discover`, filters for date, category,
+  subcategory, free/paid, online/in person, age, availability, sort), **Host &
+  Organise** (`/experiences/host`: organiser application, status and dashboard) and
+  **Plan an Event with Enhakkore**. Category pages list the R6 subcategories.
+- **Create an experience** is a four-step form: details → participation & safety →
+  entry check (None / QR pass / manual) → review and submit for approval.
+- **Organiser applications** with per-category approval and a recorded identity check
+  (no ID numbers or documents stored) — control centre → Experiences.
+- **Enhakkore Pass** with QR (random token only), issued only where entry is controlled;
+  **check-in scanner** with camera (where the browser supports it), typed references,
+  attendee search, audit trail and a signed 12-hour **offline list** that syncs later.
+- **Group chats** for events, activities and communities on the same system as trip
+  groups; organisers switch them on/off; report, block, pin, remove, close.
+- **Invite friends**: copy link, WhatsApp, the phone's share sheet, or by @username.
+  An invitation never registers anyone.
+- **Communities**: free, private (request) or paid (request; online payment is not
+  switched on — the team approves after arranging payment).
+- **Reservations**: sending the same request twice returns the first reference; the
+  WhatsApp follow-up link is pre-filled with the reference and a summary.
+- **Explore**: "Explore Places Worth Knowing", per-section hero text, filters for
+  facilities, cuisine and price range (matched against what listings state), and a
+  **Member rating** sort (published member reviews only).
+- New manuals: [TEAM-MANUAL.md](TEAM-MANUAL.md) and [INTEGRATIONS.md](INTEGRATIONS.md).
 
 ## 3. What still needs you (approval, accounts or decisions)
 
@@ -236,8 +275,17 @@ name ("WhatsApp", "prices", "expenses").
   hand after checking. Third-party bookings are enquiries only.
 - No live hotel room availability — listings say availability must be
   confirmed with the property.
-- No private chat between individual members; trip departure groups have
-  real-time chat.
+- No private chat between individual members; trip departures, events,
+  activities and communities have group chats.
+- **Enhakkore Nearby** does not work on the website: browsers cannot detect nearby
+  phones and GPS cannot tell 4 m from 10 m. The preference is saved for a future
+  mobile app, and the page says so.
+- Camera QR scanning works where the browser has a built-in QR detector (Chrome on
+  Android). On other phones, staff type the pass reference.
+- The offline check-in list is kept in the browser's storage on that device (hashed
+  pass codes and short names only, valid 12 hours); it is not separately encrypted.
+- Identity checks for organisers happen outside the website; only a note of how it
+  was checked is stored.
 - Member notifications are in-app. The team gets WhatsApp notices once the
   WhatsApp Business Platform is connected; emails are only password resets.
 - Currency conversion is not done — every total is shown per currency.

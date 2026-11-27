@@ -163,7 +163,7 @@ export function ResourceList({ resource }: { resource: ResourceDef }) {
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-ink">
-                      {row.isDemo && <span className="mr-1.5 rounded bg-[#7c3aed] px-1.5 py-0.5 text-[0.625rem] font-bold uppercase text-white">Demo</span>}
+                      {row.isDemo && <span className="mr-1.5 rounded bg-[#fff1c9] px-1.5 py-0.5 text-[0.625rem] font-bold uppercase text-[#7a5a14] ring-1 ring-[#e2c47a]">Demo</span>}
                       {String(row[resource.titleField] ?? '(untitled)')}
                     </p>
                     <p className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-muted">

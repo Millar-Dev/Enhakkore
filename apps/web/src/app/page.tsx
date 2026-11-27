@@ -128,7 +128,7 @@ function TripBanner({ trip }: { trip: TripListing }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-[clamp(1.2rem,5vw,1.7rem)] font-bold leading-tight">{trip.title}</h3>
-            <span className="rounded-full bg-[#5b3aa8] px-2.5 py-0.5 text-[0.6875rem] font-bold">Group trip</span>
+            <span className="rounded-full bg-clay-400 px-2.5 py-0.5 text-[0.6875rem] font-bold text-acacia-700">Group trip</span>
           </div>
           <ul className="mt-1.5 space-y-0.5 text-[0.8125rem] text-white/85">
             {next && <li>📅 {tripDates(next.startDate, next.endDate)} · {trip.destinationLabel ?? ''}</li>}
