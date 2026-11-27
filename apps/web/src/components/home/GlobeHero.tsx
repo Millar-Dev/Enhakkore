@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Map as MapLibreMap, Marker } from 'maplibre-gl';
-import type { GlobeCategoryKey } from '@enhakkore/shared';
+import { EXPERIENCE_SECTIONS, EXPERIENCE_SECTION_NAMES, IMPACT_SUBCATEGORIES, TRAVEL_SUBCATEGORIES, type GlobeCategoryKey } from '@enhakkore/shared';
 import { api } from '@/lib/api';
 import { Globe } from './Globe';
 
@@ -47,6 +47,33 @@ export interface GlobeItem {
   startsAt: string | null;
   price: string | null;
   isDemo: boolean;
+  group: 'EXPLORE' | 'EXPERIENCES' | 'TRAVEL' | 'IMPACT';
+  sub: string;
+}
+
+/**
+ * Locate's two levels: four groups, then each group's subcategories. A
+ * subcategory with nothing on the map (volunteering, donations) links to its
+ * page instead of showing an empty globe.
+ */
+const LEVELS: { key: GlobeItem['group']; label: string; icon: string; blurb: string; subs: { key: string; label: string; href?: string }[] }[] = [
+  { key: 'EXPLORE', label: 'Explore', icon: 'attractions', blurb: 'Stays, food, venues and attractions', subs: [{ key: 'STAYS', label: 'Stays' }, { key: 'FOOD', label: 'Food & Dining' }, { key: 'VENUES', label: 'Venues' }, { key: 'ATTRACTIONS', label: 'Attractions' }] },
+  { key: 'EXPERIENCES', label: 'Experiences', icon: 'experiences', blurb: 'Events, sports, gaming, culture and more', subs: EXPERIENCE_SECTIONS.map((section) => ({ key: section.key, label: EXPERIENCE_SECTION_NAMES[section.key] })) },
+  { key: 'TRAVEL', label: 'Travel', icon: 'travel', blurb: 'Group trips, safaris, beach and beyond', subs: TRAVEL_SUBCATEGORIES.map((item) => ({ key: item.key, label: item.label, href: item.key === 'PRIVATE' ? '/private-trips' : undefined })) },
+  {
+    key: 'IMPACT',
+    label: 'Impact',
+    icon: 'impact',
+    blurb: 'Community projects and WSC — We Save Children',
+    subs: IMPACT_SUBCATEGORIES.map((item) => ({ key: item.key, label: item.label, href: item.key === 'VOLUNTEERING' ? '/impact#volunteer' : item.key === 'DONATIONS' ? '/donate' : item.key === 'STORIES' ? '/stories' : undefined })),
+  },
+];
+const EXPERIENCE_PIN: Record<string, string> = { SPORTS: 'sports', GAMING: 'gaming', PARTIES: 'events', COMMUNITIES: 'communities' };
+/** Pin colour and icon for an item. */
+function pinKey(item: GlobeItem) {
+  if (item.group === 'EXPLORE') return item.sub.toLowerCase();
+  if (item.group === 'EXPERIENCES') return EXPERIENCE_PIN[item.sub] ?? 'experiences';
+  return item.group.toLowerCase();
 }
 
 interface Props {
@@ -61,8 +88,8 @@ const CATEGORY_STYLE: Record<string, { colour: string; d: string }> = {
   all: { colour: '#f5b544', d: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z' },
   experiences: { colour: '#f5b544', d: 'm3 20 6.5-11 4 6 2.5-3.5L21 20Z M15.5 6.5a2 2 0 1 0 0-.01' },
   travel: { colour: '#fbbf24', d: 'M2.5 19h19M4 15l6-1 7-9 2 .5-3.5 8.5 4.5-.5 1 2-14 3-3-3.5Z' },
-  sports: { colour: '#a78bfa', d: 'M13 4.5a1.5 1.5 0 1 0 0-.01 M9 20l3-6-3-3 4-4 3 3h3 M6 12l3-3 M12 14l3 6' },
-  gaming: { colour: '#8b5cf6', d: 'M6 12h4 M8 10v4 M15 13h.01 M18 11h.01 M17.3 5H6.7a4 4 0 0 0-4 3.6C2.6 9.4 2 14.5 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.4-1.4A2 2 0 0 1 9.8 16h4.4a2 2 0 0 1 1.4.6L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.5-.6-6.6-.7-7.3a4 4 0 0 0-4-3.7Z' },
+  sports: { colour: '#38bdf8', d: 'M13 4.5a1.5 1.5 0 1 0 0-.01 M9 20l3-6-3-3 4-4 3 3h3 M6 12l3-3 M12 14l3 6' },
+  gaming: { colour: '#2dd4bf', d: 'M6 12h4 M8 10v4 M15 13h.01 M18 11h.01 M17.3 5H6.7a4 4 0 0 0-4 3.6C2.6 9.4 2 14.5 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.4-1.4A2 2 0 0 1 9.8 16h4.4a2 2 0 0 1 1.4.6L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.5-.6-6.6-.7-7.3a4 4 0 0 0-4-3.7Z' },
   events: { colour: '#f59e0b', d: 'M4 6.5h16v13H4z M4 10.5h16 M8 3.5v4 M16 3.5v4' },
   food: { colour: '#f97316', d: 'M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2 M7 2v20 M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7' },
   stays: { colour: '#eab308', d: 'M2 18V6 M2 11h20v7 M2 15h20 M6 11V8h5v3' },
@@ -153,7 +180,7 @@ const WHEN = [
   { key: 'quarter', label: 'Next 3 months' },
 ] as const;
 
-export function GlobeHero({ hero, home, categories, launch }: Props) {
+export function GlobeHero({ hero, home, launch }: Props) {
   const wrapper = useRef<HTMLDivElement>(null);
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -163,7 +190,8 @@ export function GlobeHero({ hero, home, categories, launch }: Props) {
   const [ready, setReady] = useState(false);
   const [items, setItems] = useState<GlobeItem[]>([]);
   const [mode, setMode] = useState<Mode>('hero');
-  const [category, setCategory] = useState<string>('all');
+  const [level1, setLevel1] = useState<GlobeItem['group'] | ''>('');
+  const [level2, setLevel2] = useState('');
   const [country, setCountry] = useState('');
   const [city, setCity] = useState('');
   const [when, setWhen] = useState<(typeof WHEN)[number]['key']>('any');
@@ -172,7 +200,6 @@ export function GlobeHero({ hero, home, categories, launch }: Props) {
   const modeRef = useRef<Mode>('hero');
   modeRef.current = mode;
 
-  const enabled = useMemo(() => categories.filter((item) => item.enabled), [categories]);
   const sentences = hero.title.split(/(?<=\.)\s+/);
 
   // Published content with a place on the map.
@@ -190,7 +217,8 @@ export function GlobeHero({ hero, home, categories, launch }: Props) {
     const now = Date.now();
     const limit = when === 'month' ? now + 31 * 864e5 : when === 'quarter' ? now + 92 * 864e5 : Infinity;
     return items.filter((item) => {
-      if (category !== 'all' && !item.categories.includes(category)) return false;
+      if (level1 && item.group !== level1) return false;
+      if (level2 && item.sub !== level2) return false;
       if (country && item.country !== country) return false;
       if (city && item.city !== city) return false;
       if (when !== 'any') {
@@ -200,7 +228,7 @@ export function GlobeHero({ hero, home, categories, launch }: Props) {
       }
       return true;
     });
-  }, [items, category, country, city, when]);
+  }, [items, level1, level2, country, city, when]);
 
   /** Items that share a spot become one pin with a count. */
   const groups = useMemo(() => {
@@ -255,6 +283,25 @@ export function GlobeHero({ hero, home, categories, launch }: Props) {
       map.flyTo({ center: [home.lng, home.lat + 4], zoom: frame.zoom, padding: frame.padding, speed: 1.1, essential: true });
     }
   }, [home.lat, home.lng]);
+
+  // Scrolling past the hero leaves Locate and restores the hero — Locate never traps the page.
+  useEffect(() => {
+    if (mode !== 'locate' || !wrapper.current) return;
+    const element = wrapper.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry && entry.intersectionRatio < 0.35) exitLocate();
+      },
+      { threshold: [0, 0.35, 0.6] },
+    );
+    // Give the scroll that brings the globe into view time to finish first.
+    const timer = window.setTimeout(() => observer.observe(element), 900);
+    return () => {
+      window.clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [mode, exitLocate]);
 
   // Esc closes Locate.
   useEffect(() => {
@@ -457,7 +504,7 @@ export function GlobeHero({ hero, home, categories, launch }: Props) {
     markersRef.current = [];
     for (const group of groups) {
       const first = group[0]!;
-      const key = mode === 'locate' && category !== 'all' ? category : (first.categories.find((item) => item !== 'experiences') ?? first.categories[0] ?? 'all');
+      const key = pinKey(first);
       const style = styleFor(key);
       const el = document.createElement('button');
       el.type = 'button';
@@ -476,10 +523,11 @@ export function GlobeHero({ hero, home, categories, launch }: Props) {
       });
       markersRef.current.push(new maplibre.Marker({ element: el, anchor: mode === 'locate' ? 'bottom' : 'center' }).setLngLat([first.lng, first.lat]).addTo(map));
     }
-  }, [groups, mode, category, ready, select]);
+  }, [groups, mode, ready, select]);
 
   const current = selected ? selected.group[selected.index] : null;
-  const categoryLabel = enabled.find((item) => item.key === category)?.label ?? 'All Activities';
+  const activeLevel = LEVELS.find((item) => item.key === level1);
+  const categoryLabel = activeLevel ? (activeLevel.subs.find((item) => item.key === level2)?.label ?? `All ${activeLevel.label}`) : 'Everything';
 
   const Card = current ? (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-white text-ink shadow-2xl">
@@ -515,29 +563,51 @@ export function GlobeHero({ hero, home, categories, launch }: Props) {
     </div>
   ) : null;
 
-  const Categories = (
-    <div className="grid grid-cols-3 gap-2 lg:grid-cols-1 lg:gap-1">
-      {enabled.map((item) => {
-        const style = styleFor(item.key);
-        const on = category === item.key;
-        const count = item.key === 'all' ? items.length : items.filter((row) => row.categories.includes(item.key)).length;
+  const tile = 'flex min-h-[4.25rem] flex-col items-center justify-center gap-1 rounded-xl border px-1.5 py-2 text-center text-[0.75rem] font-semibold leading-tight transition lg:min-h-12 lg:flex-row lg:justify-start lg:gap-2.5 lg:px-3 lg:py-1.5 lg:text-left lg:text-sm';
+  const Categories = !activeLevel ? (
+    <div className="grid grid-cols-2 gap-2 lg:grid-cols-1 lg:gap-1.5">
+      {LEVELS.map((level) => {
+        const style = styleFor(level.icon);
+        const count = items.filter((row) => row.group === level.key).length;
         return (
-          <button
-            key={item.key}
-            type="button"
-            onClick={() => {
-              setCategory(item.key);
-              setSelected(null);
-            }}
-            aria-pressed={on}
-            className={`flex min-h-[4.25rem] flex-col items-center justify-center gap-1 rounded-xl border px-1.5 py-2 text-center text-[0.6875rem] font-semibold leading-tight transition lg:min-h-10 lg:flex-row lg:justify-start lg:gap-2.5 lg:px-3 lg:py-1.5 lg:text-left lg:text-sm ${on ? 'border-clay-400 bg-clay-400 text-acacia-700' : 'border-white/10 bg-white/[0.04] text-white hover:border-clay-400/60'}`}
-          >
-            <span style={{ color: on ? undefined : style.colour }}><Svg d={style.d} size={20} /></span>
-            <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{item.label}</span>
-            <span className={`hidden text-xs lg:inline ${on ? 'text-acacia-700/70' : 'text-white/45'}`}>{count}</span>
+          <button key={level.key} type="button" onClick={() => { setLevel1(level.key); setLevel2(''); setSelected(null); }} className={`${tile} border-white/10 bg-white/[0.04] text-white hover:border-clay-400/60`}>
+            <span style={{ color: style.colour }}><Svg d={style.d} size={22} /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block">{level.label}</span>
+              <span className="hidden text-[0.6875rem] font-normal text-white/55 lg:block">{level.blurb}</span>
+            </span>
+            <span className="text-[0.6875rem] text-white/45">{count}</span>
           </button>
         );
       })}
+    </div>
+  ) : (
+    <div>
+      <button type="button" onClick={() => { setLevel1(''); setLevel2(''); setSelected(null); }} className="mb-2 inline-flex min-h-10 items-center text-sm font-semibold text-clay-400">‹ All categories</button>
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-1 lg:gap-1">
+        <button type="button" aria-pressed={!level2} onClick={() => { setLevel2(''); setSelected(null); }} className={`${tile} ${!level2 ? 'border-clay-400 bg-clay-400 text-acacia-700' : 'border-white/10 bg-white/[0.04] text-white'}`}>
+          <span className="min-w-0 flex-1">All {activeLevel.label}</span>
+          <span className="text-[0.6875rem] opacity-60">{items.filter((row) => row.group === activeLevel.key).length}</span>
+        </button>
+        {activeLevel.subs.map((sub) => {
+          const count = items.filter((row) => row.group === activeLevel.key && row.sub === sub.key).length;
+          const on = level2 === sub.key;
+          if (count === 0 && sub.href) {
+            return (
+              <Link key={sub.key} href={sub.href} className={`${tile} border-white/10 bg-white/[0.02] text-white/85 hover:border-clay-400/60`}>
+                <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{sub.label}</span>
+                <span className="text-[0.6875rem] text-white/45">open ›</span>
+              </Link>
+            );
+          }
+          return (
+            <button key={sub.key} type="button" aria-pressed={on} onClick={() => { setLevel2(sub.key); setSelected(null); }} className={`${tile} ${on ? 'border-clay-400 bg-clay-400 text-acacia-700' : 'border-white/10 bg-white/[0.04] text-white hover:border-clay-400/60'}`}>
+              <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{sub.label}</span>
+              <span className={`text-[0.6875rem] ${on ? 'text-acacia-700/70' : 'text-white/45'}`}>{count}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 

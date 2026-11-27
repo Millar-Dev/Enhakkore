@@ -7,14 +7,14 @@ import { SocialIcon } from '@/components/site/SocialIcon';
 import { getCatalogue } from '@/lib/public';
 import { getSite, waHref } from '@/lib/site';
 
-export const metadata: Metadata = { title: 'Publish an event or activity', description: 'Submit your activity or event to Enhakkore. Every submission is reviewed before it is published.' };
+export const metadata: Metadata = { title: 'Create an experience', description: 'Submit your activity or event to Enhakkore. Every submission is reviewed before it is published.' };
 
 export default async function PublishPage() {
   const [{ settings }, catalogue] = await Promise.all([getSite(), getCatalogue()]);
   const categories = catalogue.categories.filter((item) => item.kind === 'ACTIVITY' || item.kind === 'EVENT').map((item) => ({ id: item.id, name: item.name, group: item.group ?? null }));
   return (
     <PublicShell>
-      <PageHero kicker="Experiences · Publish" title="Publish an event or activity" intro="Small, free, low-risk activities can be hosted by any member once approved. Large, paid or higher-risk events need enhanced approval and organiser verification." />
+      <PageHero kicker="Host & Organise" title="Create an experience" intro="Small, free, low-risk activities can be hosted by any member once approved. Large, paid or higher-risk events need enhanced approval and organiser verification." />
       <section className="shell grid gap-8 py-10 lg:grid-cols-[1.5fr_1fr]">
         <div className="rounded-[1.4rem] border border-line bg-white p-5 md:p-8">
           <PublishActivityForm categories={categories} />

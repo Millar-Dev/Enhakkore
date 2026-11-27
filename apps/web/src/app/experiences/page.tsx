@@ -25,7 +25,7 @@ const TILE_IMAGES: Record<string, string> = {
   OUTDOOR: '/packages/arusha/napuru-waterfalls.webp',
 };
 const TILE_COLOURS: Record<string, string> = {
-  PARTIES: 'from-[#3a1d5c] to-[#0a1a2e]',
+  PARTIES: 'from-[#7a3b12] to-[#0a1a2e]',
   COMMUNITIES: 'from-[#0f4a76] to-[#0a1a2e]',
   SPORTS: 'from-[#1f6b3a] to-[#0a1a2e]',
   LEARNING: 'from-[#7a5a14] to-[#0a1a2e]',
@@ -45,8 +45,8 @@ export default async function ExperiencesHub({ searchParams }: { searchParams: P
     <PublicShell>
       {/* 1–2. Title band with search and filter pills */}
       <AppHero
-        title="Experiences"
-        subtitle="Discover, join and create experiences"
+        title="Discover. Join. Create. Experience More."
+        subtitle="Events, sports, gaming, culture and communities — find something to join, or host your own"
         image={settings.pages.experiencesHeroImage}
         search={{ action: '/experiences', placeholder: 'Search events, activities, communities…', value: params.q, hidden: { country: params.country, city: params.city } }}
         location={{ country: params.country, city: params.city }}
@@ -61,9 +61,9 @@ export default async function ExperiencesHub({ searchParams }: { searchParams: P
                 {/* Three journeys: square tiles side by side on phones, wide cards on larger screens. */}
         <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4">
           {[
-            { href: '#upcoming', title: 'Discover experiences', short: 'Discover', line: 'Find events, activities and communities', icon: '🔍', tone: 'bg-gradient-to-br from-[#6d35c9] to-[#3f1d86]' },
-            { href: '/experiences/plan', title: 'Plan an event', short: 'Plan an event', line: 'Help with venue, catering and setup', icon: '🗓️', tone: 'bg-gradient-to-br from-[#e0701f] to-[#a3430c]' },
-            { href: '/experiences/publish', title: 'Publish an event or activity', short: 'Publish activity', line: 'List your own — reviewed by our team', icon: '➕', tone: 'bg-gradient-to-br from-[#1f9a55] to-[#0f6236]' },
+            { href: '/experiences/discover', title: 'Discover Experiences', short: 'Discover', line: 'Filter by date, category, price and more', icon: '🔍', tone: 'bg-gradient-to-br from-[#d8a634] to-[#a87717] !text-[#06152a]' },
+            { href: '/experiences/host', title: 'Host & Organise', short: 'Host & Organise', line: 'Become an organiser and publish experiences', icon: '🏁', tone: 'bg-gradient-to-br from-[#164b80] to-[#0b2547]' },
+            { href: '/experiences/plan', title: 'Plan an Event with Enhakkore', short: 'Plan an event', line: 'We help with venue, catering and setup', icon: '🗓️', tone: 'bg-gradient-to-br from-[#1f7a52] to-[#0f4a33]' },
           ].map((card) => (
             <Link key={card.title} href={card.href} className={`card-lift flex min-h-[6.5rem] flex-col items-center justify-center gap-1.5 rounded-2xl p-2.5 text-center text-white sm:flex-row sm:justify-start sm:gap-3 sm:p-4 sm:text-left ${card.tone}`}>
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-black/20 text-lg" aria-hidden>{card.icon}</span>
@@ -111,7 +111,7 @@ export default async function ExperiencesHub({ searchParams }: { searchParams: P
         {upcoming.length ? (
           <UpcomingGrid items={upcoming} limit={9} />
         ) : (
-          <Empty title="Nothing matches yet" body="New activities, events and tournaments appear here as soon as they are published." action={<Link href="/experiences/publish" className="inline-flex h-11 items-center rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">Publish an activity</Link>} />
+          <Empty title="Nothing matches yet" body="New activities, events and tournaments appear here as soon as they are published." action={<Link href="/experiences/host" className="inline-flex h-11 items-center rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">Host an experience</Link>} />
         )}
         </div>
       </section>

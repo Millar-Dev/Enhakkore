@@ -256,6 +256,57 @@ experiencesPublic.get(
   }),
 );
 
+/**
+ * Discover: every upcoming experience with filters for date, section,
+ * subcategory, free or paid, online or in person, age, availability and
+ * sorting. Filters only use what the listing actually states.
+ */
+experiencesPublic.get(
+  '/experiences-discover',
+  route(async (req, res) => {
+    const sectionKey = str(req.query.section)?.toUpperCase();
+    const section = EXPERIENCE_SECTIONS.find((item) => item.key === sectionKey)?.key;
+    const content = await sectionContent(section, req);
+    const where = (row: Row) => [row.city?.name, row.country?.name].filter(Boolean).join(', ');
+    const adult = (text: string | null | undefined) => !!text && /\b(18|21)\s*\+|adults? only|18 and over/i.test(text);
+    type Card = { kind: string; id: string; subjectType: string; title: string; href: string; image: string | null; startsAt: Date | null; where: string; category?: string; section?: string | null; free: boolean | null; online: boolean; adultsOnly: boolean; full: boolean; publishedAt: Date | null; isDemo: boolean; recurrence?: string | null };
+    let cards: Card[] = [
+      ...content.activities.map((row) => ({ kind: 'Activity', id: row.id, subjectType: 'ACTIVITY', title: row.title, href: `/activities/${row.slug}`, image: row.coverImage, startsAt: row.startsAt, where: row.mode === 'ONLINE' ? 'Online' : where(row), category: row.category?.name, section: row.category?.section, free: !row.price, online: row.mode === 'ONLINE', adultsOnly: adult(row.eligibility), full: row.status === 'FULL' || (!!row.capacity && row.spotsTaken >= row.capacity), publishedAt: row.publishedAt, isDemo: row.isDemo, recurrence: row.recurrence })),
+      ...content.events.map((row) => {
+        const prices = (row.tickets ?? []).map((ticket: { price: number }) => ticket.price);
+        return { kind: 'Event', id: row.id, subjectType: 'EVENT', title: row.title, href: `/events/${row.slug}`, image: row.poster, startsAt: row.startsAt, where: where(row), category: row.category?.name, section: row.category?.section, free: prices.length ? prices.every((price: number) => price === 0) : null, online: false, adultsOnly: adult(row.ageRestriction), full: row.status === 'SOLD_OUT', publishedAt: row.publishedAt, isDemo: row.isDemo };
+      }),
+      ...content.tournaments.map((row) => ({ kind: 'Gaming', id: row.id, subjectType: 'TOURNAMENT', title: row.title, href: `/experiences/gaming/${row.slug}`, image: row.coverImage, startsAt: row.startsAt, where: row.kind === 'ONLINE' ? 'Online' : (row.venue ?? where(row)), category: row.game?.name, section: 'GAMING', free: true, online: row.kind === 'ONLINE', adultsOnly: false, full: row.status !== 'REGISTRATION_OPEN', publishedAt: row.publishedAt, isDemo: row.isDemo })),
+    ];
+    const from = str(req.query.from);
+    const to = str(req.query.to);
+    if (from) cards = cards.filter((card) => !card.startsAt || card.startsAt >= new Date(`${from}T00:00:00Z`));
+    if (to) cards = cards.filter((card) => !!card.startsAt && card.startsAt <= new Date(`${to}T23:59:59Z`));
+    const price = str(req.query.price);
+    if (price === 'free') cards = cards.filter((card) => card.free === true);
+    if (price === 'paid') cards = cards.filter((card) => card.free === false);
+    const mode = str(req.query.mode);
+    if (mode === 'online') cards = cards.filter((card) => card.online);
+    if (mode === 'in-person') cards = cards.filter((card) => !card.online);
+    const age = str(req.query.age);
+    if (age === 'all') cards = cards.filter((card) => !card.adultsOnly);
+    if (age === 'adults') cards = cards.filter((card) => card.adultsOnly);
+    if (str(req.query.availability) === 'open') cards = cards.filter((card) => !card.full);
+    const sort = str(req.query.sort) ?? 'soonest';
+    if (sort === 'newest') cards.sort((a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0));
+    else if (sort === 'popular') {
+      const ranked: Card[] = [];
+      for (const type of ['ACTIVITY', 'EVENT', 'TOURNAMENT'] as const) {
+        const scores = await popularityScores(type, cards.filter((card) => card.subjectType === type).map((card) => card.id));
+        ranked.push(...cards.filter((card) => card.subjectType === type).map((card) => ({ ...card, popularity: scores.get(card.id) ?? 0 })));
+      }
+      cards = ranked.sort((a, b) => ((b as Card & { popularity: number }).popularity - (a as Card & { popularity: number }).popularity) || ((a.startsAt?.getTime() ?? Infinity) - (b.startsAt?.getTime() ?? Infinity)));
+    } else cards.sort((a, b) => (a.startsAt?.getTime() ?? Infinity) - (b.startsAt?.getTime() ?? Infinity));
+    const categories = section ? await prisma.category.findMany({ where: { status: 'PUBLISHED', section, kind: { in: ['ACTIVITY', 'EVENT'] } }, orderBy: { sortOrder: 'asc' }, select: { name: true, slug: true } }) : [];
+    res.json({ total: cards.length, items: cards.slice(0, 60), categories, sections: EXPERIENCE_SECTIONS });
+  }),
+);
+
 /* -------------------------------- Communities ----------------------------- */
 
 experiencesPublic.get(

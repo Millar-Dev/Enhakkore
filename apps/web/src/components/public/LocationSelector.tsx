@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { COUNTRIES, slugify } from '@enhakkore/shared';
 import { api } from '@/lib/api';
+import { useSession } from '@/lib/session';
 
 /**
  * One location picker for the whole site (Explore, Experiences, Travel,
@@ -37,7 +38,16 @@ export function LocationSelector({
   tone = 'dark',
   className = '',
   compact = false,
+  onChoose,
+  autoDefault = true,
+  triggerLabel,
 }: {
+  /** Text on the button instead of the current place (e.g. "Change"). */
+  triggerLabel?: string;
+  /** Instead of changing the page address, report the choice (it is still remembered on this device). */
+  onChoose?: (countryCode: string, citySlug: string | null) => void;
+  /** Fill in the remembered or account location when the address has none. */
+  autoDefault?: boolean;
   /** Current country code (or slug) from the page address. */
   country?: string;
   /** Current city slug from the page address. */
@@ -60,6 +70,31 @@ export function LocationSelector({
   const current = COUNTRIES.find((item) => item.code.toLowerCase() === country?.toLowerCase() || slugify(item.name) === country?.toLowerCase());
   const cityName = city ? city.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ') : '';
   const label = current ? (city ? `${cityName}, ${current.name}` : current.name) : 'Anywhere';
+
+  const { user } = useSession();
+  // Default discovery location: the last place chosen on this device, or else the
+  // country and city saved on the member's account. "Anywhere" chosen on purpose is kept.
+  useEffect(() => {
+    if (country || !autoDefault) return;
+    let saved: { country?: string; city?: string | null } | null = null;
+    try {
+      saved = JSON.parse(localStorage.getItem(STORE) ?? 'null');
+    } catch {
+      saved = null;
+    }
+    let code = saved?.country ?? '';
+    let citySlug = saved?.city ?? null;
+    if (saved === null && user?.country) {
+      code = COUNTRIES.find((item) => item.name === user.country || item.code === user.country)?.code ?? '';
+      citySlug = code && user.city ? slugify(user.city) : null;
+    }
+    if (!code) return;
+    const params = new URLSearchParams(window.location.search);
+    params.set('country', code);
+    if (citySlug) params.set('city', citySlug);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.country, user?.city]);
 
   // Open with the current choice selected.
   useEffect(() => {
@@ -111,6 +146,7 @@ export function LocationSelector({
       /* private mode */
     }
     setOpen(false);
+    if (onChoose) return onChoose(countryCode, citySlug);
     const text = params.toString();
     router.push(text ? `${pathname}?${text}` : pathname);
   };
@@ -150,7 +186,7 @@ export function LocationSelector({
           <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z" />
           <circle cx="12" cy="9.5" r="2.5" />
         </svg>
-        <span className={`min-w-0 truncate ${compact ? 'max-w-[9rem]' : ''}`}>{label}</span>
+        <span className={`min-w-0 truncate ${compact ? 'max-w-[9rem]' : ''}`}>{triggerLabel ?? label}</span>
         <span className="text-[0.625rem] opacity-70" aria-hidden>▾</span>
       </button>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useSession } from '@/lib/session';
 
@@ -28,19 +28,32 @@ function Input({ label, error, ...props }: React.InputHTMLAttributes<HTMLInputEl
   );
 }
 
-function Sent({ reference, kind, whatsappHref, notice }: { reference: string; kind: 'ROOM' | 'TABLE'; whatsappHref: string; notice: string }) {
+/** The WhatsApp link, with the reference and a short summary written into the message. */
+function withSummary(href: string, kind: 'ROOM' | 'TABLE', reference: string, summary: string) {
+  try {
+    const url = new URL(href);
+    const intro = kind === 'ROOM' ? 'Hello Enhakkore, I sent a hotel enquiry' : 'Hello Enhakkore, I sent a table reservation request';
+    url.searchParams.set('text', `${intro} — reference ${reference}.\n${summary}`.trim());
+    return url.toString();
+  } catch {
+    return href;
+  }
+}
+
+function Sent({ reference, kind, whatsappHref, notice, summary, duplicate, message }: { reference: string; kind: 'ROOM' | 'TABLE'; whatsappHref: string; notice: string | null; summary: string; duplicate?: boolean; message?: string }) {
   return (
     <div className="rounded-[1.1rem] border border-safari-100 bg-safari-50 p-5">
       <p className="font-display text-xl text-acacia-700">{kind === 'ROOM' ? 'Enquiry received' : 'Request received'}</p>
       <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+        {duplicate && <>{message} </>}
         Reference <strong>{reference}</strong>.{' '}
         {kind === 'ROOM'
           ? 'This is a request, not a booking — no room is reserved until the property confirms availability and price.'
           : 'Your table is not confirmed until the restaurant accepts the request. We will tell you as soon as it does.'}
       </p>
-      {notice !== 'SENT' && <p className="mt-2 text-xs text-ink-muted">For the quickest reply, send the reference to us on WhatsApp too.</p>}
+      {notice !== 'SENT' && <p className="mt-2 text-xs text-ink-muted">For the quickest reply, send the reference to us on WhatsApp too. Opening WhatsApp does not send anything until you press send there.</p>}
       <p className="mt-2 text-xs text-ink-muted">Signed-in members can follow it under My account → Enquiries.</p>
-      <a href={whatsappHref} target="_blank" rel="noreferrer noopener" className="mt-4 inline-flex h-11 items-center rounded-full bg-[#1f9d55] px-5 text-sm font-bold text-white">
+      <a href={withSummary(whatsappHref, kind, reference, summary)} target="_blank" rel="noreferrer noopener" className="mt-4 inline-flex h-11 items-center rounded-full bg-[#1f9d55] px-5 text-sm font-bold text-white">
         Continue on WhatsApp
       </a>
     </div>
@@ -51,14 +64,19 @@ function useSubmit(kind: 'ROOM' | 'TABLE') {
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<{ reference: string; notice: string } | null>(null);
+  const [result, setResult] = useState<{ reference: string; notice: string | null; duplicate?: boolean; message?: string; summary: string } | null>(null);
+  const sending = useRef(false);
   const submit = async (body: Record<string, unknown>) => {
+    // One request at a time: a double tap must not send it twice.
+    if (sending.current) return;
+    sending.current = true;
     setError(null);
     setFields({});
     setState('sending');
     try {
-      const response = await api.post<{ reference: string; notice: string }>('/community/enquiries', { type: kind, subjectType: 'PLACE', ...body });
-      setResult(response);
+      const response = await api.post<{ reference: string; notice: string | null; duplicate?: boolean; message?: string }>('/community/enquiries', { type: kind, subjectType: 'PLACE', ...body });
+      const summary = [body.subjectTitle, body.startDate && `Date: ${body.startDate}${body.endDate ? ` to ${body.endDate}` : ''}`, body.people && `People: ${body.people}`, body.name && `Name: ${body.name}`].filter(Boolean).join('\n');
+      setResult({ ...response, summary });
       setState('sent');
     } catch (caught) {
       setState('idle');
@@ -66,6 +84,8 @@ function useSubmit(kind: 'ROOM' | 'TABLE') {
         setError(caught.message);
         setFields(caught.fields);
       } else setError('Could not send. Check your connection, or message us on WhatsApp.');
+    } finally {
+      sending.current = false;
     }
   };
   return { state, error, fields, result, submit };
@@ -74,7 +94,7 @@ function useSubmit(kind: 'ROOM' | 'TABLE') {
 export function HotelEnquiryForm({ placeId, placeName, roomTypes = [], whatsappHref }: Props) {
   const { user } = useSession();
   const { state, error, fields, result, submit } = useSubmit('ROOM');
-  if (state === 'sent' && result) return <Sent reference={result.reference} notice={result.notice} kind="ROOM" whatsappHref={whatsappHref} />;
+  if (state === 'sent' && result) return <Sent {...result} kind="ROOM" whatsappHref={whatsappHref} />;
   return (
     <form
       className="grid gap-3"
@@ -148,7 +168,7 @@ export function HotelEnquiryForm({ placeId, placeName, roomTypes = [], whatsappH
 export function RestaurantReservationForm({ placeId, placeName, whatsappHref }: Props) {
   const { user } = useSession();
   const { state, error, fields, result, submit } = useSubmit('TABLE');
-  if (state === 'sent' && result) return <Sent reference={result.reference} notice={result.notice} kind="TABLE" whatsappHref={whatsappHref} />;
+  if (state === 'sent' && result) return <Sent {...result} kind="TABLE" whatsappHref={whatsappHref} />;
   return (
     <form
       className="grid gap-3"

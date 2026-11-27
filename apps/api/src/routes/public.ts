@@ -302,6 +302,13 @@ publicRouter.get(
     if (req.query.verified === 'true') and.push({ infoSource: 'VERIFIED' });
     const search = searchWhere(req, ['name', 'summary', 'area', 'address']);
     if (search) and.push(search);
+    // Filters read only what a listing states: its facilities, amenities, menu and price range.
+    const facility = str(req.query.facility);
+    if (facility) and.push({ OR: [{ facilities: textContains(facility) }, { amenities: textContains(facility) }] });
+    const cuisine = str(req.query.cuisine);
+    if (cuisine) and.push({ OR: [{ category: { name: textContains(cuisine) } }, { summary: textContains(cuisine) }, { menu: textContains(cuisine) }] });
+    const price = str(req.query.price);
+    if (price) and.push({ priceRange: price });
     const where = { AND: and };
     const [rows, total] = await Promise.all([
       prisma.place.findMany({
@@ -311,14 +318,19 @@ publicRouter.get(
           str(req.query.sort) === 'recent'
             ? [{ publishedAt: 'desc' }]
             : [{ featured: 'desc' }, { name: 'asc' }],
-        skip: page.skip,
-        take: page.take,
+        // Rating order is worked out over every match, then paged.
+        skip: str(req.query.sort) === 'rating' ? 0 : page.skip,
+        take: str(req.query.sort) === 'rating' ? 500 : page.take,
       }),
       prisma.place.count({ where }),
     ]);
     // Sponsored listings are labelled and never ranked by popularity; organic order comes from real engagement.
-    const ordered = str(req.query.sort) === 'popular' ? await rankByPopularity('PLACE', rows) : rows;
-    res.json(paginated(ordered.map((row) => { const out = toPublic(PLACE_RESOURCE, row); delete out.managerId; return out; }), total, page));
+    let ordered = str(req.query.sort) === 'popular' ? await rankByPopularity('PLACE', rows) : rows;
+    // Rating: the average of published member reviews only. Places without reviews come last, unrated.
+    const ratings = await prisma.placeReview.groupBy({ by: ['placeId'], where: { placeId: { in: rows.map((row) => row.id) }, status: 'PUBLISHED' }, _avg: { rating: true }, _count: { _all: true } });
+    const rated = new Map(ratings.map((row) => [row.placeId, { rating: Math.round((row._avg.rating ?? 0) * 10) / 10, count: row._count._all }]));
+    if (str(req.query.sort) === 'rating') ordered = [...rows].sort((a, b) => (rated.get(b.id)?.rating ?? -1) - (rated.get(a.id)?.rating ?? -1)).slice(page.skip, page.skip + page.take);
+    res.json(paginated(ordered.map((row) => { const out = toPublic(PLACE_RESOURCE, row); delete out.managerId; out.memberRating = rated.get(row.id) ?? null; return out; }), total, page));
   }),
 );
 

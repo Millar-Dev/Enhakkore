@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { formatInZone, formatMoney, normaliseHomepageSections, type HomepageSection } from '@enhakkore/shared';
+import { DiscoveringBar } from '@/components/home/DiscoveringBar';
 import { GlobeHero } from '@/components/home/GlobeHero';
 import type { HomeData, HubData, TrendingItem, UpcomingCard } from '@/components/home/types';
 import { PublicShell } from '@/components/layout/PublicShell';
@@ -48,16 +49,6 @@ function Icon({ d, size = 20 }: { d: string; size?: number }) {
 }
 
 /** Explore Our World: photographs where Enhakkore has its own, otherwise an icon. */
-const WORLD = [
-  { label: 'Experiences', href: '/experiences', image: '/packages/arusha/chemka-1.webp', icon: ICON.users },
-  { label: 'Travel & Trips', href: '/travel', image: '/packages/arusha/mount-meru.webp', icon: ICON.plane },
-  { label: 'Discover', sub: 'Places, hotels & more', href: '/explore', image: '/packages/arusha/arusha-city.webp', icon: ICON.pin },
-  { label: 'Food & Dining', href: '/explore?section=FOOD', image: null, icon: ICON.food },
-  { label: 'Sports', href: '/experiences/c/sports', image: null, icon: ICON.run },
-  { label: 'Gaming', href: '/experiences/gaming', image: '/media/gaming/gaming-hero.jpg', icon: ICON.game },
-  { label: 'Community', href: '/experiences/communities', image: '/impact/mkuranga/together.webp', icon: ICON.users },
-  { label: 'More', href: '/search', image: null, icon: ICON.grid },
-];
 
 const PLACE_PHOTOS: Record<string, string> = { arusha: '/packages/arusha/arusha-city.webp', tanzania: '/packages/arusha/mount-meru.webp', mkuranga: '/impact/mkuranga/village.webp' };
 const flag = (code: string) => (/^[A-Z]{2}$/i.test(code) ? String.fromCodePoint(...[...code.toUpperCase()].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)) : '');
@@ -223,18 +214,26 @@ function renderSection(section: HomepageSection, ctx: Ctx, tone: 'navy' | 'ivory
   switch (section.key) {
     case 'explore': {
       const words = title.split(' ');
+      const pages = ctx.site.settings.pages;
+      const four = [
+        { label: 'Explore', sub: 'Stays · Food · Venues · Attractions', href: '/explore', image: pages.exploreHeroImage },
+        { label: 'Experiences', sub: 'Events · Sports · Gaming · Culture', href: '/experiences', image: pages.experiencesHeroImage },
+        { label: 'Travel', sub: 'Group trips · Safaris · Beach', href: '/travel', image: pages.travelHeroImage },
+        { label: 'Impact', sub: 'Community projects · WSC', href: '/impact', image: pages.impactHeroImage },
+      ];
       return (
         <Band tone={tone}>
           <Head tone={tone} title={words.slice(0, -1).join(' ')} gold={words.length > 1 ? words[words.length - 1] : undefined} sub={subtitle} />
-          <div className="grid grid-cols-4 gap-2 sm:gap-3 lg:grid-cols-8">
-            {WORLD.map((tile) => (
-              <Link key={tile.label} href={tile.href} className="card-lift group relative block aspect-[4/5] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#123a63] to-[#06172b] sm:aspect-[4/4.4]">
-                {tile.image && <SmartImage src={tile.image} alt="" fill sizes="(max-width:1024px) 25vw, 12vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.07]" />}
-                {!tile.image && <span className="absolute inset-0 flex items-center justify-center pb-6 text-clay-400"><Icon d={tile.icon} size={34} /></span>}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#06172b]/95 via-[#06172b]/20 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-1.5 text-center sm:p-2.5">
-                  <p className="text-[0.6875rem] font-bold leading-tight text-white [overflow-wrap:anywhere] sm:text-sm">{tile.label}</p>
-                  {tile.sub && <p className="hidden text-[0.625rem] text-white/70 sm:block">{tile.sub}</p>}
+          <DiscoveringBar tone={tone} />
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+            {four.map((tile) => (
+              <Link key={tile.label} href={tile.href} className="card-lift group relative block aspect-[4/5] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#123a63] to-[#06172b] sm:aspect-[4/4.2]">
+                {tile.image && <SmartImage src={tile.image} alt="" fill sizes="(max-width:1024px) 50vw, 25vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.06]" />}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#06172b]/95 via-[#06172b]/25 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
+                  <p className="text-lg font-bold leading-tight text-white sm:text-xl">{tile.label}</p>
+                  <p className="mt-0.5 text-[0.6875rem] leading-snug text-white/75 sm:text-xs">{tile.sub}</p>
+                  <span className="mt-2 inline-flex text-xs font-bold text-clay-400">Open →</span>
                 </div>
               </Link>
             ))}

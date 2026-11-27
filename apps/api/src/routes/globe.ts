@@ -66,7 +66,12 @@ globePublic.get(
       startsAt: string | null;
       price: string | null;
       isDemo: boolean;
+      /** Top level on the globe: EXPLORE | EXPERIENCES | TRAVEL | IMPACT. */
+      group: 'EXPLORE' | 'EXPERIENCES' | 'TRAVEL' | 'IMPACT';
+      /** Second level: an Explore section, an Experiences section, a trip type or an impact area. */
+      sub: string;
     }[] = [];
+    const TRIP_SUB: Record<string, string> = { GROUP: 'GROUP', PRIVATE: 'PRIVATE', SAFARI: 'SAFARI', BEACH: 'BEACH', INTERNATIONAL: 'INTERNATIONAL', ADVENTURE: 'GROUP', CULTURAL: 'GROUP' };
     const push = (row: GeoRow, item: Omit<(typeof items)[number], 'lat' | 'lng' | 'city' | 'country'> & { place?: string | null }) => {
       const at = point(row);
       if (!at) return;
@@ -79,6 +84,7 @@ globePublic.get(
       push(row, {
         id: row.id, type: 'Activity', label: row.category?.name ?? 'Activity',
         categories: ['experiences', ...(EXPERIENCE_SECTION[row.category?.section ?? ''] ?? [])],
+        group: 'EXPERIENCES', sub: row.category?.section ?? 'OTHER',
         title: row.title, summary: row.summary ?? null, href: `/activities/${row.slug}`, image: row.coverImage, startsAt: row.startsAt?.toISOString() ?? null,
         price: row.price ? money(row.price, row.currency) : 'Free', isDemo: row.isDemo,
       });
@@ -87,12 +93,13 @@ globePublic.get(
       push(row, {
         id: row.id, type: 'Event', label: row.category?.name ?? 'Event',
         categories: ['experiences', 'events', ...(EXPERIENCE_SECTION[row.category?.section ?? ''] ?? []).filter((key) => key !== 'events')],
+        group: 'EXPERIENCES', sub: row.category?.section ?? 'PARTIES',
         title: row.title, summary: row.summary ?? null, href: `/events/${row.slug}`, image: row.poster, startsAt: row.startsAt.toISOString(), price: null, isDemo: row.isDemo,
       });
     }
     for (const row of experiences) {
       push(row, {
-        id: row.id, type: 'Experience', label: row.category?.name ?? 'Guided experience', categories: ['experiences'],
+        id: row.id, type: 'Experience', label: row.category?.name ?? 'Guided experience', categories: ['experiences'], group: 'EXPERIENCES', sub: row.category?.section ?? 'OUTDOOR',
         title: row.title, summary: row.summary ?? null, href: `/experiences/${row.slug}`, image: row.coverImage, startsAt: row.startsAt?.toISOString() ?? null,
         price: row.price ? money(row.price, row.currency) : row.priceNote ?? null, isDemo: row.isDemo,
       });
@@ -100,7 +107,7 @@ globePublic.get(
     for (const row of trips) {
       const next = row.departures[0];
       push(row, {
-        id: row.id, type: 'Trip', label: 'Group trip', categories: ['travel'],
+        id: row.id, type: 'Trip', label: row.type === 'PRIVATE' ? 'Private trip' : 'Group trip', categories: ['travel'], group: 'TRAVEL', sub: TRIP_SUB[row.type] ?? 'GROUP',
         title: row.title, summary: row.summary ?? null, href: `/travel/${row.slug}`, image: row.heroImage, startsAt: next?.startDate.toISOString() ?? null,
         price: money(next?.price ?? row.basePrice, row.currency), isDemo: row.isDemo,
       });
@@ -108,26 +115,26 @@ globePublic.get(
     for (const row of places) {
       const section = PLACE_SECTION[row.category?.section ?? ''];
       push(row, {
-        id: row.id, type: 'Place', label: row.category?.name ?? 'Place', categories: section ? [section] : ['attractions'],
+        id: row.id, type: 'Place', label: row.category?.name ?? 'Place', categories: section ? [section] : ['attractions'], group: 'EXPLORE', sub: row.category?.section ?? 'ATTRACTIONS',
         title: row.name, summary: row.summary ?? null, href: `/explore/${row.slug}`, image: row.coverImage, startsAt: null, price: row.priceRange ?? null, isDemo: row.isDemo,
       });
     }
     for (const row of tournaments) {
       push(row, {
-        id: row.id, type: 'Tournament', label: row.game?.name ?? 'Gaming', categories: ['gaming'],
+        id: row.id, type: 'Tournament', label: row.game?.name ?? 'Gaming', categories: ['gaming'], group: 'EXPERIENCES', sub: 'GAMING',
         title: row.title, summary: null, href: `/experiences/gaming/${row.slug}`, image: row.coverImage, startsAt: row.startsAt?.toISOString() ?? null,
         price: 'Free', isDemo: row.isDemo, place: row.kind === 'ONLINE' ? 'Online' : null,
       });
     }
     for (const row of communities) {
       push(row, {
-        id: row.id, type: 'Community', label: row.category?.name ?? 'Community', categories: ['communities'],
+        id: row.id, type: 'Community', label: row.category?.name ?? 'Community', categories: ['communities'], group: 'EXPERIENCES', sub: 'COMMUNITIES',
         title: row.name, summary: row.summary ?? null, href: `/experiences/communities/${row.slug}`, image: row.coverImage, startsAt: null, price: null, isDemo: row.isDemo,
       });
     }
     for (const row of projects) {
       push({ latitude: row.latitude, longitude: row.longitude }, {
-        id: row.id, type: 'Impact project', label: 'Enhakkore Impact', categories: ['impact'],
+        id: row.id, type: 'Impact project', label: 'Enhakkore Impact', categories: ['impact'], group: 'IMPACT', sub: /child|wsc|school|educat/i.test(`${row.title} ${row.beneficiaryGroup ?? ''} ${row.category}`) ? 'CHILDREN' : 'COMMUNITY',
         title: row.title, summary: row.summary ?? null, href: `/impact/${row.slug}`, image: row.heroImage, startsAt: null, price: null, isDemo: row.isDemo, place: row.location,
       });
     }

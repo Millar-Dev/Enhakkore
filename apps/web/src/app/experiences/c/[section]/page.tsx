@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { EXPERIENCE_SECTIONS } from '@enhakkore/shared';
+import { EXPERIENCE_SECTIONS, EXPERIENCE_SECTION_NAMES } from '@enhakkore/shared';
 import type { CommunityCard, UpcomingCard } from '@/components/home/types';
 import { PublicShell } from '@/components/layout/PublicShell';
 import { CardGrid, Empty, PageHero, SectionTitle } from '@/components/public/Cards';
@@ -38,8 +38,13 @@ export default async function SectionPage({ params, searchParams }: { params: Pr
 
   return (
     <PublicShell>
-      <PageHero kicker="Experiences" title={`${data.section.icon} ${data.section.label}`} intro={data.section.blurb} />
+      <PageHero kicker="Experiences" title={`${data.section.icon} ${EXPERIENCE_SECTION_NAMES[key as keyof typeof EXPERIENCE_SECTION_NAMES] ?? data.section.label}`} intro={data.section.blurb} />
       <section className="shell py-8 md:py-12">
+        <div className="mb-5 flex flex-wrap gap-2">
+          <Link href={`/experiences/discover?section=${key}`} className="inline-flex h-11 items-center rounded-full bg-acacia-700 px-5 text-sm font-bold text-white">Discover all</Link>
+          <Link href={`/experiences/host?section=${key}`} className="inline-flex h-11 items-center rounded-full border border-line-strong bg-white px-5 text-sm font-semibold text-acacia-700">Host one</Link>
+          <Link href="/experiences/plan" className="inline-flex h-11 items-center rounded-full border border-line-strong bg-white px-5 text-sm font-semibold text-acacia-700">Plan an event with us</Link>
+        </div>
         <form action={base} className="grid gap-2 rounded-[1.1rem] border border-line bg-white p-3 sm:grid-cols-[2fr_1fr_1fr_auto]">
           {filters.category && <input type="hidden" name="category" value={filters.category} />}
           <input name="q" defaultValue={filters.q} placeholder={`Search ${data.section.label.toLowerCase()}`} className="field h-12" aria-label="Search" />
@@ -72,8 +77,8 @@ export default async function SectionPage({ params, searchParams }: { params: Pr
           ) : (
             <Empty
               title="Nothing scheduled here yet"
-              body="Be the first: publish an activity and the team will review it."
-              action={<Link href="/experiences/publish" className="inline-flex h-11 items-center rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">Publish an activity</Link>}
+              body="Be the first: host one. Every submission is reviewed by the team before it is published."
+              action={<Link href={`/experiences/host?section=${key}`} className="inline-flex h-11 items-center rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">Host an experience</Link>}
             />
           )}
         </div>

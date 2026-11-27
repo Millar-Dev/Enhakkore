@@ -489,7 +489,17 @@ communityRouter.get(
       include: { participants: { include: { user: { select: { id: true, name: true, avatarUrl: true, city: true, country: true } } }, orderBy: { createdAt: 'asc' } } },
       orderBy: { startsAt: 'desc' },
     });
-    res.json(rows.map((row) => ({ id: row.id, slug: row.slug, title: row.title, status: row.status, startsAt: row.startsAt, timezone: row.timezone, capacity: row.capacity, spotsTaken: row.spotsTaken, participants: row.participants })));
+    const checkedIn = await prisma.pass.groupBy({ by: ['listingId'], where: { listingType: 'ACTIVITY', listingId: { in: rows.map((row) => row.id) }, status: 'CHECKED_IN' }, _count: { _all: true } });
+    const attendance = new Map(checkedIn.map((row) => [row.listingId, row._count._all]));
+    res.json(
+      rows.map((row) => ({
+        id: row.id, slug: row.slug, title: row.title, status: row.status, startsAt: row.startsAt, timezone: row.timezone, capacity: row.capacity, spotsTaken: row.spotsTaken,
+        verification: row.verification, chatEnabled: row.chatEnabled, checkedIn: attendance.get(row.id) ?? 0,
+        // The team's note is shown to the organiser when it asks for changes.
+        reviewNotes: row.status === 'CHANGES_REQUESTED' || row.status === 'REJECTED' ? row.reviewNotes : null,
+        participants: row.participants.map((p) => ({ ...p, user: { ...p.user, country: undefined } })),
+      })),
+    );
   }),
 );
 

@@ -978,6 +978,7 @@ async function main() {
   await once('researched-places.v3', researchedPlaces);
   await once('wsc-wording.v5', wscWording);
   await once('subcategories.v6', subcategories);
+  await once('homepage-order.v6', homepageOrder);
   // Not run once: a fresh deploy with the variables set is how the owner is created.
   await owner();
 }
@@ -1012,4 +1013,33 @@ async function subcategories() {
     if (await prisma.category.findFirst({ where: { kind: 'GAME', OR: [{ slug }, { name: { startsWith: game.name } }] } })) continue;
     await prisma.category.create({ data: { kind: 'GAME', name: game.name, slug, group: game.group, section: 'GAMING', icon: '🎮', sortOrder: 50 } });
   }
+}
+
+/**
+ * R6 homepage order: Discover & Review comes before Enhakkore Impact, and the
+ * Explore section is "Explore Enhakkore". Only changed when the saved values
+ * are still the earlier defaults — a team member's own order is left alone.
+ */
+async function homepageOrder() {
+  const row = await prisma.platformSetting.findUnique({ where: { key: 'site.homepage' } });
+  if (!row) return;
+  const value = JSON.parse(row.value) as { sections?: { key: string; title?: string; subtitle?: string }[] };
+  const sections = value.sections;
+  if (!Array.isArray(sections)) return;
+  let changed = false;
+  const keys = sections.map((section) => section.key);
+  const purpose = keys.indexOf('purpose');
+  const impact = keys.indexOf('impact');
+  const review = keys.indexOf('review');
+  if (purpose >= 0 && impact === purpose + 1 && review === impact + 1) {
+    [sections[impact], sections[review]] = [sections[review]!, sections[impact]!];
+    changed = true;
+  }
+  const explore = sections.find((section) => section.key === 'explore' || section.key === 'discover');
+  if (explore && (explore.title === 'Explore Our World' || !explore.title)) {
+    explore.title = 'Explore Enhakkore';
+    explore.subtitle = 'Places, experiences, trips and impact — start with what moves you.';
+    changed = true;
+  }
+  if (changed) await prisma.platformSetting.update({ where: { key: 'site.homepage' }, data: { value: JSON.stringify(value) } });
 }

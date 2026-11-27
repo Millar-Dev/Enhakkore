@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { localToUtc } from '@enhakkore/shared';
 import { ApiError, api } from '@/lib/api';
 import { uploadFile } from '@/lib/upload';
@@ -35,6 +35,11 @@ export function PublishActivityForm({ categories }: { categories: { id: string; 
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const [step, setStep] = useState(0);
+  const [verification, setVerification] = useState<'NONE' | 'QR' | 'MANUAL'>('NONE');
+  const [summary, setSummary] = useState<[string, string][]>([]);
+  const formRef = useRef<HTMLFormElement>(null);
+  const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
     api.get<Country[]>('/public/countries').then((rows) => {
@@ -71,13 +76,41 @@ export function PublishActivityForm({ categories }: { categories: { id: string; 
     );
   }
 
+  function next() {
+    const container = stepRefs.current[step];
+    const controls = container ? Array.from(container.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea')) : [];
+    for (const control of controls) if (!control.checkValidity()) return control.reportValidity();
+    if (step === 0 && !countryId) return setError('Choose a country.');
+    setError(null);
+    if (step === 2 && formRef.current) {
+      const form = new FormData(formRef.current);
+      const get = (name: string) => String(form.get(name) ?? '').trim();
+      setSummary([
+        ['Title', get('title')],
+        ['Category', categories.find((c) => c.id === get('categoryId'))?.name ?? ''],
+        ['Where', mode === 'ONLINE' ? 'Online' : [get('meetingPoint'), cities.find((c) => c.id === cityId)?.name, countries.find((c) => c.id === countryId)?.name].filter(Boolean).join(', ')],
+        ['Starts', get('startsAt').replace('T', ' ')],
+        ['Capacity', get('capacity') || 'No limit'],
+        ['Paid', form.get('paid') === 'on' ? 'Yes — enhanced review' : 'Free'],
+        ['Group chat', form.get('chatEnabled') === 'on' ? 'On' : 'Off'],
+        ['Entry check', verification === 'NONE' ? 'None' : verification === 'QR' ? 'Enhakkore Pass with QR' : 'Manual check-in'],
+      ]);
+    }
+    setStep(step + 1);
+    window.scrollTo({ top: (formRef.current?.getBoundingClientRect().top ?? 0) + window.scrollY - 90, behavior: 'smooth' });
+  }
+
   const zoneFor = (cityId: string) => cities.find((city) => city.id === cityId)?.timezone || countries.find((row) => row.id === countryId)?.timezone || 'Africa/Dar_es_Salaam';
 
   return (
     <form
+      ref={formRef}
       className="grid gap-4"
+      noValidate
       onSubmit={async (event) => {
         event.preventDefault();
+        if (step < STEPS.length - 1) return next();
+        if (busy) return;
         const form = new FormData(event.currentTarget);
         const get = (name: string) => String(form.get(name) ?? '').trim();
         const zone = zoneFor(cityId);
@@ -105,6 +138,10 @@ export function PublishActivityForm({ categories }: { categories: { id: string; 
             organiserPhone: get('phone'),
             coverImage: cover,
             paid: form.get('paid') === 'on',
+            verification,
+            chatEnabled: form.get('chatEnabled') === 'on',
+            ageRestriction: get('age'),
+            safetyNotes: get('safety'),
             acceptedRules: form.get('acceptedRules') === 'on',
           });
           setResult(response);
@@ -112,12 +149,26 @@ export function PublishActivityForm({ categories }: { categories: { id: string; 
           if (caught instanceof ApiError) {
             setError(caught.message);
             setFields(caught.fields);
+            const firstBad = Object.keys(caught.fields)[0];
+            const where = firstBad ? STEP_OF[firstBad] : undefined;
+            if (where !== undefined) setStep(where);
           } else setError('Could not submit. Check your connection and try again.');
         } finally {
           setBusy(false);
         }
       }}
     >
+      <ol className="grid grid-cols-4 gap-1" aria-label="Steps">
+        {STEPS.map((label, index) => (
+          <li key={label}>
+            <button type="button" onClick={() => index < step && setStep(index)} className={`w-full rounded-full px-1 py-1.5 text-[0.6875rem] font-semibold sm:text-xs ${index === step ? 'bg-acacia-700 text-white' : index < step ? 'bg-clay-400/40 text-acacia-700' : 'bg-sand text-ink-muted'}`} aria-current={index === step ? 'step' : undefined}>
+              {index + 1}. {label}
+            </button>
+          </li>
+        ))}
+      </ol>
+
+      <div ref={(el) => { stepRefs.current[0] = el; }} className={step === 0 ? 'grid gap-4' : 'hidden'}>
       <L label="Title" error={fields.title}><input name="title" className="field" required minLength={4} maxLength={160} placeholder="Saturday pickup basketball" /></L>
       <L label="Category" error={fields.categoryId}>
         <select name="categoryId" className="field" required defaultValue="">
@@ -161,9 +212,6 @@ export function PublishActivityForm({ categories }: { categories: { id: string; 
         <L label="Capacity (optional)"><input name="capacity" type="number" min={1} className="field" /></L>
         <L label="Your phone / WhatsApp (for the team only)" error={fields.organiserPhone}><input name="phone" type="tel" className="field" required defaultValue={user?.phone ?? ''} /></L>
       </div>
-      <L label="Who can take part"><input name="eligibility" className="field" placeholder="Ages 16+, all levels…" /></L>
-      <L label="Rules"><textarea name="rules" className="field" /></L>
-      <L label="Cancellation conditions"><textarea name="cancellation" className="field" /></L>
       <L label="Cover photo (optional)">
         <input
           type="file"
@@ -186,19 +234,64 @@ export function PublishActivityForm({ categories }: { categories: { id: string; 
         {uploading && <span className="text-xs text-ink-muted">Uploading…</span>}
         {cover && <span className="text-xs text-safari-700">Photo added ✓</span>}
       </L>
+      </div>
+
+      <div ref={(el) => { stepRefs.current[1] = el; }} className={step === 1 ? 'grid gap-4' : 'hidden'}>
+      <L label="Who can take part"><input name="eligibility" className="field" placeholder="All levels, beginners welcome…" /></L>
+      <L label="Age (optional)"><input name="age" className="field" maxLength={60} placeholder="16+, 18+, all ages…" /></L>
+      <L label="Rules"><textarea name="rules" className="field" /></L>
+      <L label="Safety: what participants should know or bring (optional)"><textarea name="safety" className="field" placeholder="Water, trainers, first-aid point, who to contact on the day…" /></L>
+      <L label="Cancellation conditions"><textarea name="cancellation" className="field" /></L>
+      <label className="flex items-start gap-2 text-sm text-ink-soft">
+        <input type="checkbox" name="chatEnabled" className="mt-1" />
+        <span>Open a group chat for confirmed participants (moderated; members can report and block). You can switch it off later.</span>
+      </label>
       <label className="flex items-start gap-2 text-sm text-ink-soft">
         <input type="checkbox" name="paid" className="mt-1" />
         <span>This activity is paid, or I plan to charge participants. (Paid and large events need enhanced review and organiser verification. No payment is collected through Enhakkore at launch.)</span>
       </label>
+      </div>
+
+      <div ref={(el) => { stepRefs.current[2] = el; }} className={step === 2 ? 'grid gap-3' : 'hidden'}>
+        <p className="text-sm text-ink-soft">How will people be checked in at the entrance? Most free activities do not need a check.</p>
+        {([
+          ['NONE', 'No entry check (recommended for free activities)', 'Anyone who registered can come. No pass is issued.'],
+          ['QR', 'Enhakkore Pass with QR code', 'Each confirmed participant gets a pass with a QR code. You scan it at the entrance with your phone. The code holds no personal details.'],
+          ['MANUAL', 'Manual check-in by name and reference', 'Each confirmed participant gets a pass reference. You check names off in the scanner page.'],
+        ] as const).map(([value, title, body]) => (
+          <label key={value} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${verification === value ? 'border-acacia-600 bg-[#f1f6fb]' : 'border-line'}`}>
+            <input type="radio" name="verification" value={value} checked={verification === value} onChange={() => setVerification(value)} className="mt-1" />
+            <span><span className="block text-sm font-semibold text-ink">{title}</span><span className="text-xs text-ink-muted">{body}</span></span>
+          </label>
+        ))}
+      </div>
+
+      <div ref={(el) => { stepRefs.current[3] = el; }} className={step === 3 ? 'grid gap-4' : 'hidden'}>
+      <dl className="grid gap-1 rounded-xl bg-sand p-4 text-sm">
+        {summary.map(([label, value]) => (
+          <div key={label} className="grid grid-cols-[8rem_1fr] gap-2"><dt className="text-ink-muted">{label}</dt><dd className="text-ink [overflow-wrap:anywhere]">{value || '—'}</dd></div>
+        ))}
+      </dl>
+      <p className="text-sm text-ink-soft">After you submit, it is saved as “Pending review”, seen only by you and the team. Nothing is published until the team approves it.</p>
       <label className="flex items-start gap-2 text-sm text-ink-soft">
         <input type="checkbox" name="acceptedRules" className="mt-1" required />
         <span>I accept the <Link href="/legal/activityRules" className="underline">event and activity rules</Link> and the <Link href="/legal/community" className="underline">community guidelines</Link>.</span>
       </label>
-      {error && <p className="text-sm text-danger">{error}</p>}
-      <button disabled={busy || uploading} className="h-12 rounded-full bg-acacia-600 font-bold text-white disabled:opacity-50">{busy ? 'Submitting…' : 'Submit for review'}</button>
+      </div>
+      {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+      <div className="flex gap-2">
+        {step > 0 && <button type="button" onClick={() => setStep(step - 1)} className="h-12 rounded-full border border-line-strong px-6 font-semibold text-ink">Back</button>}
+        <button disabled={busy || uploading} className="h-12 flex-1 rounded-full bg-acacia-600 font-bold text-white disabled:opacity-50">
+          {step < STEPS.length - 1 ? 'Continue' : busy ? 'Submitting…' : 'Submit for review'}
+        </button>
+      </div>
     </form>
   );
 }
+
+const STEPS = ['Details', 'Participation & safety', 'Entry check', 'Review'];
+/** Which step holds each field, to go back to it when the server reports a problem. */
+const STEP_OF: Record<string, number> = { title: 0, categoryId: 0, description: 0, countryId: 0, startsAt: 0, organiserPhone: 0, eligibility: 1, rules: 1, cancellationTerms: 1, acceptedRules: 3 };
 
 function L({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (

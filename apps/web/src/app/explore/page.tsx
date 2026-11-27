@@ -46,7 +46,22 @@ const SORTS = [
   { value: '', label: 'Featured' },
   { value: 'popular', label: 'Popular' },
   { value: 'recent', label: 'Recently added' },
+  { value: 'rating', label: 'Member rating' },
 ];
+/** Common facilities to filter by — matched against what each listing states. */
+const FACILITIES: Record<string, string[]> = {
+  STAYS: ['Wi-Fi', 'Pool', 'Parking', 'Breakfast', 'Air conditioning', 'Beach'],
+  FOOD: ['Outdoor seating', 'Parking', 'Wi-Fi', 'Live music', 'Delivery'],
+  VENUES: ['Parking', 'Sound system', 'Catering', 'Air conditioning', 'Outdoor'],
+  ATTRACTIONS: ['Parking', 'Guided tours', 'Toilets', 'Family friendly'],
+};
+const CUISINES = ['Swahili', 'Seafood', 'Indian', 'Italian', 'Chinese', 'Grill', 'Vegetarian', 'Café'];
+const SECTION_INTRO: Record<string, string> = {
+  STAYS: 'Hotels, lodges, guesthouses and apartments',
+  FOOD: 'Restaurants, cafés and places to eat and drink',
+  VENUES: 'Spaces for events, parties, meetings and celebrations',
+  ATTRACTIONS: 'Beaches, parks, museums and things to see',
+};
 
 function Svg({ d, size = 22 }: { d: string; size?: number }) {
   return (
@@ -69,8 +84,8 @@ function Row({ title, href, children }: { title: string; href?: string; children
 }
 
 export default async function ExplorePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const params = pick(await searchParams, ['section', 'country', 'city', 'category', 'q', 'page', 'hiddenGem', 'verified', 'sort']);
-  const filtering = !!(params.section || params.country || params.city || params.category || params.q || params.hiddenGem || params.verified || params.sort || params.page);
+  const params = pick(await searchParams, ['section', 'country', 'city', 'category', 'q', 'page', 'hiddenGem', 'verified', 'sort', 'facility', 'cuisine', 'price']);
+  const filtering = !!(params.section || params.country || params.city || params.category || params.q || params.hiddenGem || params.verified || params.sort || params.page || params.facility || params.cuisine || params.price);
   const [{ settings }, catalogue, list, popular, recent] = await Promise.all([
     getSite(),
     getCatalogue(),
@@ -88,7 +103,7 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
     const text = search.toString();
     return text ? `/explore?${text}` : '/explore';
   };
-  const activeFilters = [params.category, params.verified, params.hiddenGem, params.sort].filter(Boolean).length;
+  const activeFilters = [params.category, params.verified, params.hiddenGem, params.sort, params.facility, params.cuisine, params.price].filter(Boolean).length;
   const where = cityName ?? country?.name;
 
   return (
@@ -98,8 +113,8 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
         <SmartImage src={settings.pages.exploreHeroImage} alt="" fill priority sizes="100vw" className="object-cover object-center opacity-80" />
         <div className="absolute inset-0 bg-gradient-to-b from-[#06172b]/40 via-[#06172b]/55 to-[#06172b]" />
         <div className="shell relative flex min-h-[min(26rem,62svh)] flex-col items-center justify-end pb-6 pt-14 text-center md:min-h-[24rem] md:pb-10">
-          <h1 className="font-display text-[clamp(2.4rem,11vw,4.6rem)] leading-none">{active ? active.label : 'Explore'}</h1>
-          <p className="mt-2 max-w-md text-[0.9375rem] text-white/85 md:text-lg">Discover places, stays, dining, venues and attractions{where ? ` in ${where}` : ' worldwide'}.</p>
+          <h1 className="font-display text-[clamp(2.2rem,10vw,4.4rem)] leading-none text-balance">{active ? active.label : 'Explore Places Worth Knowing'}</h1>
+          <p className="mt-2 max-w-md text-[0.9375rem] text-white/85 md:text-lg">{active ? SECTION_INTRO[active.key] ?? '' : 'Stays, dining, venues and attractions'}{where ? ` in ${where}` : ' worldwide'}.</p>
           <span className="mt-3 h-[3px] w-12 rounded-full bg-clay-400" aria-hidden />
           <form action="/explore" role="search" className="mt-5 flex h-12 w-full max-w-xl items-center gap-2 rounded-full bg-white pl-4 pr-1 text-ink shadow-xl">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="shrink-0 text-ink-muted" aria-hidden><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
@@ -137,6 +152,31 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
                   <div className="flex flex-wrap gap-2">
                     <label className="enh-choice"><input type="checkbox" name="verified" value="true" defaultChecked={params.verified === 'true'} /> Verified by Enhakkore only</label>
                     <label className="enh-choice"><input type="checkbox" name="hiddenGem" value="true" defaultChecked={params.hiddenGem === 'true'} /> Hidden gems</label>
+                  </div>
+                </fieldset>
+                <fieldset>
+                  <legend className="mb-2 text-sm font-bold">Facilities</legend>
+                  <div className="flex flex-wrap gap-2">
+                    <label className="enh-choice"><input type="radio" name="facility" value="" defaultChecked={!params.facility} /> Any</label>
+                    {(FACILITIES[active?.key ?? ''] ?? [...new Set(Object.values(FACILITIES).flat())]).map((item) => (
+                      <label key={item} className="enh-choice"><input type="radio" name="facility" value={item} defaultChecked={params.facility === item} /> {item}</label>
+                    ))}
+                  </div>
+                  <p className="mt-1 text-xs opacity-70">Matched against what each place lists. Ask the place to confirm.</p>
+                </fieldset>
+                {(!active || active.key === 'FOOD') && (
+                  <fieldset>
+                    <legend className="mb-2 text-sm font-bold">Cuisine</legend>
+                    <div className="flex flex-wrap gap-2">
+                      <label className="enh-choice"><input type="radio" name="cuisine" value="" defaultChecked={!params.cuisine} /> Any</label>
+                      {CUISINES.map((item) => <label key={item} className="enh-choice"><input type="radio" name="cuisine" value={item} defaultChecked={params.cuisine === item} /> {item}</label>)}
+                    </div>
+                  </fieldset>
+                )}
+                <fieldset>
+                  <legend className="mb-2 text-sm font-bold">Price range</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {['', '$', '$$', '$$$'].map((item) => <label key={item || 'any'} className="enh-choice"><input type="radio" name="price" value={item} defaultChecked={(params.price ?? '') === item} /> {item || 'Any'}</label>)}
                   </div>
                 </fieldset>
                 <label className="grid gap-2 text-sm font-bold">

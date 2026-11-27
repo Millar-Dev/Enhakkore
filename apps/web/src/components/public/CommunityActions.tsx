@@ -7,15 +7,19 @@ import { ApiError, api } from '@/lib/api';
 import { useSession } from '@/lib/session';
 
 interface Detail {
-  members: { id: string; name: string; avatarUrl: string | null; city: string | null; role: string }[];
-  viewer: { isMember: boolean; role: string | null } | null;
+  members: { id: string; name: string; username?: string | null; avatarUrl: string | null; city: string | null; role: string }[];
+  viewer: { isMember: boolean; status?: string | null; role: string | null } | null;
+  community?: { accessType?: string; membershipPrice?: number | null; membershipCurrency?: string | null; membershipPeriod?: string | null; membershipBenefits?: string | null; membershipTerms?: string | null };
 }
+const PERIOD: Record<string, string> = { MONTH: 'per month', YEAR: 'per year', ONCE: 'one-time' };
 
 /** Join / leave, and the member list (signed-in members only). */
 export function CommunityMembership({ slug, memberCount }: { slug: string; memberCount: number }) {
   const { status } = useSession();
   const [detail, setDetail] = useState<Detail | null>(null);
   const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState('');
+  const [notice, setNotice] = useState<string | null>(null);
   const load = useCallback(() => api.get<Detail>(`/public/communities/${slug}`).then(setDetail).catch(() => undefined), [slug]);
   useEffect(() => {
     if (status === 'authenticated') void load();
@@ -31,20 +35,52 @@ export function CommunityMembership({ slug, memberCount }: { slug: string; membe
     );
   }
   const isMember = !!detail?.viewer?.isMember;
+  const pending = detail?.viewer?.status === 'PENDING';
+  const declined = detail?.viewer?.status === 'DECLINED';
+  const access = detail?.community?.accessType ?? 'FREE';
+  const c = detail?.community;
   return (
     <div className="space-y-4">
-      <button
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          await api.post(`/community/communities/${slug}/${isMember ? 'leave' : 'join'}`, {}).catch(() => undefined);
-          await load();
-          setBusy(false);
-        }}
-        className={isMember ? 'h-12 w-full rounded-full border border-line-strong bg-white font-semibold text-ink' : 'h-12 w-full rounded-full bg-acacia-600 font-bold text-white'}
-      >
-        {isMember ? 'Leave community' : 'Join community'}
-      </button>
+      {access !== 'FREE' && (
+        <div className="rounded-[1.1rem] border border-line bg-white p-5 text-sm text-ink-soft">
+          <p className="font-bold text-acacia-700">{access === 'PAID' ? 'Paid membership' : 'Private community'}</p>
+          {access === 'PAID' && c?.membershipPrice != null && <p className="mt-1">{c.membershipCurrency ?? 'TZS'} {c.membershipPrice.toLocaleString()} {PERIOD[c.membershipPeriod ?? ''] ?? ''} — separate from the cost of any event.</p>}
+          {access === 'PAID' && <p className="mt-1">Online payment is not switched on yet. Send a request; the community team will contact you about payment and approve your membership.</p>}
+          {access === 'PRIVATE' && <p className="mt-1">Members apply and the community team approves each one.</p>}
+          {c?.membershipBenefits && <p className="mt-2 whitespace-pre-line"><strong>Members get:</strong> {c.membershipBenefits}</p>}
+          {c?.membershipTerms && <details className="mt-2"><summary className="cursor-pointer font-semibold">Membership terms</summary><p className="mt-1 whitespace-pre-line">{c.membershipTerms}</p></details>}
+        </div>
+      )}
+      {notice && <p role="status" className="rounded-xl bg-sand p-3 text-sm text-ink-soft">{notice}</p>}
+      {pending ? (
+        <p className="rounded-xl border border-line bg-white p-4 text-sm text-ink-soft">Your request is waiting for the community team. <button type="button" className="font-semibold underline" onClick={async () => { await api.post(`/community/communities/${slug}/leave`, {}).catch(() => undefined); await load(); }}>Withdraw</button></p>
+      ) : declined ? (
+        <p className="rounded-xl border border-line bg-white p-4 text-sm text-ink-soft">Your last request was not approved.</p>
+      ) : (
+        <>
+          {!isMember && access === 'PRIVATE' && (
+            <textarea value={note} onChange={(event) => setNote(event.target.value)} maxLength={1000} rows={3} placeholder="Tell the community team a little about yourself" aria-label="Message to the community team" className="field w-full" />
+          )}
+          <button
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              setNotice(null);
+              try {
+                const result = await api.post<{ message?: string }>(`/community/communities/${slug}/${isMember ? 'leave' : 'join'}`, isMember ? {} : { message: note || undefined });
+                if (!isMember && result.message && access !== 'FREE') setNotice(result.message);
+              } catch (caught) {
+                setNotice(caught instanceof ApiError ? caught.message : 'That did not work.');
+              }
+              await load();
+              setBusy(false);
+            }}
+            className={isMember ? 'h-12 w-full rounded-full border border-line-strong bg-white font-semibold text-ink' : 'h-12 w-full rounded-full bg-acacia-600 font-bold text-white'}
+          >
+            {isMember ? 'Leave community' : access === 'FREE' ? 'Join community' : 'Request to join'}
+          </button>
+        </>
+      )}
       <div className="rounded-[1.1rem] border border-line bg-white p-5">
         <p className="font-bold text-acacia-700">Members ({detail?.members.length ?? memberCount})</p>
         <ul className="mt-3 grid gap-2">
@@ -52,7 +88,7 @@ export function CommunityMembership({ slug, memberCount }: { slug: string; membe
             <li key={member.id}>
               <Link href={`/members/${member.id}`} className="flex items-center gap-2 text-sm">
                 <Avatar name={member.name} src={member.avatarUrl} size="xs" />
-                <span className="font-semibold text-ink">{member.name.split(' ')[0]}</span>
+                <span className="font-semibold text-ink">{member.username ? `@${member.username}` : member.name.split(' ')[0]}</span>
                 {member.role === 'MODERATOR' && <span className="text-xs text-clay-600">moderator</span>}
                 {member.city && <span className="text-xs text-ink-muted">{member.city}</span>}
               </Link>
