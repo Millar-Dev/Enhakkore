@@ -1,4 +1,5 @@
 import { Router, type Request } from 'express';
+import { usernameProblem } from '../services/usernames';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { ENQUIRY_TYPES, departureStatus, slugify } from '@enhakkore/shared';
@@ -980,6 +981,17 @@ communityRouter.get(
 
 /** Public profile card by username — only fields the member made Public. */
 export const profilePublic = Router();
+
+/** Username availability for the sign-up form (rate-limited like other forms). */
+profilePublic.get(
+  '/username-available',
+  socialLimiter,
+  route(async (req, res) => {
+    const username = String(req.query.u ?? '').trim().toLowerCase();
+    const problem = await usernameProblem(username);
+    res.json({ username, available: !problem, reason: problem });
+  }),
+);
 profilePublic.get(
   '/u/:username',
   route(async (req, res) => {

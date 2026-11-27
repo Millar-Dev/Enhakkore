@@ -42,6 +42,13 @@ export interface CommunityCard {
   coverImage: string | null;
   memberCount: number;
   isDemo?: boolean;
+  chatEnabled?: boolean;
+  accessType?: 'FREE' | 'PAID' | 'PRIVATE' | string;
+  membershipPrice?: number | null;
+  membershipCurrency?: string | null;
+  membershipPeriod?: string | null;
+  membershipBenefits?: string | null;
+  membershipTerms?: string | null;
   city?: { name: string } | null;
   country?: { name: string } | null;
   category?: { name: string; icon?: string | null } | null;

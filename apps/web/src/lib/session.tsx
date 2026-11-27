@@ -33,6 +33,9 @@ export interface RegisterInput {
   accountType: 'TRAVELER' | 'ORGANIZER';
   companyName?: string;
   country?: string;
+  city?: string;
+  /** Public handle shown instead of a phone number or email. */
+  username?: string;
   phone?: string;
   /** The member accepted the current terms (required). */
   acceptedTerms?: boolean;

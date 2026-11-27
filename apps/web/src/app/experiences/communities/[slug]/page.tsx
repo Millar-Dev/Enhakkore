@@ -8,7 +8,7 @@ import { CardGrid, Prose, SectionTitle } from '@/components/public/Cards';
 import { CommunityMembership } from '@/components/public/CommunityActions';
 import { ActivityCard } from '@/components/public/listings';
 import { SmartImage } from '@/components/public/SmartImage';
-import { ShareButton, TrackView } from '@/components/public/Track';
+import { GroupChatLink, ShareButton, TrackView } from '@/components/public/Track';
 import { apiGet } from '@/lib/api';
 import type { Listing } from '@/lib/public';
 
@@ -47,6 +47,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
         <div className="space-y-10">
           <div className="flex gap-2">
             <ShareButton subjectType="COMMUNITY" subjectId={c.id} title={c.name} />
+            <GroupChatLink subjectType="COMMUNITY" subjectId={c.id} enabled={Boolean(c.chatEnabled)} />
             <TrackView subjectType="COMMUNITY" subjectId={c.id} />
           </div>
           {c.isDemo && <DemoNotice what="community" />}

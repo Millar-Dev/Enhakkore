@@ -156,13 +156,17 @@ export function DashboardShell({
 export const TRAVELLER_NAV: NavItem[] = [
   { href: '/account', label: 'Overview', exact: true },
   { href: '/account/experiences', label: 'My experiences' },
+  { href: '/account/passes', label: 'Enhakkore Pass' },
   { href: '/account/enquiries', label: 'Enquiries & reservations' },
   { href: '/account/applications', label: 'Trip applications' },
+  { href: '/account/chats', label: 'Group chats' },
   { href: '/account/groups', label: 'Trip groups' },
   { href: '/account/hosting', label: 'Hosting' },
+  { href: '/account/scanner', label: 'Check-in scanner' },
   { href: '/account/saved', label: 'Saved' },
   { href: '/account/notifications', label: 'Notifications' },
-  { href: '/account/profile', label: 'Profile' },
+  { href: '/account/profile', label: 'Profile & privacy' },
+  { href: '/account/settings', label: 'Notifications & Nearby' },
 ];
 
 /** Every account type that has a personal area. */

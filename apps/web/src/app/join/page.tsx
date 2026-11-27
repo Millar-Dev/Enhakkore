@@ -3,11 +3,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { USERNAME_PATTERN } from '@enhakkore/shared';
+import { CountryCity } from '@/components/public/CountryCity';
 import { Logo } from '@/components/brand/Logo';
 import { Alert, Button, Icon, cx } from '@/components/ui';
 import { Checkbox, Input } from '@/components/ui/form';
-import { ApiError } from '@/lib/api';
+import { ApiError, api } from '@/lib/api';
 import { homeFor, useSession } from '@/lib/session';
 
 type AccountType = 'TRAVELER' | 'ORGANIZER';
@@ -26,7 +28,23 @@ function JoinForm() {
     password: '',
     companyName: '',
     country: '',
+    city: '',
+    username: '',
   });
+  const [nameCheck, setNameCheck] = useState<{ username: string; ok: boolean; reason?: string } | null>(null);
+
+  // Checks the username as it is typed, after a short pause.
+  useEffect(() => {
+    const value = form.username.trim().toLowerCase();
+    if (!value) return setNameCheck(null);
+    if (!USERNAME_PATTERN.test(value)) return setNameCheck({ username: value, ok: false, reason: 'Use 3–20 lowercase letters, numbers, dots or underscores.' });
+    const timer = window.setTimeout(() => {
+      api.get<{ available: boolean; reason: string | null }>(`/public/username-available?u=${encodeURIComponent(value)}`, { token: null })
+        .then((result) => setNameCheck({ username: value, ok: result.available, reason: result.reason ?? undefined }))
+        .catch(() => setNameCheck(null));
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [form.username]);
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -42,6 +60,16 @@ function JoinForm() {
       setError('Please accept the terms to continue.');
       return;
     }
+    const missing: Record<string, string> = {};
+    if (!form.username.trim()) missing.username = 'Choose a username.';
+    else if (nameCheck && !nameCheck.ok) missing.username = nameCheck.reason ?? 'Choose another username.';
+    if (!form.country) missing.country = 'Choose your country.';
+    if (!form.city) missing.city = 'Choose your city.';
+    if (Object.keys(missing).length) {
+      setFields(missing);
+      setError('Please complete the highlighted fields.');
+      return;
+    }
     setBusy(true);
     setError(null);
     setFields({});
@@ -52,6 +80,8 @@ function JoinForm() {
         password: form.password,
         accountType,
         country: form.country || undefined,
+        city: form.city || undefined,
+        username: form.username.trim().toLowerCase(),
         acceptedTerms: true,
       });
       // New operators go straight to verification — it is the only thing that
@@ -100,6 +130,18 @@ function JoinForm() {
 
 
         <Input
+          label="Username"
+          required
+          autoComplete="username"
+          value={form.username}
+          onChange={(event) => set('username', event.target.value.replace(/\s/g, '').toLowerCase())}
+          error={fields.username ?? (nameCheck && !nameCheck.ok && nameCheck.username === form.username.trim().toLowerCase() ? nameCheck.reason : undefined)}
+          hint={nameCheck?.ok ? `@${nameCheck.username} is available.` : 'Shown to other members instead of your phone number or email.'}
+          placeholder="e.g. amina_runs"
+          maxLength={20}
+        />
+
+        <Input
           label="Email"
           type="email"
           required
@@ -122,13 +164,14 @@ function JoinForm() {
           hint="Use at least 8 characters."
         />
 
-        <Input
-          label="Country"
-          value={form.country}
-          onChange={(event) => set('country', event.target.value)}
-          error={fields.country}
-          placeholder="Tanzania"
+        <CountryCity
+          required
+          country={form.country}
+          city={form.city}
+          errors={{ country: fields.country, city: fields.city }}
+          onChange={(next) => setForm((current) => ({ ...current, ...next }))}
         />
+        <p className="-mt-2 text-[0.8125rem] text-ink-muted">Used to show experiences, trips and places near you first. You can change it at any time.</p>
 
         <Checkbox
           checked={agreed}

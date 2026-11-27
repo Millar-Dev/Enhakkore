@@ -8,7 +8,7 @@ import { ReportButton, SaveButton } from '@/components/public/Actions';
 import { Facts, Gallery, Prose, VideoBlock } from '@/components/public/Cards';
 import { JoinPanel } from '@/components/public/JoinPanel';
 import { Sessions } from '@/components/public/Sessions';
-import { ShareButton, TrackView } from '@/components/public/Track';
+import { GroupChatLink, ShareButton, TrackView } from '@/components/public/Track';
 import { SmartImage } from '@/components/public/SmartImage';
 import { apiGet } from '@/lib/api';
 import { placeLabel, priceLabel, whenLabel, type Listing } from '@/lib/public';
@@ -59,6 +59,7 @@ export default async function ActivityPage({ params }: { params: Promise<{ slug:
               {ended && item.status !== 'CANCELLED' && <span className="rounded-full bg-ink-muted px-3 py-1.5 font-semibold text-white">This activity has taken place</span>}
               <SaveButton itemType="ACTIVITY" itemId={item.id} />
               <ShareButton subjectType="ACTIVITY" subjectId={item.id} title={String(item.title)} />
+              <GroupChatLink subjectType="ACTIVITY" subjectId={item.id} enabled={Boolean(item.chatEnabled)} />
               <TrackView subjectType="ACTIVITY" subjectId={item.id} />
             </div>
           </div>
