@@ -13,6 +13,8 @@ import { SocialIcon } from './SocialIcon';
 
 export interface HeaderProps {
   logoUrl: string;
+  /** Official light version of the logo for the dark phone header, if supplied. */
+  logoOnDarkUrl?: string;
   brandName: string;
   nav: { label: string; href: string }[];
   whatsapp: { label: string; display: string; href: string }[];
@@ -48,10 +50,17 @@ const SUBNAV: Record<string, { label: string; href: string }[]> = {
 };
 
 /**
- * The site header. Always a light ground, because the original logo is navy
- * artwork and must stay legible; it is never inverted or recoloured.
+ * The site header.
+ *
+ * Phones and tablets: a compact dark navy bar — menu on the left, logo in the
+ * middle, search and notifications on the right. The original logo is navy
+ * artwork and is never inverted or recoloured, so on the dark bar it sits on a
+ * small cream badge unless an official light version has been uploaded
+ * (Settings → Brand → Logo on dark URL).
+ *
+ * Computers: a light bar with the full menu.
  */
-export function Header({ logoUrl, brandName, nav, whatsapp }: HeaderProps) {
+export function Header({ logoUrl, logoOnDarkUrl, brandName, nav, whatsapp }: HeaderProps) {
   const pathname = usePathname();
   const { user, status, signOut } = useSession();
   const [unread, setUnread] = useState(0);
@@ -88,15 +97,60 @@ export function Header({ logoUrl, brandName, nav, whatsapp }: HeaderProps) {
     <>
       <header
         className={cx(
-          'sticky top-0 z-50 border-b bg-[color:var(--color-cream)]/95 backdrop-blur-xl transition-[transform,box-shadow] duration-300',
-          scrolled ? 'border-line shadow-[0_6px_24px_-18px_rgba(8,43,69,0.45)]' : 'border-transparent',
+          'sticky top-0 z-50 border-b bg-[#06152a]/95 pt-[env(safe-area-inset-top)] backdrop-blur-xl transition-[transform,box-shadow] duration-300 lg:bg-[color:var(--color-cream)]/95',
+          scrolled ? 'border-white/10 shadow-[0_6px_24px_-18px_rgba(8,43,69,0.45)] lg:border-line' : 'border-transparent',
           hidden && !open && !searching && '-translate-y-full',
         )}
       >
-        <div className="shell flex h-14 items-center justify-between gap-3 md:h-[4.5rem]">
+        {/* Phones and tablets */}
+        <div className="shell grid h-14 grid-cols-[5.5rem_1fr_5.5rem] items-center text-white md:h-16 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-expanded={open}
+            className="-ml-2 inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10"
+          >
+            {open ? (
+              <Icon.close size={22} />
+            ) : (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              </svg>
+            )}
+          </button>
+          <Link href="/" aria-label={`${brandName} — home`} className="flex justify-self-center">
+            {logoOnDarkUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoOnDarkUrl} alt="" className="h-10 w-auto md:h-11" />
+            ) : (
+              <span className="rounded-lg bg-[#f6f2ea] px-1.5 py-0.5 shadow-[0_0_0_1px_rgba(203,154,60,0.45)]">
+                <OriginalLogo src={logoUrl} height={38} priority />
+              </span>
+            )}
+          </Link>
+          <div className="-mr-2 flex items-center justify-end">
+            <button type="button" onClick={() => setSearching(true)} aria-label="Search" className="inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10">
+              <Icon.search size={21} />
+            </button>
+            <Link
+              href={status === 'authenticated' ? '/account/notifications' : '/signin?next=/account/notifications'}
+              aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
+              className="relative inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10"
+            >
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+              </svg>
+              {unread > 0 && <span className="absolute right-1.5 top-1.5 min-w-[1.1rem] rounded-full bg-[#e5484d] px-1 text-center text-[0.625rem] font-bold leading-[1.1rem] text-white">{unread > 9 ? '9+' : unread}</span>}
+            </Link>
+          </div>
+        </div>
+
+        {/* Computers */}
+        <div className="shell hidden h-[4.5rem] items-center justify-between gap-3 lg:flex">
           <Link href="/" aria-label={`${brandName} — home`} className="flex shrink-0 items-center">
-            <OriginalLogo src={logoUrl} height={56} priority className="hidden md:block" />
-            <OriginalLogo src={logoUrl} height={40} priority className="md:hidden" />
+            <OriginalLogo src={logoUrl} height={56} priority />
           </Link>
 
           <nav className="hidden items-center lg:flex" aria-label="Primary">
@@ -120,11 +174,6 @@ export function Header({ logoUrl, brandName, nav, whatsapp }: HeaderProps) {
             <button type="button" onClick={() => setSearching(true)} aria-label="Search" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-sand-deep">
               <Icon.search size={19} />
             </button>
-            {whatsapp[0] && (
-              <a href={whatsapp[0].href} target="_blank" rel="noreferrer noopener" aria-label="WhatsApp Enhakkore" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#1f9d55] hover:bg-sand-deep md:hidden">
-                <SocialIcon platform="whatsapp" size={20} />
-              </a>
-            )}
             {status === 'authenticated' && (
               <Link href="/account/notifications" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-sand-deep">
                 <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -136,45 +185,30 @@ export function Header({ logoUrl, brandName, nav, whatsapp }: HeaderProps) {
             )}
             <Link
               href="/donate"
-              className="hidden h-10 items-center rounded-full bg-clay-400 px-4 text-[0.8125rem] font-bold text-acacia-700 shadow-sm transition hover:bg-clay-500 hover:text-white md:inline-flex"
+              className="inline-flex h-10 items-center rounded-full bg-clay-400 px-4 text-[0.8125rem] font-bold text-acacia-700 shadow-sm transition hover:bg-clay-500 hover:text-white"
             >
               Donate
             </Link>
             {status === 'authenticated' && user ? (
               <Link
                 href={staff ? '/admin' : homeFor(user.role)}
-                className="hidden items-center gap-2 rounded-full border border-line-strong bg-white py-1 pl-1 pr-3 text-[0.8125rem] font-semibold text-ink md:inline-flex"
+                className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-white py-1 pl-1 pr-3 text-[0.8125rem] font-semibold text-ink"
               >
                 <Avatar name={user.name} src={user.avatarUrl} size="xs" />
                 {staff ? 'Control centre' : user.name.split(' ')[0]}
               </Link>
             ) : (
-              <Link href="/signin" className="hidden h-10 items-center rounded-full px-3 text-[0.8125rem] font-semibold text-ink hover:text-acacia-600 md:inline-flex">
+              <Link href="/signin" className="inline-flex h-10 items-center rounded-full px-3 text-[0.8125rem] font-semibold text-ink hover:text-acacia-600">
                 Sign in
               </Link>
             )}
-            <button
-              type="button"
-              onClick={() => setOpen((value) => !value)}
-              aria-label={open ? 'Close menu' : 'Open menu'}
-              aria-expanded={open}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-sand-deep lg:hidden"
-            >
-              {open ? (
-                <Icon.close size={20} />
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-                  <path d="M4 7h16M4 12h16M4 17h10" />
-                </svg>
-              )}
-            </button>
           </div>
         </div>
       </header>
       {searching && <SearchOverlay onClose={() => setSearching(false)} />}
 
       {open && (
-        <div className="fixed inset-0 top-14 z-40 animate-fade overflow-y-auto bg-[color:var(--color-cream)] md:top-[4.5rem] lg:hidden">
+        <div className="fixed inset-0 top-[calc(3.5rem+env(safe-area-inset-top))] z-40 animate-fade overflow-y-auto bg-[color:var(--color-cream)] md:top-[calc(4rem+env(safe-area-inset-top))] lg:hidden">
           <div className="shell flex min-h-full flex-col py-6">
             <nav aria-label="Primary mobile" className="grid">
               <Link href="/" className="flex items-center justify-between border-b border-line py-3 font-display text-[1.5rem] text-acacia-700">
@@ -190,7 +224,7 @@ export function Header({ logoUrl, brandName, nav, whatsapp }: HeaderProps) {
                   {SUBNAV[item.href] && (
                     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
                       {SUBNAV[item.href]!.map((sub) => (
-                        <Link key={sub.href} href={sub.href} className="text-[0.875rem] font-medium text-ink-soft">
+                        <Link key={sub.href} href={sub.href} className="inline-flex min-h-9 items-center text-[0.875rem] font-medium text-ink-soft">
                           {sub.label}
                         </Link>
                       ))}

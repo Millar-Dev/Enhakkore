@@ -1,3 +1,5 @@
+import Link from 'next/link';
+import { SmartImage } from './SmartImage';
 import { ACTIVITY_MODE_LABELS, EXPERIENCE_LEVEL_LABELS, INFO_SOURCE_LABELS, formatMoney } from '@enhakkore/shared';
 import { placeLabel, priceLabel, whenLabel, type Listing } from '@/lib/public';
 import { ListingCard } from './Cards';
@@ -113,6 +115,31 @@ export function tripDates(start: string, end: string): string {
   const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', timeZone: 'UTC' };
   if (s.toISOString().slice(0, 10) === e.toISOString().slice(0, 10)) return s.toLocaleDateString('en-GB', { ...opts, year: 'numeric' });
   return `${s.toLocaleDateString('en-GB', opts)} – ${e.toLocaleDateString('en-GB', { ...opts, year: 'numeric' })}`;
+}
+
+/** The large trip card used on Travel: picture, the key facts and a clear button. */
+export function TripPackageCard({ trip }: { trip: TripListing }) {
+  const next = trip.nextDeparture;
+  const last = trip.departures[trip.departures.length - 1];
+  const dates = next ? tripDates(next.startDate, next.endDate) : last ? tripDates(last.startDate, last.endDate) : null;
+  return (
+    <Link href={`/travel/${trip.slug}`} className="card-lift group block overflow-hidden rounded-2xl border border-line bg-white shadow-[0_10px_30px_-18px_rgba(4,18,30,0.5)]">
+      <div className="relative aspect-[16/9] overflow-hidden bg-acacia-700">
+        <SmartImage src={trip.heroImage} alt="" fill sizes="(max-width:768px) 100vw, (max-width:1280px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.04]" />
+        <span className="absolute left-3 top-3 rounded-full bg-[#5b3aa8] px-2.5 py-1 text-[0.6875rem] font-bold text-white">{trip.isPast ? 'Completed trip' : 'Group trip'}</span>
+      </div>
+      <div className="p-4">
+        <h3 className="text-[1.25rem] font-bold leading-tight text-acacia-700">{trip.title}</h3>
+        <ul className="mt-2 space-y-1.5 text-[0.875rem] text-ink-soft">
+          {dates && <li className="flex gap-2"><span aria-hidden>📅</span>{dates} · {trip.durationDays} day{trip.durationDays === 1 ? '' : 's'}{trip.durationNights ? ` / ${trip.durationNights} night${trip.durationNights === 1 ? '' : 's'}` : ''}</li>}
+          {trip.destinationLabel && <li className="flex gap-2"><span aria-hidden>📍</span>{trip.destinationLabel}</li>}
+          {next && <li className="flex gap-2"><span aria-hidden>👥</span>{next.seatsLeft} place{next.seatsLeft === 1 ? '' : 's'} left</li>}
+          {!trip.isPast && <li className="flex gap-2 text-base font-bold text-ink"><span aria-hidden>💳</span>{formatMoney({ amount: next?.price ?? trip.basePrice, currency: trip.currency })}<span className="self-end text-xs font-normal text-ink-muted">/ person</span></li>}
+        </ul>
+        <span className={`mt-4 flex h-12 items-center justify-center rounded-full text-sm font-bold ${trip.isPast ? 'border border-line text-acacia-700' : 'bg-clay-400 text-acacia-700'}`}>{trip.isPast ? 'See the trip' : 'View package →'}</span>
+      </div>
+    </Link>
+  );
 }
 
 export function TripCard({ trip }: { trip: TripListing }) {

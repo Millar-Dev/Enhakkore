@@ -23,24 +23,35 @@ export default async function ImpactPage() {
 
   return (
     <PublicShell>
-      <section className="relative overflow-hidden bg-[color:var(--color-cream)]">
-        <div className="shell grid gap-10 py-14 md:py-20 lg:grid-cols-[1.2fr_1fr] lg:items-center">
-          <div>
-            <p className="kicker">Enhakkore Impact</p>
-            <h1 className="display-xl mt-4 text-acacia-700">Create impact, together</h1>
-            <p className="mt-5 max-w-xl text-[1.0625rem] leading-relaxed text-ink-soft">
-              Community outreach and projects with the people who travel with us. Recorded as they happened — with real photographs, and without invented figures.
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link href="/donate" className="inline-flex h-12 items-center rounded-full bg-safari-500 px-6 font-bold text-white hover:bg-safari-600">Donate</Link>
-              <a href={waHref(settings, 'general')} target="_blank" rel="noreferrer noopener" className="inline-flex h-12 items-center rounded-full border border-acacia-600/30 bg-white px-6 font-semibold text-acacia-600">Volunteer or partner with us</a>
-            </div>
+      {/* Hero: a real outreach photograph, WSC, and two clear actions. */}
+      <section className="relative isolate overflow-hidden bg-acacia-900 text-white">
+        <SmartImage src={featured?.heroImage ?? '/impact/mkuranga/cover.webp'} alt="" fill priority sizes="100vw" className="object-cover object-[center_35%]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#06152a] via-[#06152a]/70 to-[#06152a]/25 md:bg-gradient-to-r md:from-[#06152a]/95 md:via-[#06152a]/60 md:to-transparent" />
+        <div className="shell relative flex min-h-[min(32rem,76svh)] flex-col items-center justify-end py-7 text-center md:min-h-[30rem] md:items-start md:justify-center md:py-16 md:text-left">
+          <span className="rounded-2xl bg-white p-2 shadow-lg"><WscLogo src="/brand/refined/wsc-logo.png" height={52} /></span>
+          <p className="mt-2 text-sm font-semibold text-white/85">We Save Children — with Enhakkore</p>
+          <h1 className="mt-3 max-w-xl font-display text-[clamp(1.7rem,6.5vw,3.4rem)] leading-[1.08]">Supporting children and communities to create brighter futures.</h1>
+          <p className="mt-2 max-w-md text-[0.875rem] text-white/80 md:text-base">Recorded as it happened — real photographs, no invented figures.</p>
+          <div className="mt-5 grid w-full max-w-xs gap-2.5 sm:max-w-md sm:grid-cols-2">
+            <Link href="/donate" className="inline-flex h-12 items-center justify-center rounded-full bg-clay-400 px-5 text-sm font-bold text-acacia-700">Donate now →</Link>
+            <Link href="#volunteer" className="inline-flex h-12 items-center justify-center rounded-full border border-white/60 px-5 text-sm font-semibold hover:bg-white/10">Get involved</Link>
           </div>
-          {featured && (
-            <div className="relative aspect-[4/3] overflow-hidden rounded-[1.6rem] shadow-[var(--shadow-float)]">
-              <SmartImage src={featured.heroImage} alt={featured.title} fill priority sizes="(max-width:1024px) 100vw, 45vw" className="object-cover" />
-            </div>
-          )}
+        </div>
+      </section>
+
+      {/* Three ways in. */}
+      <section className="bg-white">
+        <div className="shell grid grid-cols-3 gap-2 py-6 text-center md:max-w-3xl md:py-10">
+          {[
+            { href: '#projects', label: 'Our projects', icon: '🤝' },
+            { href: '#volunteer', label: 'Volunteer', icon: '💛' },
+            { href: '/donate', label: 'Donate', icon: '🎁' },
+          ].map((item) => (
+            <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 rounded-2xl p-2 text-[0.8125rem] font-semibold text-acacia-700 hover:bg-sand">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-clay-50 text-3xl ring-1 ring-clay-400/40" aria-hidden>{item.icon}</span>
+              {item.label}
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -70,7 +81,7 @@ export default async function ImpactPage() {
         </section>
       )}
 
-      <section className="bg-[color:var(--color-cream)]">
+      <section id="projects" className="scroll-mt-20 bg-[color:var(--color-cream)]">
         <div className="shell py-14 md:py-20">
           <SectionTitle kicker="Completed" title="What we have done" />
           {completed.length ? (

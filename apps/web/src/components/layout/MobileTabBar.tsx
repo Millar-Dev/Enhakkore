@@ -26,7 +26,7 @@ const TABS = [
 // Screens with their own pinned bottom action, or their own navigation.
 // `/trips/` with the trailing slash matches trip detail (where the booking bar
 // lives) without matching `/trips` itself.
-const HIDDEN_PREFIXES = ['/book', '/organizer', '/admin', '/account/groups/', '/trips/', '/travel/'];
+const HIDDEN_PREFIXES = ['/book', '/organizer', '/admin', '/account/groups/', '/trips/', '/travel/', '/explore/', '/events/', '/activities/'];
 
 /** Whether the tab bar shows on this route for this account type. */
 function useTabBarVisible(): boolean {
@@ -46,7 +46,7 @@ export function MobileTabBar() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-acacia-700/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 rounded-t-2xl border-t border-line bg-white/[0.97] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_rgba(4,18,30,0.35)] backdrop-blur-xl md:hidden"
       aria-label="Main"
     >
       <ul className="grid grid-cols-5">
@@ -59,11 +59,11 @@ export function MobileTabBar() {
                 href={tab.href}
                 aria-current={active ? 'page' : undefined}
                 className={cx(
-                  'flex h-14 min-w-0 flex-col items-center justify-center gap-0.5 truncate px-0.5 text-[0.625rem] font-semibold tracking-wide transition-colors',
-                  active ? 'text-clay-400' : 'text-white/65',
+                  'flex h-[3.75rem] min-w-0 flex-col items-center justify-center gap-0.5 truncate px-0.5 text-[0.625rem] font-semibold tracking-wide transition-colors',
+                  active ? 'text-clay-600' : 'text-ink-soft',
                 )}
               >
-                <TabIcon size={19} />
+                <span className={cx('flex h-7 w-10 items-center justify-center rounded-full transition-colors', active && 'bg-clay-50 text-clay-500')}><TabIcon size={21} /></span>
                 {tab.label}
               </Link>
             </li>
@@ -81,5 +81,5 @@ export function MobileTabBar() {
 export function MobileTabBarSpacer() {
   const visible = useTabBarVisible();
   if (!visible) return null;
-  return <div className="h-[calc(3.5rem+env(safe-area-inset-bottom))] bg-[#030b17] md:hidden" aria-hidden="true" />;
+  return <div className="h-[calc(3.75rem+env(safe-area-inset-bottom))] bg-[#030b17] md:hidden" aria-hidden="true" />;
 }

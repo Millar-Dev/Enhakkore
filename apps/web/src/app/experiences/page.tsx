@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { HubData } from '@/components/home/types';
 import { PublicShell } from '@/components/layout/PublicShell';
+import { AppHero } from '@/components/public/AppHero';
 import { CardGrid, Empty, ListingCard, SectionTitle } from '@/components/public/Cards';
 import { CommunityTile, sectionHref } from '@/components/public/experience';
 import { ExperienceCard } from '@/components/public/listings';
@@ -42,47 +43,38 @@ export default async function ExperiencesHub({ searchParams }: { searchParams: P
 
   return (
     <PublicShell>
-      {/* 1–2. Compact hero with search */}
-      <section className="band band-navy relative overflow-hidden text-white">
-        <SmartImage src={settings.gaming.heroImage} alt="" fill priority sizes="100vw" className="object-cover opacity-35" />
-        <div className="absolute inset-0 bg-gradient-to-r from-acacia-900/95 via-acacia-900/70 to-acacia-900/30" />
-        <div className="shell relative py-7 md:py-12">
-          <span className="rounded-full bg-clay-400 px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-wider text-acacia-700">Experiences</span>
-          <h1 className="mt-3 max-w-2xl font-display text-[2rem] leading-[1.05] md:text-[3.2rem]">Discover. Join. Create. Experience more.</h1>
-          <p className="mt-2 max-w-xl text-sm text-white/75 md:text-base">Events, activities, communities and gaming — in your city and beyond.</p>
-          <form action="/experiences" className="mt-5 flex max-w-2xl items-center gap-1 rounded-full bg-white p-1 pl-4 text-ink shadow-xl">
-            <input name="q" defaultValue={params.q} placeholder="Search experiences — e.g. Free Fire, basketball" className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none" aria-label="Search experiences" />
-            {country && <input type="hidden" name="country" value={country.code} />}
-            <Link href={`/experiences?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), filters: showFilters ? '0' : '1' }).toString()}`} className="hidden shrink-0 rounded-full px-3 py-2 text-xs font-semibold text-acacia-600 sm:block">📍 {country?.name ?? 'Anywhere'}</Link>
-            <button className="h-10 shrink-0 rounded-full bg-acacia-600 px-4 text-sm font-bold text-white" aria-label="Search">Search</button>
+      {/* 1–2. Title band with search and filter pills */}
+      <AppHero
+        title="Experiences"
+        subtitle="Discover, join and create experiences"
+        search={{ action: '/experiences', placeholder: 'Search events, activities, communities…', value: params.q, hidden: { country: country?.code, city: params.city } }}
+        pills={[
+          { label: params.city ? (country?.cities.find((city) => city.slug === params.city)?.name ?? 'Anywhere') : country?.name ?? 'Anywhere', icon: '📍', href: `/experiences?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), filters: showFilters ? '0' : '1' }).toString()}`, active: !!(params.country || params.city) },
+          { label: 'Gaming', icon: '🎮', href: '/experiences/gaming' },
+        ]}
+      >
+        {(params.q || params.country || params.city) && <Link href="/experiences" className="mt-2 inline-flex min-h-10 items-center text-xs text-white/70 underline">Clear search and filters</Link>}
+        {showFilters && (
+          <form action="/experiences" className="mx-auto mt-3 grid max-w-2xl grid-cols-2 gap-2 rounded-2xl bg-white/10 p-2 backdrop-blur md:mx-0">
+            {params.q && <input type="hidden" name="q" value={params.q} />}
+            <input type="hidden" name="filters" value="1" />
+            <select name="country" defaultValue={country?.code ?? ''} className="field h-11 text-ink" aria-label="Country">
+              <option value="">Any country</option>
+              {catalogue.countries.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
+            </select>
+            <select name="city" defaultValue={params.city ?? ''} className="field h-11 text-ink" aria-label="City">
+              <option value="">Any city</option>
+              {(country?.cities ?? catalogue.countries.flatMap((item) => item.cities)).map((city) => <option key={city.slug} value={city.slug}>{city.name}</option>)}
+            </select>
+            <button className="col-span-2 h-11 rounded-full bg-clay-400 text-sm font-bold text-acacia-700">Apply</button>
           </form>
-          <div className="mt-2 flex gap-3 text-xs">
-            <Link href={`/experiences?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), filters: showFilters ? '0' : '1' }).toString()}`} className="inline-flex min-h-10 items-center font-semibold text-clay-400 underline-offset-4 hover:underline">{showFilters ? 'Hide filters' : 'Filters'}</Link>
-            {(params.q || params.country || params.city) && <Link href="/experiences" className="text-white/70 underline">Clear</Link>}
-          </div>
-          {showFilters && (
-            <form action="/experiences" className="mt-3 grid max-w-2xl grid-cols-2 gap-2 rounded-2xl bg-white/10 p-2 backdrop-blur">
-              {params.q && <input type="hidden" name="q" value={params.q} />}
-              <input type="hidden" name="filters" value="1" />
-              <select name="country" defaultValue={country?.code ?? ''} className="field h-10 text-ink" aria-label="Country">
-                <option value="">Any country</option>
-                {catalogue.countries.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
-              </select>
-              <select name="city" defaultValue={params.city ?? ''} className="field h-10 text-ink" aria-label="City">
-                <option value="">Any city</option>
-                {(country?.cities ?? catalogue.countries.flatMap((item) => item.cities)).map((city) => <option key={city.slug} value={city.slug}>{city.name}</option>)}
-              </select>
-              <button className="col-span-2 h-10 rounded-full bg-clay-400 text-sm font-bold text-acacia-700">Apply</button>
-            </form>
-          )}
-        </div>
-      </section>
+        )}
+      </AppHero>
 
       {/* 3. Three journeys */}
       <section className="band band-dark-a text-white">
         <div className="shell py-5 md:py-9">
-        <p className="band-kicker mb-2.5 text-clay-400">Start here</p>
-        {/* Three journeys: square tiles side by side on phones, wide cards on larger screens. */}
+                {/* Three journeys: square tiles side by side on phones, wide cards on larger screens. */}
         <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4">
           {[
             { href: '#upcoming', title: 'Discover experiences', short: 'Discover', line: 'Find events, activities and communities', icon: '🔍', tone: 'bg-gradient-to-br from-[#6d35c9] to-[#3f1d86]' },
@@ -107,9 +99,9 @@ export default async function ExperiencesHub({ searchParams }: { searchParams: P
         <div className="shell py-6 md:py-10">
         <div className="mb-3 flex items-end justify-between">
           <div>
-            <p className="band-kicker text-clay-400">Categories</p>
-            <h2 className="font-display text-[1.45rem] text-white md:text-[2rem]">Browse by category</h2>
+            <h2 className="text-[1.15rem] font-bold text-white md:text-[1.75rem]">Browse by category</h2>
           </div>
+          <Link href="/experiences#upcoming" className="inline-flex min-h-10 items-center text-sm font-semibold text-clay-400">See all →</Link>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:gap-3">
           {(hub?.sections ?? []).map((section) => (

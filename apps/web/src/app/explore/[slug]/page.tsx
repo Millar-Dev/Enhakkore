@@ -53,10 +53,13 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
   return (
     <PublicShell>
       <section className="relative">
-        <div className="relative h-[42vh] min-h-[280px] w-full overflow-hidden bg-acacia-600 md:h-[52vh]">
+        <div className="relative h-[36svh] min-h-[14rem] w-full overflow-hidden bg-acacia-600 md:h-[52vh] md:min-h-[280px]">
           {place.coverImage && <SmartImage src={place.coverImage} alt="" fill priority sizes="100vw" className="object-cover" />}
-          <div className="absolute inset-0 bg-gradient-to-t from-acacia-900/80 via-acacia-900/10 to-transparent" />
-          <div className="shell absolute inset-x-0 bottom-0 pb-8 text-white">
+          <div className="absolute inset-0 bg-gradient-to-t from-acacia-900/30 to-transparent md:from-acacia-900/80 md:via-acacia-900/10" />
+          <Link href="/explore" aria-label="Back to Explore" className="absolute left-4 top-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur md:hidden">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 18l-6-6 6-6" /></svg>
+          </Link>
+          <div className="shell absolute inset-x-0 bottom-0 hidden pb-8 text-white md:block">
             <Link href={`/explore?category=${place.category?.slug ?? ''}`} className="text-[0.75rem] font-bold uppercase tracking-[0.16em] text-clay-400">
               {place.category?.icon} {place.category?.name}
             </Link>
@@ -66,8 +69,23 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
         </div>
       </section>
 
-      <section className="shell grid gap-10 py-10 lg:grid-cols-[1.45fr_1fr]">
-        <div className="space-y-8">
+      {/* Phones: name and essentials on a sheet over the picture, then quick links. */}
+      <section className="relative -mt-6 rounded-t-[1.75rem] bg-white px-5 pb-1 pt-5 md:hidden">
+        <h1 className="text-[1.5rem] font-bold leading-tight text-acacia-700">{String(place.name)}</h1>
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+          {data.rating && <span className="font-bold text-ink">★ {data.rating.average} <span className="font-normal text-ink-muted">({data.rating.count})</span></span>}
+          <span className={`rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ring-1 ${SOURCE_TONE[source] ?? SOURCE_TONE.UNVERIFIED}`}>{INFO_SOURCE_LABELS[source]}</span>
+        </p>
+        <p className="mt-1.5 text-sm text-ink-muted">📍 {[place.area as string, placeLabel(place)].filter(Boolean).join(' · ')}</p>
+        <nav aria-label="On this page" className="no-scrollbar -mx-5 mt-3 flex gap-1 overflow-x-auto border-b border-line px-5">
+          {[['#overview', 'Overview'], ...(roomTypes.length ? [['#book', 'Rooms']] : []), ['#facilities', 'Facilities'], ['#location', 'Location']].map(([href, label]) => (
+            <a key={href} href={href} className="inline-flex min-h-11 shrink-0 items-center border-b-2 border-transparent px-3 text-sm font-semibold text-ink-soft first:border-clay-400 first:text-acacia-700">{label}</a>
+          ))}
+        </nav>
+      </section>
+
+      <section className="shell grid gap-10 py-6 md:py-10 lg:grid-cols-[1.45fr_1fr]">
+        <div id="overview" className="scroll-mt-20 space-y-8">
           <div className="flex flex-wrap items-center gap-2">
             <span className={`rounded-full px-3 py-1.5 text-xs font-bold ring-1 ${SOURCE_TONE[source] ?? SOURCE_TONE.UNVERIFIED}`}>
               {INFO_SOURCE_LABELS[source]}
@@ -94,6 +112,7 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
           )}
           {place.summary && <p className="font-display text-2xl leading-snug text-acacia-700">{place.summary}</p>}
           <Prose text={place.description} />
+          <div id="facilities" className="scroll-mt-20" />
           <Facts
             items={[
               { label: 'Price range', value: place.priceRange as string },
@@ -137,6 +156,7 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
               <Prose text={deal.description} className="mt-1 text-sm" />
             </div>
           ))}
+          <div id="location" className="scroll-mt-20" />
           {place.latitude && place.longitude ? (
             <div className="overflow-hidden rounded-[1.1rem] border border-line">
               <iframe
@@ -179,7 +199,7 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
               <li className={verifiedWhatsapp ? 'text-ink' : 'text-ink-muted line-through'}>② Contact the business on its verified WhatsApp</li>
               <li className={place.bookingUrl ? 'text-ink' : 'text-ink-muted line-through'}>③ Use its own reservation link</li>
             </ul>
-            <div className="mt-4">
+            <div id="book" className="mt-4 scroll-mt-20">
               {place.bookingMode === 'ENQUIRY' && enquiryType === 'ROOM' && (
                 <HotelEnquiryForm placeId={place.id} placeName={String(place.name)} roomTypes={roomTypes} whatsappHref={waHref(settings, 'place', String(place.name))} />
               )}
@@ -224,6 +244,22 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
           </div>
         </aside>
       </section>
+
+      {/* Phones: call, WhatsApp and enquire always within reach. */}
+      <div className="h-24 md:hidden" aria-hidden />
+      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-line bg-white/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur md:hidden">
+        {place.phone ? (
+          <a href={`tel:${String(place.phone).replace(/\s/g, '')}`} className="flex h-12 w-14 shrink-0 flex-col items-center justify-center text-[0.6875rem] font-semibold text-acacia-700">
+            <span aria-hidden className="text-lg leading-none">📞</span>Call
+          </a>
+        ) : null}
+        <a href={verifiedWhatsapp ? `https://wa.me/${String(place.whatsapp).replace(/\D/g, '')}` : waHref(settings, 'place', String(place.name))} target="_blank" rel="noreferrer noopener" className="flex h-12 w-16 shrink-0 flex-col items-center justify-center text-[0.6875rem] font-semibold text-[#1f9d55]">
+          <SocialIcon platform="whatsapp" size={20} />WhatsApp
+        </a>
+        <a href={place.bookingMode === 'ENQUIRY' ? '#book' : place.bookingUrl ? String(place.bookingUrl) : '#book'} className="inline-flex h-12 flex-1 items-center justify-center rounded-full bg-clay-400 text-sm font-bold text-acacia-700">
+          {enquiryType === 'ROOM' ? 'Enquire / book' : enquiryType === 'TABLE' ? 'Reserve a table' : 'Enquire'}
+        </a>
+      </div>
     </PublicShell>
   );
 }

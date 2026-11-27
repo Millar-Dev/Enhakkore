@@ -69,7 +69,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           <VideoBlock url={item.videoUrl} />
           <Gallery images={(item.gallery ?? []).map((src) => ({ src }))} />
         </div>
-        <aside className="lg:sticky lg:top-28 lg:self-start">
+        <aside id="register" className="scroll-mt-20 lg:sticky lg:top-28 lg:self-start">
           <div className="rounded-[1.2rem] border border-line bg-white p-5 shadow-[var(--shadow-card)]">
             <p className="font-display text-2xl text-acacia-700">{ended ? 'Event' : 'Tickets'}</p>
             <div className="mt-4">
@@ -90,6 +90,19 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           </div>
         </aside>
       </section>
+
+      {/* Phones: register and WhatsApp always within reach. */}
+      <div className="h-24 md:hidden" aria-hidden />
+      <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-line bg-white/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur md:hidden">
+        {!ended && item.status !== 'CANCELLED' && (item.registrationMode === 'ENHAKKORE' || item.externalUrl) ? (
+          <a href={item.registrationMode === 'EXTERNAL' && item.externalUrl ? String(item.externalUrl) : '#register'} className="inline-flex h-12 flex-1 items-center justify-center rounded-full bg-clay-400 text-sm font-bold text-acacia-700">
+            {tickets.length && tickets.some((ticket) => ticket.price > 0) ? 'Get tickets' : 'Register now (free)'}
+          </a>
+        ) : null}
+        <a href={wa} target="_blank" rel="noreferrer noopener" className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#1f9d55] text-sm font-bold text-white">
+          <SocialIcon platform="whatsapp" size={18} /> WhatsApp
+        </a>
+      </div>
     </PublicShell>
   );
 }

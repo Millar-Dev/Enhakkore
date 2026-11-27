@@ -35,6 +35,11 @@ export interface SiteSettings {
     logoUrl: string;
     /** The emblem alone, from the same artwork. */
     markUrl: string;
+    /**
+     * Optional official light/gold version of the logo for dark backgrounds
+     * (the phone header). Empty shows the original logo on a cream badge.
+     */
+    logoOnDarkUrl: string;
     faviconUrl: string;
     /** The WSC logo, used in the Impact section. The original file supplied. */
     wscLogoUrl: string;
@@ -162,6 +167,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
       'An international platform connecting people to destinations, experiences, events, communities and opportunities to create positive change.',
     logoUrl: '/partners/enhakkore-wordmark.webp',
     markUrl: '/partners/enhakkore-mark.webp',
+    logoOnDarkUrl: '',
     faviconUrl: '/brand/refined/favicon-32.png',
     wscLogoUrl: '/partners/wsc.webp',
     primaryColor: '',
@@ -274,8 +280,8 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   },
   gaming: {
     heroImage: '/media/gaming/gaming-hero.jpg',
-    heroTitle: 'Play, compete, meet your squad',
-    heroSubtitle: 'Online tournaments, squad competitions and PlayStation / console sessions. Every tournament is free to enter at launch.',
+    heroTitle: 'Game. Compete. Connect.',
+    heroSubtitle: 'Tournaments, gaming sessions and gaming communities — every tournament free to enter at launch.',
   },
   catering: {
     intro:

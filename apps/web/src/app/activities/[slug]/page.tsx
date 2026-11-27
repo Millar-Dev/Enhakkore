@@ -42,8 +42,8 @@ export default async function ActivityPage({ params }: { params: Promise<{ slug:
   return (
     <PublicShell>
       <section className="bg-[color:var(--color-cream)]">
-        <div className="shell grid gap-8 py-10 md:py-14 lg:grid-cols-[1.4fr_1fr] lg:items-end">
-          <div>
+        <div className="shell grid gap-6 pb-8 md:gap-8 md:py-14 lg:grid-cols-[1.4fr_1fr] lg:items-end">
+          <div className="order-2 lg:order-1">
             <Link href={`/activities${item.category ? `?category=${item.category.slug}` : ''}`} className="kicker">
               {item.category?.icon} {item.category?.name ?? 'Activity'}
             </Link>
@@ -62,11 +62,12 @@ export default async function ActivityPage({ params }: { params: Promise<{ slug:
               <TrackView subjectType="ACTIVITY" subjectId={item.id} />
             </div>
           </div>
-          {item.coverImage && (
-            <div className="relative aspect-[4/3] overflow-hidden rounded-[1.4rem]">
-              <SmartImage src={item.coverImage} alt="" fill priority sizes="(max-width: 1024px) 100vw, 40vw" className="object-cover" />
-            </div>
-          )}
+          <div className="relative order-1 -mx-5 aspect-[16/11] overflow-hidden bg-acacia-700 md:mx-0 md:mt-0 md:rounded-[1.4rem] lg:order-2 lg:aspect-[4/3]">
+            {item.coverImage && <SmartImage src={item.coverImage} alt="" fill priority sizes="(max-width: 1024px) 100vw, 40vw" className="object-cover" />}
+            <Link href="/experiences" aria-label="Back to Experiences" className="absolute left-4 top-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur md:hidden">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 18l-6-6 6-6" /></svg>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -119,7 +120,7 @@ export default async function ActivityPage({ params }: { params: Promise<{ slug:
           <Gallery images={(item.gallery ?? []).map((src) => ({ src }))} />
         </div>
 
-        <aside className="lg:sticky lg:top-28 lg:self-start">
+        <aside id="register" className="scroll-mt-20 lg:sticky lg:top-28 lg:self-start">
           <div className="rounded-[1.2rem] border border-line bg-white p-5 shadow-[var(--shadow-card)]">
             <p className="font-display text-2xl text-acacia-700">{open ? 'Join this activity' : 'Activity'}</p>
             {item.contactMethod ? <p className="mt-1 text-sm text-ink-muted">{String(item.contactMethod)}</p> : null}
@@ -136,6 +137,18 @@ export default async function ActivityPage({ params }: { params: Promise<{ slug:
           </div>
         </aside>
       </section>
+
+      {/* Phones: the main action always within reach. */}
+      {open && !ended && (
+        <>
+          <div className="h-24 md:hidden" aria-hidden />
+          <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur md:hidden">
+            <a href="#register" className="flex h-12 items-center justify-center rounded-full bg-clay-400 text-sm font-bold text-acacia-700">
+              {item.isDemo ? 'Example activity — see details' : `Register now${priceLabel(item.price, item.currency) ? '' : ' (free)'}`}
+            </a>
+          </div>
+        </>
+      )}
     </PublicShell>
   );
 }

@@ -19,9 +19,28 @@ interface Application {
 export default function AccountHome() {
   const { user } = useSession();
   const [applications, setApplications] = useState<Application[] | null>(null);
+  const [unread, setUnread] = useState(0);
   useEffect(() => {
     api.get<Application[]>('/community/applications').then(setApplications).catch(() => setApplications([]));
+    api
+      .get<{ items: { read: boolean }[]; unread?: number }>('/me/notifications')
+      .then((data) => setUnread(data.unread ?? data.items.filter((item) => !item.read).length))
+      .catch(() => undefined);
   }, []);
+  const openApplications = (applications ?? []).filter((item) => !['CANCELLED', 'DECLINED', 'COMPLETED'].includes(item.status)).length;
+
+  /** The phone menu, as a list — counts only where they are real. */
+  const menu = [
+    { href: '/account/experiences', label: 'My registrations', icon: '📋' },
+    { href: '/account/applications', label: 'My trips', icon: '🧭', count: openApplications },
+    { href: '/account/enquiries', label: 'My enquiries', icon: '✉️' },
+    { href: '/account/experiences#communities', label: 'My communities', icon: '👥' },
+    { href: '/account/groups', label: 'Trip groups', icon: '💬' },
+    { href: '/account/saved', label: 'Saved items', icon: '🔖' },
+    { href: '/account/notifications', label: 'Notifications', icon: '🔔', count: unread },
+    { href: '/account/profile', label: 'Edit profile', icon: '👤' },
+    { href: '/account/hosting', label: 'Activities you host', icon: '🏁' },
+  ];
 
   const tiles = [
     { href: '/account/experiences', title: 'My experiences', body: 'Registrations, upcoming and past, teams, communities, event plans and activities you published.' },
@@ -37,7 +56,32 @@ export default function AccountHome() {
   return (
     <DashboardShell nav={TRAVELLER_NAV} allow={MEMBER_ROLES}>
       {user && (
-        <div className="space-y-8">
+        <>
+        {/* Phones: profile card and a simple menu list. */}
+        <div className="-mx-5 -mt-5 md:hidden">
+          <div className="bg-[#06152a] px-5 pb-6 pt-2 text-center text-white">
+            <span className="inline-block rounded-full p-1 ring-2 ring-clay-400"><Avatar name={user.name} src={user.avatarUrl} size="xl" /></span>
+            <p className="mt-2 text-xl font-bold">{user.name}</p>
+            <span className="mt-1 inline-block rounded-full bg-[#1f9a55] px-2.5 py-0.5 text-[0.6875rem] font-bold">{user.role === 'ADMIN' || user.role === 'STAFF' ? 'Team' : 'Member'}</span>
+            {(user.role === 'ADMIN' || user.role === 'STAFF') && (
+              <Link href="/admin" className="mx-auto mt-3 flex h-11 max-w-xs items-center justify-center rounded-full bg-clay-400 text-sm font-bold text-acacia-700">Open the control centre</Link>
+            )}
+          </div>
+          <ul className="divide-y divide-line bg-white">
+            {menu.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href} className="flex min-h-14 items-center gap-3 px-5 text-[0.9375rem] font-medium text-ink hover:bg-sand">
+                  <span className="w-6 text-center text-lg" aria-hidden>{item.icon}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.count ? <span className="min-w-6 rounded-full bg-[#5b3aa8] px-2 text-center text-xs font-bold leading-6 text-white">{item.count}</span> : null}
+                  <span className="text-ink-faint" aria-hidden>›</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="hidden space-y-8 md:block">
           <div className="flex flex-wrap items-center gap-4">
             <Avatar name={user.name} src={user.avatarUrl} size="xl" />
             <div>
@@ -82,6 +126,7 @@ export default function AccountHome() {
             Looking for something to do? <Link href="/activities" className="font-semibold text-acacia-600 underline">Browse activities</Link>, <Link href="/events" className="font-semibold text-acacia-600 underline">see events</Link> or <Link href="/activities/host" className="font-semibold text-acacia-600 underline">host your own</Link>.
           </section>
         </div>
+        </>
       )}
     </DashboardShell>
   );

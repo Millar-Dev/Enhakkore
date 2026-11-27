@@ -60,6 +60,33 @@ function Card({ item }: { item: TournamentCard }) {
   );
 }
 
+/** A large tournament card: picture, the facts and a clear register button. */
+function Feature({ item }: { item: TournamentCard }) {
+  return (
+    <Link href={`/experiences/gaming/${item.slug}`} className="card-lift group block w-[84vw] max-w-[24rem] shrink-0 snap-start overflow-hidden rounded-2xl border border-white/10 bg-[#0d2240] md:w-auto md:max-w-none">
+      <div className="relative aspect-[16/9] overflow-hidden bg-[#0b0a24]">
+        {item.coverImage && <SmartImage src={item.coverImage} alt="" fill sizes="(max-width:768px) 84vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.05]" />}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0d2240] via-transparent to-transparent" />
+        <div className="absolute left-3 top-3 flex gap-1">
+          {item.isDemo && <span className="rounded-full bg-white/90 px-2 py-0.5 text-[0.625rem] font-bold uppercase text-[#4b2a8a]">Demo</span>}
+        </div>
+        <div className="absolute inset-x-3 bottom-2 flex items-end justify-between gap-2">
+          <p className="line-clamp-2 text-lg font-bold leading-tight">{item.title}</p>
+          <span className="shrink-0 rounded-full bg-[#1f9a55] px-2.5 py-0.5 text-[0.6875rem] font-bold">FREE</span>
+        </div>
+      </div>
+      <div className="p-3">
+        <p className="flex flex-wrap gap-x-3 gap-y-1 text-[0.8125rem] text-white/75">
+          {item.startsAt && <span>📅 {formatInZone(item.startsAt, item.timezone, 'date')}</span>}
+          <span>👥 {TOURNAMENT_FORMAT_LABELS[item.format] ?? item.format}{item.teamSize > 1 ? ` (${item.teamSize})` : ''}</span>
+          {item.slots ? <span>🏆 {item.slots} {item.teamSize > 1 ? 'teams' : 'players'}</span> : null}
+        </p>
+        <span className="mt-3 flex h-11 items-center justify-center rounded-full bg-clay-400 text-sm font-bold text-acacia-700">{item.isDemo ? 'See example →' : item.registrationOpen ? 'Register now →' : 'View tournament →'}</span>
+      </div>
+    </Link>
+  );
+}
+
 export default async function GamingPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = pick(await searchParams, ['q', 'game', 'kind']);
   const { settings } = await getSite();
@@ -72,27 +99,51 @@ export default async function GamingPage({ searchParams }: { searchParams: Promi
   const online = items.filter((item) => item.kind === 'ONLINE');
   const consoleSessions = items.filter((item) => item.kind === 'CONSOLE');
   const href = (changes: Record<string, string | undefined>) => `/experiences/gaming${query({ ...params, ...changes })}`;
+  const TITLE = settings.gaming.heroTitle.split(/(?<=\.)\s+/);
 
   return (
     <PublicShell>
-      <section className="relative overflow-hidden bg-acacia-900 text-white">
-        <SmartImage src={settings.gaming.heroImage} alt="" fill priority sizes="100vw" className="object-cover opacity-70" />
-        <div className="absolute inset-0 bg-gradient-to-r from-acacia-900/95 via-acacia-900/60 to-transparent" />
-        <div className="shell relative py-10 md:py-20">
-          <p className="kicker !text-clay-400">Experiences · Gaming & esports</p>
-          <h1 className="display-lg mt-3 max-w-3xl">{settings.gaming.heroTitle}</h1>
-          <p className="mt-3 max-w-2xl text-white/80">{settings.gaming.heroSubtitle}</p>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold">
-            {['Online esports', 'Squad competitions', 'PS & console nights', 'Gaming communities'].map((label) => <span key={label} className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5">{label}</span>)}
+      {/* Hero: the gaming picture, the promise, and two clear ways in. */}
+      <section className="relative isolate overflow-hidden bg-[#0b0a24] text-white">
+        <SmartImage src={settings.gaming.heroImage} alt="" fill priority sizes="100vw" className="object-cover object-[center_30%] opacity-80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0b0a24] via-[#0b0a24]/55 to-[#0b0a24]/20 md:bg-gradient-to-r md:from-[#0b0a24]/95 md:via-[#0b0a24]/55 md:to-transparent" />
+        <div className="shell relative flex min-h-[min(30rem,72svh)] flex-col justify-end py-7 text-center md:min-h-[28rem] md:justify-center md:py-16 md:text-left">
+          <h1 className="font-display text-[clamp(1.9rem,8vw,4rem)] uppercase leading-[1.02] tracking-wide">
+            {TITLE.map((part, index) => (
+              <span key={part + index} className={index === TITLE.length - 1 && TITLE.length > 1 ? 'block text-clay-400' : ''}>
+                {part}{' '}
+              </span>
+            ))}
+          </h1>
+          <p className="mx-auto mt-3 max-w-md text-[0.9375rem] text-white/85 md:mx-0 md:max-w-xl md:text-lg">{settings.gaming.heroSubtitle}</p>
+          <div className="mx-auto mt-5 grid w-full max-w-xs gap-2.5 sm:max-w-md sm:grid-cols-2 md:mx-0">
+            <Link href="#tournaments" className="inline-flex h-12 items-center justify-center rounded-full bg-clay-400 px-5 text-sm font-bold text-acacia-700">Join a tournament →</Link>
+            <Link href="#games" className="inline-flex h-12 items-center justify-center rounded-full border border-white/50 px-5 text-sm font-semibold hover:bg-white/10">Browse games</Link>
           </div>
-          <form action="/experiences/gaming" className="mt-7 flex flex-col gap-2 rounded-[1.2rem] bg-white p-3 sm:flex-row">
-            <input name="q" defaultValue={params.q} placeholder="Search a game — e.g. Free Fire" className="field h-12 w-full sm:flex-1 text-ink" aria-label="Search gaming" />
-            <button className="h-12 rounded-[var(--radius-field)] bg-clay-400 px-6 font-bold text-acacia-700">Search</button>
-          </form>
         </div>
       </section>
-      <section className="shell py-8 md:py-12">
-        <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto overscroll-x-contain px-5 pb-1 md:mx-0 md:flex-wrap md:px-0">
+
+      {/* Featured: the next tournaments as large cards. */}
+      {items.length > 0 && (
+        <section id="tournaments" className="band band-dark-a scroll-mt-20 text-white">
+          <div className="shell py-6 md:py-10">
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <h2 className="text-[1.15rem] font-bold md:text-[1.75rem]">Upcoming tournaments</h2>
+              <Link href="#online" className="inline-flex min-h-10 items-center text-sm font-semibold text-clay-400">See all →</Link>
+            </div>
+            <div className="no-scrollbar -mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1 md:mx-0 md:grid md:grid-cols-2 md:gap-5 md:overflow-visible md:px-0 xl:grid-cols-3">
+              {items.slice(0, 6).map((item) => <Feature key={item.id} item={item} />)}
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className="shell py-6 md:py-12">
+        <form action="/experiences/gaming" role="search" className="mb-4 flex h-11 items-center gap-2 rounded-full border border-line bg-white pl-4 pr-1 md:max-w-xl">
+          <input name="q" defaultValue={params.q} placeholder="Search a game — e.g. Free Fire" className="h-full min-w-0 flex-1 bg-transparent text-sm text-ink outline-none" aria-label="Search gaming" />
+          <button className="h-9 shrink-0 rounded-full bg-acacia-700 px-4 text-xs font-bold text-white">Search</button>
+        </form>
+        <div id="games" className="no-scrollbar -mx-5 flex scroll-mt-24 gap-2 overflow-x-auto overscroll-x-contain px-5 pb-1 md:mx-0 md:flex-wrap md:px-0">
           <Link href={href({ game: undefined })} className={cx('chip', !params.game && 'chip-active')}>All games</Link>
           {games.map((game) => (
             <Link key={game.slug} href={href({ game: game.slug })} className={cx('chip', params.game === game.slug && 'chip-active')}>
@@ -111,7 +162,7 @@ export default async function GamingPage({ searchParams }: { searchParams: Promi
         </div>
 
         {(!params.kind || params.kind === 'online') && (
-          <div className="mt-10">
+          <div id="online" className="mt-10 scroll-mt-24">
             <SectionTitle kicker="Online" title="Online tournaments" />
             {online.length ? <CardGrid>{online.map((item) => <Card key={item.id} item={item} />)}</CardGrid> : <Empty title="No online tournaments open right now" body="New tournaments are announced here and on our Instagram and TikTok." />}
           </div>

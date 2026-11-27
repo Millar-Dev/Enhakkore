@@ -71,7 +71,18 @@ export function DashboardShell({
 
   return (
     <div className="min-h-screen bg-sand/40">
-      <header className="sticky top-0 z-40 border-b border-line bg-white/95 backdrop-blur-xl">
+      {/* Phones: a compact dark bar — back, the page's name, sign out. */}
+      <header className="sticky top-0 z-40 bg-[#06152a] pt-[env(safe-area-inset-top)] text-white md:hidden">
+        <div className="shell grid h-14 grid-cols-[3rem_1fr_3rem] items-center">
+          <Link href={pathname === '/account' ? '/' : '/account'} aria-label={pathname === '/account' ? 'Home' : 'Back to my account'} className="-ml-2 inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 18l-6-6 6-6" /></svg>
+          </Link>
+          <p className="truncate text-center text-[0.9375rem] font-bold">{pathname === '/account' ? 'My account' : title ?? nav.find((item) => (item.exact ? pathname === item.href : pathname.startsWith(item.href)))?.label ?? contextLabel}</p>
+          <button type="button" onClick={signOut} className="-mr-2 inline-flex h-11 items-center justify-end text-xs font-semibold text-white/70">Sign out</button>
+        </div>
+      </header>
+
+      <header className="sticky top-0 z-40 hidden border-b border-line bg-white/95 backdrop-blur-xl md:block">
         <div className={cx(wide ? 'mx-auto w-full max-w-[96rem] px-5 md:px-8' : 'shell', 'flex h-16 items-center justify-between gap-4')}>
           <div className="flex min-w-0 items-center gap-4">
             <Link href="/" aria-label="Enhakkore — home" className="shrink-0">
@@ -126,7 +137,7 @@ export function DashboardShell({
         </nav>
       </header>
 
-      <main id="main" className={cx(wide ? 'mx-auto w-full max-w-[96rem] px-5 md:px-8' : 'shell', 'py-8 md:py-10')}>
+      <main id="main" className={cx(wide ? 'mx-auto w-full max-w-[96rem] px-5 md:px-8' : 'shell', 'py-5 md:py-10')}>
         {(title || action) && (
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             {title && <h1 className="text-h1">{title}</h1>}

@@ -89,6 +89,32 @@ function unwrapAntimeridian(geometry: GeoJSON.Geometry) {
   if (geometry.type === 'MultiPolygon') geometry.coordinates = geometry.coordinates.map((polygon) => polygon.map(fixRing));
 }
 
+/** Points along the great circle between two places, for the gold flight arcs. */
+function arc(from: [number, number], to: [number, number], steps = 48): number[][] {
+  const rad = Math.PI / 180;
+  const [l1, p1] = [from[0] * rad, from[1] * rad];
+  const [l2, p2] = [to[0] * rad, to[1] * rad];
+  const d = 2 * Math.asin(Math.sqrt(Math.sin((p2 - p1) / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin((l2 - l1) / 2) ** 2));
+  if (d < 1e-6) return [from, to];
+  const points: number[][] = [];
+  let lastLng = from[0];
+  for (let i = 0; i <= steps; i++) {
+    const f = i / steps;
+    const a = Math.sin((1 - f) * d) / Math.sin(d);
+    const b = Math.sin(f * d) / Math.sin(d);
+    const x = a * Math.cos(p1) * Math.cos(l1) + b * Math.cos(p2) * Math.cos(l2);
+    const y = a * Math.cos(p1) * Math.sin(l1) + b * Math.cos(p2) * Math.sin(l2);
+    const z = a * Math.sin(p1) + b * Math.sin(p2);
+    let lng = Math.atan2(y, x) / rad;
+    // Keep the line continuous across 180°.
+    while (lng - lastLng > 180) lng -= 360;
+    while (lng - lastLng < -180) lng += 360;
+    lastLng = lng;
+    points.push([lng, Math.atan2(z, Math.sqrt(x * x + y * y)) / rad]);
+  }
+  return points;
+}
+
 function graticule(): GeoJSON.FeatureCollection {
   const features: GeoJSON.Feature[] = [];
   for (let lng = -180; lng <= 180; lng += 20) {
@@ -121,6 +147,8 @@ export function WorldMap({ catalogue, home, className = '', background = false }
   const [fallback, setFallback] = useState(false);
   const [ready, setReady] = useState(false);
   const [target, setTarget] = useState<Target | null>(null);
+  // Where the globe sits, for the soft atmosphere glow drawn behind it.
+  const [glow, setGlow] = useState<{ x: number; y: number; r: number } | null>(null);
 
   useEffect(() => {
     const element = container.current;
@@ -158,6 +186,26 @@ export function WorldMap({ catalogue, home, className = '', background = false }
       const touch = window.matchMedia('(pointer: coarse)').matches;
 
       const frame = framing(element, background);
+      const placeGlow = () => {
+        const f = framing(element, background);
+        const w = element.clientWidth;
+        const h = element.clientHeight;
+        const r = 81.5 * 2 ** (map ? map.getZoom() : f.zoom);
+        setGlow({ x: f.padding.left + (w - f.padding.left - f.padding.right) / 2, y: f.padding.top + (h - f.padding.top - f.padding.bottom) / 2, r });
+      };
+      // Gold arcs from home to every place with something on Enhakkore.
+      const homeLngLat: [number, number] = [home?.lng ?? 39.28, home?.lat ?? -6.8];
+      const destinations: [number, number][] = [];
+      for (const country of catalogue.countries) {
+        if (country.latitude !== null && country.longitude !== null && (country.total > 0 || country.featured)) destinations.push([country.longitude, country.latitude]);
+        for (const city of country.cities) if (city.latitude != null && city.longitude != null) destinations.push([city.longitude, city.latitude]);
+      }
+      const arcs: GeoJSON.FeatureCollection = {
+        type: 'FeatureCollection',
+        features: destinations
+          .filter(([lng, lat]) => Math.abs(lng - homeLngLat[0]) + Math.abs(lat - homeLngLat[1]) > 1.5)
+          .map((to) => ({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: arc(homeLngLat, to) } })),
+      };
       try {
         map = new maplibre.Map({
           container: element,
@@ -184,22 +232,25 @@ export function WorldMap({ catalogue, home, className = '', background = false }
               },
               countries: { type: 'geojson', data: countries },
               graticule: { type: 'geojson', data: graticule() },
+              arcs: { type: 'geojson', data: arcs },
             },
             layers: [
-              { id: 'ocean', type: 'background', paint: { 'background-color': '#04182a' } },
-              { id: 'graticule', type: 'line', source: 'graticule', paint: { 'line-color': '#2aa7d8', 'line-opacity': ['interpolate', ['linear'], ['zoom'], 0, 0.18, 4, 0], 'line-width': 0.6 } },
+              { id: 'ocean', type: 'background', paint: { 'background-color': '#0a3a6e' } },
+              { id: 'graticule', type: 'line', source: 'graticule', paint: { 'line-color': '#9fd3ff', 'line-opacity': ['interpolate', ['linear'], ['zoom'], 0, 0.12, 4, 0], 'line-width': 0.5 } },
               {
                 id: 'land',
                 type: 'fill',
                 source: 'countries',
                 paint: {
-                  'fill-color': ['case', ['boolean', ['feature-state', 'hover'], false], '#1d5f8f', ['==', ['get', 'active'], 1], '#16456b', '#0d2e4b'],
+                  'fill-color': ['case', ['boolean', ['feature-state', 'hover'], false], '#f0cf86', ['==', ['get', 'active'], 1], '#d9b46a', '#a8895a'],
                   'fill-opacity': ['interpolate', ['linear'], ['zoom'], 0, 0.95, 4, 0.85, 6, 0.15],
                 },
               },
               { id: 'streets', type: 'raster', source: 'streets', minzoom: 3, paint: { 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0, 5, 0.95] } },
-              { id: 'borders-glow', type: 'line', source: 'countries', paint: { 'line-color': '#46c8ff', 'line-opacity': 0.25, 'line-width': ['interpolate', ['linear'], ['zoom'], 0, 2, 6, 5], 'line-blur': 3 } },
-              { id: 'borders', type: 'line', source: 'countries', paint: { 'line-color': ['case', ['==', ['get', 'active'], 1], '#e8c16a', '#5fd0ff'], 'line-opacity': 0.85, 'line-width': ['interpolate', ['linear'], ['zoom'], 0, 0.5, 6, 1.4] } },
+              { id: 'borders', type: 'line', source: 'countries', paint: { 'line-color': ['interpolate', ['linear'], ['zoom'], 0, '#7a5a26', 5, '#f3d48a'], 'line-opacity': ['interpolate', ['linear'], ['zoom'], 0, 0.45, 5, 0.9], 'line-width': ['interpolate', ['linear'], ['zoom'], 0, 0.4, 6, 1.4] } },
+              // Gold flight arcs from home, with a soft glow underneath.
+              { id: 'arcs-glow', type: 'line', source: 'arcs', layout: { 'line-cap': 'round' }, paint: { 'line-color': '#ffd27a', 'line-opacity': ['interpolate', ['linear'], ['zoom'], 0, 0.35, 5, 0], 'line-width': 5, 'line-blur': 4 } },
+              { id: 'arcs', type: 'line', source: 'arcs', layout: { 'line-cap': 'round' }, paint: { 'line-color': '#ffd27a', 'line-opacity': ['interpolate', ['linear'], ['zoom'], 0, 0.9, 5, 0], 'line-width': 1.4 } },
             ],
           },
         });
@@ -209,9 +260,11 @@ export function WorldMap({ catalogue, home, className = '', background = false }
       }
       map.setPadding(frame.padding);
       mapRef.current = map;
+      placeGlow();
+      map.on('zoom', placeGlow);
       (window as unknown as { __enhMap?: MapLibreMap }).__enhMap = map;
       map.on('error', (event) => console.error('[map]', event.error?.message ?? event));
-      map.addControl(new maplibre.NavigationControl({ showCompass: true, visualizePitch: false }), 'bottom-right');
+      map.addControl(new maplibre.NavigationControl({ showCompass: !touch, visualizePitch: false }), 'bottom-right');
       map.addControl(new maplibre.FullscreenControl(), 'bottom-right');
       if (background && touch) {
         const onFullscreen = () => {
@@ -225,6 +278,7 @@ export function WorldMap({ catalogue, home, className = '', background = false }
         if (!map) return;
         const next = framing(element, background);
         map.setPadding(next.padding);
+        placeGlow();
       };
       window.addEventListener('resize', onResize);
       map.on('remove', () => window.removeEventListener('resize', onResize));
@@ -355,6 +409,19 @@ export function WorldMap({ catalogue, home, className = '', background = false }
 
   return (
     <div className={`enh-hud overflow-hidden bg-[#04182a] ${background ? 'enh-hud-bg absolute inset-0' : 'relative rounded-[1.4rem] border border-[#46c8ff]/25'} ${className}`}>
+      {background && glow && glow.r < 900 && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute rounded-full"
+          style={{
+            left: glow.x - glow.r * 1.35,
+            top: glow.y - glow.r * 1.35,
+            width: glow.r * 2.7,
+            height: glow.r * 2.7,
+            background: 'radial-gradient(circle, rgba(70,160,255,0.55) 0%, rgba(40,120,230,0.35) 36%, rgba(20,80,180,0.12) 52%, rgba(4,18,30,0) 70%)',
+          }}
+        />
+      )}
       <div ref={container} style={{ position: 'absolute', inset: 0 }} role="region" aria-label="Interactive world map. Select a marker or a country to explore a place; zoom in to see streets." />
       {!background && (
         <div className="pointer-events-none absolute inset-0 z-[2] font-mono text-[0.625rem] uppercase tracking-[0.18em] text-[#7fdcff]">
@@ -389,8 +456,12 @@ export function WorldMap({ catalogue, home, className = '', background = false }
         </div>
       )}
       {!target && ready && (
-        <button type="button" onClick={worldView} className={`absolute z-[4] inline-flex h-10 items-center rounded-full border border-[#46c8ff]/40 bg-[#04182a]/80 px-3 font-mono text-[0.625rem] uppercase tracking-[0.18em] text-[#7fdcff] ${background ? 'left-3 top-[34%] lg:bottom-3 lg:top-auto' : 'right-3 top-3'}`}>
-          ↺ World view
+        <button type="button" onClick={worldView} aria-label="Back to the world view" title="World view" className={`absolute z-[4] inline-flex items-center justify-center border text-[#7fdcff] ${background ? 'right-[10px] bottom-[calc(16rem+12rem)] h-10 w-10 rounded-full border-white/25 bg-[#04182a]/85 text-white lg:bottom-[11rem] lg:h-[29px] lg:w-[29px]' : 'right-3 top-3 h-10 rounded-full border-[#46c8ff]/40 bg-[#04182a]/80 px-3 font-mono text-[0.625rem] uppercase tracking-[0.18em]'}`}>
+          {background ? (
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>
+          ) : (
+            '↺ World view'
+          )}
         </button>
       )}
     </div>

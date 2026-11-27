@@ -43,7 +43,52 @@ export function Footer({ settings }: { settings: SiteSettings }) {
   const numbers = waNumbers(settings);
   return (
     <footer className="site-footer">
-      <div className="shell py-12 md:py-20">
+      {/* Phones: short and centred. */}
+      <div className="shell py-8 text-center sm:hidden">
+        <Link href="/" aria-label="Enhakkore — home" className="inline-block">
+          {settings.brand.logoOnDarkUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={settings.brand.logoOnDarkUrl} alt="Enhakkore Travel & Impact" className="mx-auto h-16 w-auto" />
+          ) : (
+            <span className="inline-block rounded-2xl bg-[#f6f2ea] p-2"><OriginalLogo src={settings.brand.logoUrl} height={72} /></span>
+          )}
+        </Link>
+        <nav aria-label="Footer" className="mt-5 flex flex-wrap items-start justify-center gap-x-1 text-[0.875rem] text-white/85">
+          {[
+            { href: '/about', label: 'About' },
+            { href: '/contact', label: 'Contact' },
+            { href: '/faq', label: 'FAQs' },
+          ].map((link) => (
+            <Link key={link.href} href={link.href} className="inline-flex min-h-11 items-center px-2.5 hover:text-clay-400">{link.label}</Link>
+          ))}
+          <details className="group relative">
+            <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-1 px-2.5 hover:text-clay-400 [&::-webkit-details-marker]:hidden">
+              Policies <span className="text-xs transition-transform group-open:rotate-180" aria-hidden>▾</span>
+            </summary>
+            <ul className="absolute bottom-full right-0 z-10 mb-1 w-56 overflow-hidden rounded-xl border border-white/10 bg-[#0d2240] py-1 text-left shadow-2xl">
+              {COLUMNS[2]!.links.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="flex min-h-11 items-center px-4 text-[0.875rem] text-white/85 hover:bg-white/5 hover:text-clay-400">{link.label}</Link>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </nav>
+        {settings.social.length > 0 && (
+          <ul className="mt-3 flex justify-center gap-3" aria-label="Social media">
+            {settings.social.map((link) => (
+              <li key={link.url}>
+                <a href={link.url} target="_blank" rel="noreferrer noopener" aria-label={link.handle || link.label} className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/15 text-white hover:border-clay-400">
+                  <SocialIcon platform={link.platform} size={19} />
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="mt-5 text-[0.75rem] text-white/55">© {new Date().getFullYear()} Enhakkore Travel &amp; Impact. Enquiries are confirmed by our team — they are not instant bookings.</p>
+      </div>
+
+      <div className="shell hidden py-12 sm:block md:py-20">
         <div className="grid gap-12 lg:grid-cols-[1.3fr_2fr]">
           <div>
             <span className="inline-block rounded-2xl bg-[#f6f2ea] p-2.5 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]"><OriginalLogo src={settings.brand.logoUrl} height={96} /></span>
@@ -89,25 +134,6 @@ export function Footer({ settings }: { settings: SiteSettings }) {
                 </li>
               ))}
             </ul>
-          </div>
-
-          {/* Phones: each group folds open, so the footer stays short. */}
-          <div className="divide-y divide-white/10 border-y border-white/10 sm:hidden">
-            {COLUMNS.map((column) => (
-              <details key={column.title} className="group">
-                <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between text-[0.9375rem] font-semibold text-white [&::-webkit-details-marker]:hidden">
-                  {column.title}
-                  <span className="text-clay-400 transition-transform group-open:rotate-45" aria-hidden>+</span>
-                </summary>
-                <ul className="grid grid-cols-2 gap-x-4 pb-3">
-                  {column.links.map((link) => (
-                    <li key={link.href}>
-                      <Link href={link.href} className="flex min-h-10 items-center text-[0.875rem] text-white/75 hover:text-clay-400">{link.label}</Link>
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            ))}
           </div>
 
           <div className="hidden grid-cols-3 gap-8 sm:grid [&>*]:min-w-0">

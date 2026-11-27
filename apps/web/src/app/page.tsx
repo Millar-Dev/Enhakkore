@@ -10,6 +10,7 @@ import { tripDates, type TripListing } from '@/components/public/listings';
 import { SmartImage } from '@/components/public/SmartImage';
 import { WscLogo } from '@/components/site/BrandLogo';
 import { SocialIcon } from '@/components/site/SocialIcon';
+import { StayConnected } from '@/components/public/StayConnected';
 import { apiGet } from '@/lib/api';
 import { getCatalogue, type Catalogue } from '@/lib/public';
 import { getSite, type Site } from '@/lib/site';
@@ -52,15 +53,18 @@ const PILLARS = [
 ];
 
 const INTERESTS = [
-  { label: 'Parties', icon: '🎉', href: '/experiences/c/parties', tone: 'bg-[#3a1d5c] ring-[#a66bf0]/40' },
-  { label: 'Sports', icon: '🏀', href: '/experiences/c/sports', tone: 'bg-[#123f2a] ring-[#3ccf7e]/40' },
-  { label: 'Gaming', icon: '🎮', href: '/experiences/gaming', tone: 'bg-[#2a1a5e] ring-[#8f7bff]/40' },
-  { label: 'Adventure', icon: '⛰️', href: '/experiences/c/outdoor', tone: 'bg-[#0e4636] ring-[#38c7a0]/40' },
-  { label: 'Arts', icon: '🎨', href: '/experiences/c/arts', tone: 'bg-[#4d2333] ring-[#f07ca0]/40' },
-  { label: 'Food', icon: '🍽️', href: '/explore?section=FOOD', tone: 'bg-[#4a3410] ring-[#e8b14a]/40' },
-  { label: 'Travel', icon: '✈️', href: '/travel', tone: 'bg-[#0f3557] ring-[#5fb4ff]/40' },
-  { label: 'Community', icon: '🤝', href: '/impact', tone: 'bg-[#3d2a12] ring-[#cb9a3c]/40' },
+  { label: 'Parties', href: '/experiences/c/parties', colour: '#f472b6', d: 'M5.8 11.3 2 22l10.7-3.8 M4 3h.01 M22 8h.01 M15 2h.01 M22 20h.01 M22 2l-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10 M11 2l.33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7 M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z' },
+  { label: 'Sports', href: '/experiences/c/sports', colour: '#34d399', d: 'M6.5 6.5 17.5 17.5 M21 21l-1-1 M3 3l1 1 M18 22l4-4 M2 6l4-4 M3 10l7-7 M14 21l7-7' },
+  { label: 'Gaming', href: '/experiences/gaming', colour: '#a78bfa', d: 'M6 12h4 M8 10v4 M15 13h.01 M18 11h.01 M17.3 5H6.7a4 4 0 0 0-4 3.6C2.6 9.4 2 14.5 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.4-1.4A2 2 0 0 1 9.8 16h4.4a2 2 0 0 1 1.4.6L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.5-.6-6.6-.7-7.3a4 4 0 0 0-4-3.7Z' },
+  { label: 'Adventure', href: '/experiences/c/outdoor', colour: '#2dd4bf', d: 'm8 3 4 8 5-5 5 15H2L8 3Z' },
+  { label: 'Arts', href: '/experiences/c/arts', colour: '#fb923c', d: 'M12 22a10 10 0 1 1 10-10c0 2.8-2.2 4-4 4h-2a2 2 0 0 0-1.5 3.3A2 2 0 0 1 12 22Z M7.5 10.5h.01 M10.5 7.5h.01 M14.5 7.5h.01 M17.5 10.5h.01' },
+  { label: 'Food', href: '/explore?section=FOOD', colour: '#fbbf24', d: 'M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2 M7 2v20 M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7' },
+  { label: 'Travel', href: '/travel', colour: '#60a5fa', d: 'M2.5 19h19M4 15l6-1 7-9 2 .5-3.5 8.5 4.5-.5 1 2-14 3-3-3.5Z' },
+  { label: 'Community', href: '/impact', colour: '#f5b544', d: 'M16 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 17.5V19 M10 10.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z M20 19v-1.5a3.5 3.5 0 0 0-2.6-3.4 M15.5 3.6a3.5 3.5 0 0 1 0 6.8' },
 ];
+
+/** A country's flag, from its two-letter code. */
+const flag = (code: string) => (/^[A-Z]{2}$/i.test(code) ? String.fromCodePoint(...[...code.toUpperCase()].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)) : '');
 
 /** Enhakkore's own photographs for places that have no picture set yet. */
 const PLACE_PHOTOS: Record<string, string> = {
@@ -78,14 +82,15 @@ function Band({ tone, children, id }: { tone: 'a' | 'b'; children: ReactNode; id
   );
 }
 
-function Head({ icon, title, href, linkLabel = 'See all', sub }: { icon: string; title: string; href?: string; linkLabel?: string; sub?: string }) {
+function Head({ icon, title, href, linkLabel = 'See all', sub, underline = false }: { icon?: string; title: string; href?: string; linkLabel?: string; sub?: string; underline?: boolean }) {
   return (
     <div className="mb-3.5 flex items-end justify-between gap-3 md:mb-6">
       <div className="min-w-0">
-        <h2 className="flex items-center gap-2 font-display text-[clamp(1.3rem,4.6vw,2.2rem)] leading-tight">
-          <span className="shrink-0 text-clay-400"><Icon d={icon} size={22} /></span>
+        <h2 className="flex items-center gap-2 text-[clamp(1.15rem,4.8vw,1.9rem)] font-bold leading-tight tracking-tight">
+          {icon && <span className="shrink-0 text-clay-400"><Icon d={icon} size={22} /></span>}
           <span className="min-w-0">{title}</span>
         </h2>
+        {underline && <span className="mt-1.5 block h-[3px] w-9 rounded-full bg-clay-400" aria-hidden />}
         {sub && <p className="mt-1 text-[0.8125rem] text-white/60 md:text-sm">{sub}</p>}
       </div>
       {href && (
@@ -152,7 +157,7 @@ function TripBanner({ trip }: { trip: TripListing }) {
       <div className="absolute inset-x-0 bottom-0 flex items-end gap-3 p-4 md:p-5">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-display text-[clamp(1.35rem,5vw,1.9rem)] leading-tight">{trip.title}</h3>
+            <h3 className="text-[clamp(1.25rem,5vw,1.75rem)] font-bold leading-tight">{trip.title}</h3>
             <span className="rounded-full bg-[#5b3aa8] px-2.5 py-0.5 text-[0.6875rem] font-bold">Group trip</span>
           </div>
           <ul className="mt-1.5 space-y-0.5 text-[0.8125rem] text-white/85">
@@ -182,7 +187,6 @@ export default async function HomePage() {
   const homePoint = launch?.latitude != null && launch.longitude != null ? { lat: launch.latitude, lng: launch.longitude } : { lat: -6.8, lng: 39.28 };
   // "Travel Further. Connect Deeper. Create Impact." — the last sentence in gold.
   const sentences = hero.title.split(/(?<=\.)\s+/);
-  const lead = sentences.length > 1 ? sentences.slice(0, -1).join(' ') : hero.title;
   const gold = sentences.length > 1 ? sentences[sentences.length - 1] : null;
   const experiencesHere = launch ? launch.counts.experiences + launch.counts.activities + launch.counts.events : 0;
   const launchFacts = launch
@@ -203,17 +207,18 @@ export default async function HomePage() {
           <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(4,18,30,0.95)_0%,rgba(4,18,30,0.55)_26%,rgba(4,18,30,0)_42%,rgba(4,18,30,0)_58%,rgba(4,18,30,0.8)_74%,rgba(4,18,30,0.97)_100%)] lg:bg-[linear-gradient(90deg,rgba(4,18,30,0.95)_0%,rgba(4,18,30,0.75)_34%,rgba(4,18,30,0)_56%)]" />
           <div className="shell pointer-events-none relative z-[3] flex w-full flex-col justify-between gap-[clamp(9rem,34svh,22rem)] py-6 text-center md:py-10 lg:justify-center lg:gap-8 lg:py-12 lg:text-left [&_a]:pointer-events-auto">
             <div className="mx-auto max-w-xl lg:mx-0">
-              <p className="text-[0.625rem] font-bold uppercase tracking-[0.22em] text-clay-400 md:text-xs">{hero.eyebrow}</p>
-              <h1 className="mt-2 font-display text-[clamp(1.9rem,8vw,4.4rem)] leading-[1.04]">
-                {lead}
-                {gold && <span className="block text-clay-400">{gold}</span>}
+              <p className="hidden text-xs font-bold uppercase tracking-[0.22em] text-clay-400 md:block">{hero.eyebrow}</p>
+              <h1 className="font-display text-[clamp(1.8rem,8.4vw,4.4rem)] leading-[1.06] md:mt-2">
+                {sentences.map((sentence, index) => (
+                  <span key={sentence + index} className={`block ${gold && index === sentences.length - 1 ? 'text-clay-400' : ''}`}>{sentence}</span>
+                ))}
               </h1>
               <p className="mx-auto mt-2.5 max-w-md text-[0.875rem] leading-snug text-white/80 md:text-lg md:leading-relaxed lg:mx-0">{hero.subtitle}</p>
             </div>
             <div className="mx-auto grid w-full max-w-sm gap-2.5 sm:max-w-xl lg:mx-0">
               {launch && (
                 <Link href={`/destinations/${launch.slug}`} className="flex items-center gap-3 rounded-full border border-white/15 bg-[#04121e]/60 py-1.5 pl-1.5 pr-4 text-left backdrop-blur hover:border-clay-400 sm:w-fit">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-clay-400 text-acacia-700"><Icon d={ICON.pin} size={18} /></span>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-xl leading-none" aria-hidden>{flag(launch.code) || '📍'}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold leading-tight">{launch.name}</span>
                     <span className="block truncate text-[0.6875rem] text-white/65">{launchFacts || 'Our home — see what is on'}</span>
@@ -225,11 +230,11 @@ export default async function HomePage() {
                 <Link href={hero.primaryHref} className="inline-flex h-12 items-center justify-center rounded-full bg-clay-400 px-4 text-sm font-bold text-acacia-700 shadow-lg transition hover:bg-clay-500 hover:text-white">
                   {hero.primaryLabel} →
                 </Link>
-                <Link href={hero.secondaryHref} className="inline-flex h-12 items-center justify-center rounded-full border border-white/45 bg-[#04121e]/40 px-4 text-sm font-semibold backdrop-blur hover:bg-white/10">
-                  {hero.secondaryLabel}
+                <Link href={hero.secondaryHref} className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/45 bg-[#04121e]/40 px-4 text-sm font-semibold backdrop-blur hover:bg-white/10">
+                  <Icon d={ICON.users} size={17} /> {hero.secondaryLabel}
                 </Link>
                 <Link href="/impact" className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/45 bg-[#04121e]/40 px-4 text-sm font-semibold backdrop-blur hover:bg-white/10">
-                  <Icon d={ICON.heart} size={16} /> Support WSC
+                  <Icon d={ICON.heart} size={16} /> Support WSC →
                 </Link>
               </div>
             </div>
@@ -281,17 +286,20 @@ function HomeSection({
     case 'discover':
       return (
         <Band tone={tone()}>
-          <Head icon={ICON.sparkle} title="Discover Enhakkore" />
+          <Head title="Discover Enhakkore" underline />
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-5">
             {PILLARS.map((pillar) => (
-              <Link key={pillar.href} href={pillar.href} className="card-lift group relative block aspect-[4/3.6] overflow-hidden rounded-2xl border border-white/10 sm:aspect-[16/10] lg:aspect-[4/4.4]">
-                <SmartImage src={pillar.image} alt="" fill sizes="(max-width:1024px) 50vw, 25vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.06]" />
+              <Link key={pillar.href} href={pillar.href} className="card-lift group relative block aspect-[4/3.6] overflow-hidden rounded-2xl border border-white/15 bg-[#0b2142] sm:aspect-[16/10] lg:aspect-[4/4.4]">
+                <div className="absolute inset-y-0 right-0 w-[78%]">
+                  <SmartImage src={pillar.image} alt="" fill sizes="(max-width:1024px) 40vw, 20vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.06]" />
+                </div>
                 <div className={`absolute inset-0 bg-gradient-to-t ${pillar.tint} to-transparent`} />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#0b2142] via-[#0b2142]/45 to-transparent" />
                 <div className="absolute inset-0 flex flex-col justify-between p-3 md:p-5">
-                  <span className="text-clay-400"><Icon d={pillar.icon} size={26} /></span>
+                  <span className="text-clay-400"><Icon d={pillar.icon} size={30} /></span>
                   <div>
-                    <p className="font-display text-[clamp(1.2rem,4.6vw,1.9rem)] leading-none">{pillar.title}</p>
-                    <p className="mt-1 line-clamp-2 text-[0.6875rem] text-white/85 md:text-sm">{pillar.line}</p>
+                    <p className="text-[clamp(1.15rem,4.6vw,1.75rem)] font-bold leading-none">{pillar.title}</p>
+                    <p className="mt-1 line-clamp-2 text-[0.6875rem] leading-snug text-white/85 md:text-sm">{pillar.line}</p>
                   </div>
                 </div>
               </Link>
@@ -329,8 +337,8 @@ function HomeSection({
           <Head icon={ICON.sparkle} title={title} />
           <div className="grid grid-cols-4 gap-2 sm:gap-3 lg:grid-cols-8">
             {INTERESTS.map((interest) => (
-              <Link key={interest.label} href={interest.href} className={`flex aspect-square min-h-[4.25rem] flex-col items-center justify-center gap-1 rounded-2xl p-1 ring-1 transition hover:ring-clay-400 sm:aspect-[5/4] ${interest.tone}`}>
-                <span className="text-[clamp(1.3rem,5.5vw,1.9rem)] leading-none" aria-hidden>{interest.icon}</span>
+              <Link key={interest.label} href={interest.href} style={{ borderColor: `${interest.colour}55` }} className="flex aspect-square min-h-[4.25rem] flex-col items-center justify-center gap-1.5 rounded-2xl border bg-[#0d2240] p-1 transition hover:bg-[#123059] sm:aspect-[5/4]">
+                <span style={{ color: interest.colour }}><Icon d={interest.d} size={26} /></span>
                 <span className="w-full truncate text-center text-[0.6875rem] font-semibold sm:text-sm">{interest.label}</span>
               </Link>
             ))}
@@ -467,13 +475,13 @@ function HomeSection({
             </div>
             <div className="rounded-2xl border border-white/10 bg-[#0d2240] p-5">
               <Head icon={ICON.send} title="Stay connected" />
-              <p className="text-sm text-white/75">Trip updates, new events and impact stories — follow us.</p>
-              <ul className="mt-4 flex flex-wrap gap-2" aria-label="Social media">
+              <p className="text-sm text-white/75">Get trip updates, new events and impact stories.</p>
+              <StayConnected />
+              <ul className="mt-4 flex flex-wrap justify-center gap-3 sm:justify-start" aria-label="Social media">
                 {settings.social.map((link) => (
-                  <li key={link.url} className="max-w-full">
-                    <a href={link.url} target="_blank" rel="noreferrer noopener" className="inline-flex h-11 max-w-full items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3.5 text-[0.8125rem] font-semibold hover:border-clay-400">
-                      <SocialIcon platform={link.platform} size={16} />
-                      <span className="truncate">{link.handle || link.label}</span>
+                  <li key={link.url}>
+                    <a href={link.url} target="_blank" rel="noreferrer noopener" aria-label={link.handle || link.label} title={link.handle || link.label} className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] hover:border-clay-400">
+                      <SocialIcon platform={link.platform} size={20} />
                     </a>
                   </li>
                 ))}

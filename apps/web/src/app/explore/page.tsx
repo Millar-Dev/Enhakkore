@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { EXPLORE_SECTIONS } from '@enhakkore/shared';
 import { PublicShell } from '@/components/layout/PublicShell';
-import { CardGrid, Empty, PageHero } from '@/components/public/Cards';
+import { AppHero } from '@/components/public/AppHero';
+import { CardGrid, Empty } from '@/components/public/Cards';
 import { Filters, Pager } from '@/components/public/Filters';
 import { PlaceCard } from '@/components/public/listings';
 import { cx } from '@/components/ui';
@@ -15,6 +16,8 @@ export const metadata: Metadata = {
 };
 export const revalidate = 60;
 
+const SHORT: Record<string, string> = { STAYS: 'Stays', FOOD: 'Dining', VENUES: 'Venues', ATTRACTIONS: 'Attractions' };
+
 const SORTS = [
   { value: '', label: 'Featured' },
   { value: 'popular', label: 'Popular' },
@@ -25,6 +28,7 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
   const params = pick(await searchParams, ['section', 'country', 'city', 'category', 'q', 'page', 'hiddenGem', 'verified', 'sort']);
   const [, catalogue, list] = await Promise.all([getSite(), getCatalogue(), getList('/public/places', params)]);
   const active = EXPLORE_SECTIONS.find((section) => section.key === params.section);
+  const country = catalogue.countries.find((item) => item.code.toLowerCase() === params.country?.toLowerCase() || item.slug === params.country);
   const subcategories = catalogue.categories.filter((item) => item.kind === 'PLACE' && (!active || item.section === active.key));
   const href = (changes: Record<string, string | undefined>) => {
     const search = new URLSearchParams();
@@ -35,27 +39,36 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
 
   return (
     <PublicShell>
-      <PageHero
-        kicker="Explore"
-        title={active ? active.label : 'Places worth knowing'}
-        intro="Where to stay, eat, celebrate and explore. Every listing is published by the Enhakkore team and says who provided its details — verified by us, submitted by the business, or not yet verified. Sponsored listings are always labelled."
+      <AppHero
+        title={active ? active.label : 'Explore'}
+        subtitle="Stays, dining, venues and places worth knowing"
+        search={{ action: '/explore', placeholder: 'Search places (hotels, restaurants…)', value: params.q, hidden: { section: params.section, category: params.category, country: params.country, city: params.city } }}
+        pills={[
+          { label: country?.name ?? 'Anywhere', icon: '📍', href: '#filters', active: !!params.country },
+          { label: active ? SHORT[active.key] ?? active.label : 'All categories', icon: '☰', href: '#categories', active: !!active },
+        ]}
       />
-      <section className="shell py-8 md:py-12">
-        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
-          {EXPLORE_SECTIONS.map((section) => (
-            <Link
-              key={section.key}
-              href={href({ section: active?.key === section.key ? undefined : section.key, category: undefined })}
-              className={cx(
-                'rounded-[1rem] border p-4 transition',
-                active?.key === section.key ? 'border-acacia-600 bg-acacia-600 text-white' : 'border-line bg-white text-acacia-700 hover:border-acacia-600',
-              )}
-            >
-              <span className="text-2xl" aria-hidden>{section.icon}</span>
-              <p className="mt-2 font-display text-lg leading-tight">{section.label}</p>
-              <p className={cx('mt-1 text-xs', active?.key === section.key ? 'text-white/75' : 'text-ink-muted')}>{section.kinds.slice(0, 4).join(' · ')}</p>
-            </Link>
-          ))}
+      <section className="shell py-5 md:py-10">
+        {/* Four ways to browse: compact icon tiles on phones, described cards on larger screens. */}
+        <div id="categories" className="grid scroll-mt-24 grid-cols-4 gap-2 md:gap-3">
+          {EXPLORE_SECTIONS.map((section) => {
+            const on = active?.key === section.key;
+            return (
+              <Link
+                key={section.key}
+                href={href({ section: on ? undefined : section.key, category: undefined })}
+                aria-current={on ? 'page' : undefined}
+                className={cx('group flex flex-col items-center gap-1.5 rounded-2xl p-1.5 text-center transition md:flex-row md:items-start md:gap-3 md:border md:p-4 md:text-left', on ? 'md:border-acacia-600 md:bg-acacia-600 md:text-white' : 'md:border-line md:bg-white md:hover:border-acacia-600')}
+              >
+                <span className={cx('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border text-2xl shadow-sm transition', on ? 'border-clay-400 bg-clay-50' : 'border-line bg-white group-hover:border-acacia-600')} aria-hidden>{section.icon}</span>
+                <span className="min-w-0">
+                  <span className={cx('block text-xs font-semibold md:hidden', on ? 'text-clay-600' : 'text-acacia-700')}>{SHORT[section.key]}</span>
+                  <span className="hidden font-display text-lg leading-tight md:block">{section.label}</span>
+                  <span className={cx('hidden text-xs md:block', on ? 'text-white/75' : 'text-ink-muted')}>{section.kinds.slice(0, 4).join(' · ')}</span>
+                </span>
+              </Link>
+            );
+          })}
         </div>
 
         {subcategories.length > 0 && (
@@ -70,7 +83,12 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
           </div>
         )}
 
-        <div className="mt-5">
+        <details id="filters" className="mt-4 scroll-mt-24 rounded-2xl border border-line bg-white" open={!!(params.country || params.city || params.verified || params.hiddenGem)}>
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 text-sm font-semibold text-acacia-700 [&::-webkit-details-marker]:hidden">
+            <span>Filters{[params.city, params.country].filter(Boolean).join(', ') ? ` · ${[params.city, params.country].filter(Boolean).join(', ')}` : ''}</span>
+            <span aria-hidden>▾</span>
+          </summary>
+          <div className="border-t border-line p-3">
           <Filters
             action="/explore"
             catalogue={catalogue}
@@ -82,10 +100,14 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
               { name: 'hiddenGem', label: 'Type', options: [{ value: '', label: 'Everything' }, { value: 'true', label: 'Hidden gems' }] },
             ]}
           />
-        </div>
+          </div>
+        </details>
 
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-ink-muted">{list.total} place{list.total === 1 ? '' : 's'}</p>
+        <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-[1.15rem] font-bold text-acacia-700 md:text-2xl">{params.q ? `Results for “${params.q}”` : 'Featured places'}</h2>
+            <p className="text-sm text-ink-muted">{list.total} place{list.total === 1 ? '' : 's'}</p>
+          </div>
           <div className="flex flex-wrap gap-1.5">
             {SORTS.map((sort) => (
               <Link key={sort.value} href={href({ sort: sort.value || undefined })} className={cx('chip', (params.sort ?? '') === sort.value && 'chip-active')}>

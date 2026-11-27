@@ -56,6 +56,7 @@ export async function PublicShell({
       ))}
       <Header
         logoUrl={settings.brand.logoUrl}
+        logoOnDarkUrl={settings.brand.logoOnDarkUrl}
         brandName={settings.brand.name}
         nav={settings.navigation.primary}
         hostHref="/activities/host"

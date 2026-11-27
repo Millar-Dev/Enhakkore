@@ -74,10 +74,13 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
   return (
     <PublicShell>
       <section className="relative">
-        <div className="relative h-[52vh] min-h-[340px] overflow-hidden bg-acacia-700 md:h-[66vh]">
+        <div className="relative h-[38svh] min-h-[15rem] overflow-hidden bg-acacia-700 md:h-[66vh] md:min-h-[340px]">
           <SmartImage src={trip.heroImage} alt="" fill priority sizes="100vw" className="object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-acacia-900/90 via-acacia-900/25 to-transparent" />
-          <div className="shell absolute inset-x-0 bottom-0 pb-10 text-white">
+          <div className="absolute inset-0 bg-gradient-to-t from-acacia-900/40 to-transparent md:from-acacia-900/90 md:via-acacia-900/25" />
+          <a href="/travel" aria-label="Back to Travel" className="absolute left-4 top-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur md:hidden">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 18l-6-6 6-6" /></svg>
+          </a>
+          <div className="shell absolute inset-x-0 bottom-0 hidden pb-10 text-white md:block">
             <p className="kicker !text-clay-400">{trip.destinationLabel ?? 'Enhakkore Travel'}</p>
             <h1 className="display-xl mt-3">{trip.title}</h1>
             {trip.subtitle && <p className="mt-2 font-display text-2xl text-white/85">{trip.subtitle}</p>}
@@ -96,8 +99,28 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
         </div>
       </section>
 
-      <section className="shell grid gap-10 py-10 md:py-14 lg:grid-cols-[1.5fr_1fr]">
-        <div className="space-y-10">
+      {/* Phones: the essentials on a sheet over the picture, then quick links. */}
+      <section className="relative -mt-6 rounded-t-[1.75rem] bg-white px-5 pb-1 pt-5 md:hidden">
+        <h1 className="text-[1.6rem] font-bold leading-tight text-acacia-700">{trip.title}</h1>
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          <span className="rounded-full bg-[#ede7fb] px-2.5 py-0.5 text-xs font-bold text-[#5b3aa8]">{trip.isPast ? 'Past trip' : 'Group trip'}</span>
+          {trip.stage && <span className="rounded-full bg-[#fdf4e3] px-2.5 py-0.5 text-xs font-bold text-warning">{TRIP_STAGE_LABELS[trip.stage] ?? trip.stage}</span>}
+        </div>
+        <ul className="mt-3 space-y-1.5 text-[0.9375rem] text-ink-soft">
+          {upcoming[0] && <li className="flex gap-2"><span aria-hidden>📅</span>{tripDates(upcoming[0].startDate, upcoming[0].endDate)} <span className="text-ink-muted">({trip.durationDays} days{trip.durationNights ? ` / ${trip.durationNights} nights` : ''})</span></li>}
+          {trip.destinationLabel && <li className="flex gap-2"><span aria-hidden>📍</span>{trip.destinationLabel}</li>}
+          {upcoming[0] && <li className="flex gap-2"><span aria-hidden>👥</span>{upcoming[0].seatsLeft} of {upcoming[0].capacity} places left</li>}
+          {!trip.isPast && <li className="flex gap-2 text-lg font-bold text-ink"><span aria-hidden>💳</span>{formatMoney({ amount: upcoming[0]?.price ?? trip.basePrice, currency: trip.currency })} <span className="self-end text-xs font-normal text-ink-muted">/ person</span></li>}
+        </ul>
+        <nav aria-label="On this page" className="no-scrollbar -mx-5 mt-4 flex gap-1 overflow-x-auto border-b border-line px-5">
+          {[['#overview', 'Overview'], ['#itinerary', 'Itinerary'], ['#package', 'Package'], ['#group', 'Group']].map(([href, label]) => (
+            <a key={href} href={href} className="inline-flex min-h-11 shrink-0 items-center border-b-2 border-transparent px-3 text-sm font-semibold text-ink-soft first:border-clay-400 first:text-acacia-700">{label}</a>
+          ))}
+        </nav>
+      </section>
+
+      <section className="shell grid gap-10 py-6 md:py-14 lg:grid-cols-[1.5fr_1fr]">
+        <div id="overview" className="scroll-mt-20 space-y-10">
           <div className="flex flex-wrap items-center gap-2">
             <SaveButton itemType="TRIP" itemId={trip.id} />
             <ShareButton subjectType="TRIP" subjectId={trip.id} title={trip.title} />
@@ -123,7 +146,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
           ]} />
 
           {trip.itinerary.length > 0 && (
-            <div>
+            <div id="itinerary" className="scroll-mt-20">
               <p className="kicker">Day by day</p>
               <h2 className="display-md mt-3 text-acacia-700">Itinerary</h2>
               <ol className="mt-6 space-y-5">
@@ -152,7 +175,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
             </div>
           )}
 
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div id="package" className="grid scroll-mt-20 gap-6 sm:grid-cols-2">
             {trip.includes.length > 0 && (
               <div className="rounded-[1.1rem] bg-[color:var(--color-cream)] p-5">
                 <p className="font-display text-xl text-acacia-700">Included</p>
@@ -204,12 +227,14 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
                 </a>
               </>
             ) : (
-              <TripRequest
-                tripId={trip.id}
-                tripTitle={trip.title}
-                dates={upcoming.map((departure) => ({ value: departure.startDate, label: tripDates(departure.startDate, departure.endDate) }))}
-                whatsapp={tripNumbers}
-              />
+              <div id="request" className="scroll-mt-20">
+                <TripRequest
+                  tripId={trip.id}
+                  tripTitle={trip.title}
+                  dates={upcoming.map((departure) => ({ value: departure.startDate, label: tripDates(departure.startDate, departure.endDate) }))}
+                  whatsapp={tripNumbers}
+                />
+              </div>
             )}
           </div>
           {!trip.isPast && (
@@ -219,7 +244,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
               <div className="mt-4"><ApplyForm slug={trip.slug} title={trip.title} departures={trip.departures} currency={trip.currency} tiers={trip.priceTiers} /></div>
             </details>
           )}
-          <div className="rounded-[1.2rem] border border-acacia-600/20 bg-acacia-700 p-5 text-white">
+          <div id="group" className="scroll-mt-20 rounded-[1.2rem] border border-acacia-600/20 bg-acacia-700 p-5 text-white">
             <p className="font-display text-xl">🔒 Private trip group</p>
             <p className="mt-1 text-sm text-white/80">Confirmed participants get access to this departure’s private group chat — live messages, the itinerary, documents, photos and announcements from the trip leader. Sign in with your member account to open it once your place is confirmed. Creating an account alone does not give access.</p>
             <a href="/account/groups" className="mt-3 inline-flex h-9 items-center rounded-full bg-clay-400 px-4 text-sm font-bold text-acacia-700">My trip groups →</a>
@@ -250,6 +275,15 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
           )}
         </aside>
       </section>
+
+      {/* Phones: the two actions always within reach. */}
+      <div className="h-24 md:hidden" aria-hidden />
+      <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-line bg-white/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur md:hidden">
+        {!trip.isPast && <a href="#request" className="inline-flex h-12 flex-1 items-center justify-center rounded-full bg-acacia-700 text-sm font-bold text-white">Request this trip</a>}
+        <a href={wa} target="_blank" rel="noreferrer noopener" className={`inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#1f9d55] px-5 text-sm font-bold text-white ${trip.isPast ? 'flex-1' : ''}`}>
+          <SocialIcon platform="whatsapp" size={18} /> WhatsApp
+        </a>
+      </div>
     </PublicShell>
   );
 }
