@@ -348,7 +348,7 @@ function renderSection(section: HomepageSection, ctx: Ctx, tone: 'navy' | 'ivory
                     { label: 'Arts & Culture', href: '/experiences/c/arts', d: ICON.palette },
                     { label: 'Travel Lovers', href: '/travel', d: ICON.plane },
                   ].map((item) => (
-                    <Link key={item.label} href={item.href} className="flex flex-col items-center gap-1.5 rounded-xl p-1.5 hover:bg-white/10">
+                    <Link key={item.label} href={item.href} className="flex min-w-0 flex-col items-center gap-1.5 rounded-xl p-1.5 [overflow-wrap:anywhere] hover:bg-white/10">
                       <span className="text-clay-400"><Icon d={item.d} size={28} /></span>
                       {item.label}
                     </Link>

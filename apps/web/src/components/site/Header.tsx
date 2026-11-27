@@ -147,7 +147,7 @@ export function Header({ logoUrl, logoOnDarkUrl, brandName, nav, whatsapp }: Hea
           </button>
           <Link href="/" aria-label={`${brandName} — home`} className="flex justify-self-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={emblem} alt="" width={64} height={45} className="h-11 w-auto md:h-12" />
+            <img src={emblem} alt="" width={64} height={45} className="h-11 w-auto max-w-full object-contain md:h-12" />
           </Link>
           <div className="-mr-2 flex items-center justify-end">
             <button type="button" onClick={() => setSearching(true)} aria-label="Search" className="inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10">
