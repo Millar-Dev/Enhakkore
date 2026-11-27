@@ -92,7 +92,7 @@ export default async function GamingPage({ searchParams }: { searchParams: Promi
         </div>
       </section>
       <section className="shell py-8 md:py-12">
-        <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 md:mx-0 md:flex-wrap md:px-0">
+        <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto overscroll-x-contain px-5 pb-1 md:mx-0 md:flex-wrap md:px-0">
           <Link href={href({ game: undefined })} className={cx('chip', !params.game && 'chip-active')}>All games</Link>
           {games.map((game) => (
             <Link key={game.slug} href={href({ game: game.slug })} className={cx('chip', params.game === game.slug && 'chip-active')}>
@@ -100,7 +100,7 @@ export default async function GamingPage({ searchParams }: { searchParams: Promi
             </Link>
           ))}
         </div>
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex flex-wrap gap-2">
           {[
             { value: undefined, label: 'Everything' },
             { value: 'online', label: 'Online tournaments' },

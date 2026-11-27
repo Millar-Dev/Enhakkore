@@ -39,19 +39,33 @@ const Icon = ({ d, size = 18 }: { d: string; size?: number }) => (
   </svg>
 );
 
-/** A titled row; scrolls sideways on phones, a grid on larger screens. */
-function Rail({ title, kicker, href, linkLabel = 'See all', dark = false, children }: { title: string; kicker?: string; href?: string; linkLabel?: string; dark?: boolean; children: React.ReactNode }) {
+type Tone = 'ivory' | 'white' | 'gold' | 'navy' | 'gaming';
+const DARK: Tone[] = ['navy', 'gaming'];
+
+/**
+ * A titled row in its own colour band, so each part of the page reads as its
+ * own place while scrolling. Scrolls sideways inside itself on phones (never
+ * the page), a grid on larger screens.
+ */
+function Rail({ title, kicker, href, linkLabel = 'See all', tone = 'white', image, children }: { title: string; kicker?: string; href?: string; linkLabel?: string; tone?: Tone; image?: string; children: React.ReactNode }) {
+  const dark = DARK.includes(tone);
   return (
-    <section className={dark ? 'bg-acacia-700 text-white' : ''}>
-      <div className="shell py-7 md:py-12">
+    <section className={`band band-${tone}`}>
+      {image && (
+        <>
+          <SmartImage src={image} alt="" fill sizes="100vw" className="object-cover opacity-25" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0b0a24]/80 to-[#04121e]/95" />
+        </>
+      )}
+      <div className="shell relative py-7 md:py-12">
         <div className="mb-3 flex items-end justify-between gap-3 md:mb-5">
-          <div>
-            {kicker && <p className={`text-[0.625rem] font-bold uppercase tracking-[0.18em] ${dark ? 'text-clay-400' : 'text-clay-600'}`}>{kicker}</p>}
+          <div className="min-w-0">
+            {kicker && <p className={`band-kicker ${dark ? 'text-clay-400' : 'text-clay-600'}`}>{kicker}</p>}
             <h2 className={`font-display text-[1.45rem] leading-tight md:text-[2rem] ${dark ? 'text-white' : 'text-acacia-700'}`}>{title}</h2>
           </div>
           {href && <Link href={href} className={`shrink-0 text-[0.8125rem] font-semibold ${dark ? 'text-clay-400' : 'text-acacia-600'}`}>{linkLabel} →</Link>}
         </div>
-        <div className="no-scrollbar -mx-5 flex snap-x gap-3 overflow-x-auto px-5 pb-1 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-4 [&>*]:w-[44vw] [&>*]:shrink-0 [&>*]:snap-start md:[&>*]:w-auto">
+        <div className="no-scrollbar -mx-5 flex snap-x gap-3 overflow-x-auto overscroll-x-contain px-5 pb-1 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-4 [&>*]:w-[44vw] [&>*]:max-w-[16rem] [&>*]:shrink-0 [&>*]:snap-start md:[&>*]:w-auto md:[&>*]:max-w-none">
           {children}
         </div>
       </div>
@@ -75,40 +89,47 @@ export default async function HomePage() {
 
   return (
     <PublicShell>
-      {/* Hero: words on the left, the live globe on the right (below on phones). */}
-      <section className="relative overflow-hidden bg-[radial-gradient(ellipse_at_75%_35%,#0f4a76_0%,#082b45_45%,#04182a_100%)] text-white">
-        <div className="shell relative grid items-center gap-4 py-4 md:py-10 lg:min-h-[78vh] lg:grid-cols-[0.95fr_1.05fr] lg:gap-10">
-          <div>
-            <p className="text-[0.625rem] font-bold uppercase tracking-[0.22em] text-clay-400 md:text-xs">{hero.eyebrow}</p>
-            <h1 className="mt-1.5 font-display text-[1.75rem] leading-[1.04] md:text-[3.4rem] lg:text-[4rem]">{hero.title}</h1>
-            <p className="mt-2 line-clamp-2 max-w-xl text-[0.8125rem] leading-snug text-white/75 md:mt-3 md:line-clamp-none md:text-lg md:leading-relaxed">{hero.subtitle}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-2 md:mt-5 md:gap-2.5">
-              <Link href={hero.primaryHref} className="inline-flex h-10 items-center rounded-full bg-clay-400 px-4 text-[0.8125rem] font-bold text-acacia-700 shadow-lg transition hover:bg-clay-500 hover:text-white md:h-12 md:px-7 md:text-sm">
-                {hero.primaryLabel} →
+      {/* Hero: the live globe is the whole background; the words sit over it.
+          Fills the screen on any phone, tablet or computer (svh = the visible
+          height, so browser toolbars never push content off). */}
+      <section className="band-hero relative isolate overflow-hidden text-white">
+        <div className="relative h-[max(27rem,calc(100svh-10.5rem))] max-h-[60rem] md:h-[max(32rem,calc(100svh-9rem))]">
+          <WorldMap catalogue={catalogue} home={homePoint} background />
+          {/* Shade so the words stay readable over the globe. */}
+          <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(4,18,30,0.92)_0%,rgba(4,18,30,0.55)_38%,rgba(4,18,30,0)_62%)] lg:bg-[linear-gradient(90deg,rgba(4,18,30,0.94)_0%,rgba(4,18,30,0.7)_34%,rgba(4,18,30,0)_58%)]" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-16 bg-gradient-to-t from-[#04121e] to-transparent" />
+          <div className="shell pointer-events-none relative z-[3] flex h-full flex-col pt-5 md:pt-10 lg:justify-center lg:pt-0">
+            <div className="max-w-xl [&_a]:pointer-events-auto">
+              <p className="text-[0.625rem] font-bold uppercase tracking-[0.22em] text-clay-400 md:text-xs">{hero.eyebrow}</p>
+              <h1 className="mt-1.5 font-display text-[clamp(1.75rem,7.2vw,4.2rem)] leading-[1.04]">{hero.title}</h1>
+              <p className="mt-2 line-clamp-3 max-w-lg text-[0.8125rem] leading-snug text-white/80 md:mt-3 md:text-lg md:leading-relaxed">{hero.subtitle}</p>
+              <div className="mt-3.5 flex flex-wrap items-center gap-2 md:mt-6 md:gap-2.5">
+                <Link href={hero.primaryHref} className="inline-flex h-10 items-center rounded-full bg-clay-400 px-4 text-[0.8125rem] font-bold text-acacia-700 shadow-lg transition hover:bg-clay-500 hover:text-white md:h-12 md:px-7 md:text-sm">
+                  {hero.primaryLabel} →
+                </Link>
+                <Link href={hero.secondaryHref} className="inline-flex h-10 items-center rounded-full border border-white/40 bg-[#04121e]/30 px-4 text-[0.8125rem] font-semibold backdrop-blur hover:bg-white/10 md:h-12 md:px-7 md:text-sm">
+                  {hero.secondaryLabel}
+                </Link>
+                <Link href="/donate" className="px-1 text-[0.8125rem] font-semibold text-clay-400 underline-offset-4 hover:underline md:text-sm">Donate</Link>
+              </div>
+              {/* WSC: part of the hero, not a sticker on it. */}
+              <Link href="/impact" className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full border border-white/15 bg-[#04121e]/40 py-0.5 pl-0.5 pr-3 text-[0.6875rem] text-white/85 backdrop-blur transition hover:bg-white/[0.12] md:mt-5 md:text-[0.75rem]">
+                <span className="shrink-0 rounded-full bg-white px-1.5 py-0.5"><WscLogo src="/brand/refined/wsc-logo.png" height={16} /></span>
+                <span className="truncate">Impact work with <strong className="font-semibold text-white">WSC — We Save Children</strong></span>
               </Link>
-              <Link href={hero.secondaryHref} className="inline-flex h-10 items-center rounded-full border border-white/40 px-4 text-[0.8125rem] font-semibold hover:bg-white/10 md:h-12 md:px-7 md:text-sm">
-                {hero.secondaryLabel}
-              </Link>
-              <Link href="/donate" className="px-1 text-[0.8125rem] font-semibold text-clay-400 underline-offset-4 hover:underline md:text-sm">Donate</Link>
             </div>
-            {/* WSC: part of the hero, not a sticker on it. */}
-            <Link href="/impact" className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] py-0.5 pl-0.5 pr-3 text-[0.6875rem] text-white/85 backdrop-blur transition hover:bg-white/[0.12] md:mt-5 md:text-[0.75rem]">
-              <span className="rounded-full bg-white px-1.5 py-0.5"><WscLogo src="/brand/refined/wsc-logo.png" height={16} /></span>
-              Impact work with <strong className="font-semibold text-white">WSC — We Save Children</strong>
-            </Link>
           </div>
-          <WorldMap catalogue={catalogue} home={homePoint} className="h-[16.5rem] sm:h-[24rem] lg:h-[34rem]" />
         </div>
-        <div className="border-t border-white/10 bg-black/20">
+        <div className="relative z-[3] border-t border-clay-400/30 bg-[#04121e]">
           <div className="shell grid grid-cols-3 divide-x divide-white/10 py-3 text-center">
             {[
               ['Explore', 'Travel further'],
               ['Connect', 'Meet, share, belong'],
               ['Create impact', 'Together, better'],
             ].map(([title, line]) => (
-              <div key={title} className="px-2">
-                <p className="font-display text-[0.95rem] uppercase tracking-wide text-clay-400 md:text-lg">{title}</p>
-                <p className="text-[0.625rem] text-white/60 md:text-xs">{line}</p>
+              <div key={title} className="min-w-0 px-2">
+                <p className="truncate font-display text-[0.95rem] uppercase tracking-wide text-clay-400 md:text-lg">{title}</p>
+                <p className="truncate text-[0.625rem] text-white/60 md:text-xs">{line}</p>
               </div>
             ))}
           </div>
@@ -178,7 +199,9 @@ function HomeSection({
   switch (sectionKey) {
     case 'discover':
       return (
-        <section className="shell py-5 md:py-10">
+        <section className="band band-ivory">
+          <div className="shell py-6 md:py-12">
+          <p className="band-kicker mb-2.5 text-clay-600">Four ways in</p>
           <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-4">
             {PILLARS.map((pillar) => (
               <Link key={pillar.href} href={pillar.href} className="group relative block h-[8.5rem] overflow-hidden rounded-2xl md:h-[13rem]">
@@ -195,13 +218,15 @@ function HomeSection({
               </Link>
             ))}
           </div>
+          </div>
         </section>
       );
     case 'happening': {
       const trips = (home?.trips ?? []).filter((trip) => trip.nextDeparture);
       const events = hub?.upcoming ?? [];
       return (
-        <section className="shell grid gap-6 py-6 md:py-10 lg:grid-cols-2 lg:gap-10">
+        <section className="band band-white">
+        <div className="shell grid grid-cols-[minmax(0,1fr)] gap-6 py-7 md:py-12 lg:grid-cols-2 lg:gap-10 [&>*]:min-w-0">
           <div>
             <div className="mb-3 flex items-end justify-between">
               <h2 className="font-display text-[1.45rem] text-acacia-700 md:text-[2rem]">✈ Upcoming trips</h2>
@@ -231,15 +256,16 @@ function HomeSection({
               {!events.length && <li className="p-4 text-sm text-ink-muted">Nothing scheduled yet. <Link href="/experiences/publish" className="font-semibold text-acacia-600 underline">Publish an activity</Link>.</li>}
             </ul>
           </div>
+        </div>
         </section>
       );
     }
     case 'interests':
       return (
-        <section className="bg-acacia-700">
-          <div className="shell py-5 md:py-8">
-            <p className="mb-2.5 text-[0.625rem] font-bold uppercase tracking-[0.18em] text-clay-400">{title}</p>
-            <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 md:mx-0 md:flex-wrap md:px-0">
+        <section className="band band-navy">
+          <div className="shell py-6 md:py-9">
+            <p className="band-kicker mb-2.5 text-clay-400">{title}</p>
+            <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto overscroll-x-contain px-5 md:mx-0 md:flex-wrap md:px-0">
               {INTERESTS.map((interest) => (
                 <Link key={interest.href} href={interest.href} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-2 text-[0.8125rem] font-semibold text-white hover:border-clay-400">
                   <span aria-hidden>{interest.icon}</span>
@@ -255,7 +281,7 @@ function HomeSection({
       const cities = countries.flatMap((country) => country.cities.filter((city) => city.total > 0).map((city) => ({ city, country }))).slice(0, 8);
       if (!cities.length && !countries.length) return null;
       return (
-        <Rail title={title} kicker="Destinations" href="/destinations">
+        <Rail title={title} kicker="Destinations" href="/destinations" tone="gold">
           {(cities.length ? cities : countries.map((country) => ({ city: null, country }))).map(({ city, country }) => (
             <Link key={city?.slug ?? country.slug} href={city ? `/destinations/${country.slug}/${city.slug}` : `/destinations/${country.slug}`} className="card-lift block rounded-2xl border border-line bg-white p-3.5">
               <p className="text-[0.625rem] font-bold uppercase tracking-wider text-clay-600">{country.name}</p>
@@ -270,7 +296,7 @@ function HomeSection({
       const places = home?.places ?? [];
       if (!places.length) return null;
       return (
-        <Rail title="Featured places" kicker="Explore" href="/explore">
+        <Rail title="Featured places" kicker="Explore" href="/explore" tone="white">
           {places.slice(0, 8).map((item) => (
             <ListingCard
               key={item.id}
@@ -291,14 +317,14 @@ function HomeSection({
       return (
         <>
           {items.length > 0 && (
-            <Rail title={title} kicker="Trending" dark>
+            <Rail title={title} kicker="Trending" tone="ivory">
               {items.slice(0, 8).map((item) => (
                 <ListingCard key={item.href} href={item.href} image={item.image} kicker={item.kind} title={item.title} meta={[item.where]} badges={item.sponsored ? [{ label: 'Sponsored', tone: 'gold' }] : []} />
               ))}
             </Rail>
           )}
           {gaming.length > 0 && (
-            <Rail title="Gaming & esports" kicker="Free tournaments" href="/experiences/gaming" dark={!items.length}>
+            <Rail title="Gaming & esports" kicker="Free tournaments" href="/experiences/gaming" tone="gaming" image={settings.gaming.heroImage}>
               {gaming.map((item) => (
                 <ListingCard key={item.id} href={item.href} image={item.image} kicker={item.category} title={item.title} meta={[item.startsAt ? formatInZone(item.startsAt, 'Africa/Dar_es_Salaam', 'datetime') : null, item.where]} badges={[...(item.isDemo ? [{ label: 'Demo', tone: 'demo' as const }] : []), { label: 'Free', tone: 'green' as const }]} />
               ))}
@@ -310,24 +336,24 @@ function HomeSection({
     case 'impact': {
       const project = home?.impact?.[0];
       return (
-        <section className="bg-acacia-700 text-white">
+        <section className="band band-impact">
           <div className="grid lg:grid-cols-[1fr_1.2fr_0.8fr]">
-            <div className="relative h-44 lg:h-auto">
+            <div className="relative h-44 sm:h-56 lg:h-auto">
               <SmartImage src={project?.heroImage ?? '/impact/mkuranga/cover.webp'} alt="Mkuranga outreach with WSC" fill sizes="(max-width:1024px) 100vw, 33vw" className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent to-acacia-700/80 max-lg:bg-gradient-to-t" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#f3e3bd] via-transparent to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-[#f6e9c8]" />
             </div>
             <div className="px-5 py-7 text-center lg:py-12">
-              <p className="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-clay-400">Enhakkore Impact</p>
-              <h2 className="mt-2 font-display text-[1.7rem] leading-tight md:text-[2.3rem]">{title}</h2>
-              <p className="mx-auto mt-2 max-w-md text-sm text-white/75">{subtitle}</p>
+              <p className="band-kicker text-clay-700">Enhakkore Impact</p>
+              <h2 className="mt-2 font-display text-[1.7rem] leading-tight text-acacia-700 md:text-[2.3rem]">{title}</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm text-ink-soft">{subtitle}</p>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
-                <Link href="/donate" className="inline-flex h-10 items-center rounded-full bg-clay-400 px-5 text-sm font-bold text-acacia-700">Donate now →</Link>
-                {project && <Link href={`/impact/${project.slug}`} className="inline-flex h-10 items-center rounded-full border border-white/30 px-5 text-sm font-semibold">{project.title}</Link>}
+                <Link href="/donate" className="inline-flex h-10 items-center rounded-full bg-acacia-700 px-5 text-sm font-bold text-white">Donate now →</Link>
+                {project && <Link href={`/impact/${project.slug}`} className="inline-flex h-10 max-w-full items-center truncate rounded-full border border-acacia-700/30 px-5 text-sm font-semibold text-acacia-700">{project.title}</Link>}
               </div>
             </div>
-            <div className="flex items-center justify-center gap-3 border-t border-white/10 px-5 py-5 lg:border-l lg:border-t-0">
-              <span className="rounded-xl bg-white p-2"><WscLogo src="/brand/refined/wsc-logo.png" height={44} /></span>
-              <p className="text-sm text-white/80">In partnership with<br /><strong className="text-white">WSC — We Save Children</strong></p>
+            <div className="flex items-center justify-center gap-3 border-t border-clay-400/40 px-5 py-5 lg:border-l lg:border-t-0">
+              <span className="rounded-xl bg-white p-2 shadow-sm"><WscLogo src="/brand/refined/wsc-logo.png" height={44} /></span>
+              <p className="text-sm text-ink-soft">In partnership with<br /><strong className="text-acacia-700">WSC — We Save Children</strong></p>
             </div>
           </div>
         </section>
@@ -335,11 +361,11 @@ function HomeSection({
     }
     case 'join':
       return (
-        <section className="bg-[color:var(--color-cream)]">
-          <div className="shell grid gap-4 py-7 md:grid-cols-2 md:items-center md:py-10">
+        <section className="band band-white">
+          <div className="shell grid grid-cols-[minmax(0,1fr)] gap-4 py-8 md:grid-cols-2 md:items-center md:py-12">
             <div className="flex items-center gap-3">
               <span className="text-3xl" aria-hidden>🤝</span>
-              <div>
+              <div className="min-w-0">
                 <p className="font-display text-xl text-acacia-700 md:text-2xl">Partner with Enhakkore</p>
                 <p className="text-sm text-ink-muted">List your hotel, restaurant, venue or event.</p>
               </div>
@@ -347,7 +373,7 @@ function HomeSection({
             </div>
             <div className="flex items-center gap-3 md:border-l md:border-clay-400/40 md:pl-6">
               <span className="text-3xl" aria-hidden>✨</span>
-              <div>
+              <div className="min-w-0">
                 <p className="font-display text-xl text-acacia-700 md:text-2xl">{title}</p>
                 <p className="text-sm text-ink-muted">Free — join activities, communities, trips and tournaments.</p>
               </div>

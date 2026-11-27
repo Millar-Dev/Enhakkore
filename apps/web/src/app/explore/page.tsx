@@ -86,7 +86,7 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
 
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-ink-muted">{list.total} place{list.total === 1 ? '' : 's'}</p>
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {SORTS.map((sort) => (
               <Link key={sort.value} href={href({ sort: sort.value || undefined })} className={cx('chip', (params.sort ?? '') === sort.value && 'chip-active')}>
                 {sort.label}

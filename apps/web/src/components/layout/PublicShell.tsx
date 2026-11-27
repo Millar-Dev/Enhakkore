@@ -31,7 +31,7 @@ export async function PublicShell({
   ].join('');
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-[100svh] w-full max-w-full flex-col overflow-x-clip bg-white">
       {overrides && <style>{`:root{${overrides}}`}</style>}
       {top.map((banner) => (
         <div

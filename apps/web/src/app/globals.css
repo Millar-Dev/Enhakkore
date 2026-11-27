@@ -152,9 +152,13 @@
    are meant to scroll set their own overflow and are unaffected. */
 html {
   overflow-x: clip;
+  overscroll-behavior-x: none;
 }
 
 body {
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+    max-width: 100vw;
     background: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-sans);
@@ -535,3 +539,56 @@ body {
 .manual table { width: 100%; border-collapse: collapse; font-size: 0.875rem; display: block; overflow-x: auto; }
 .manual th, .manual td { border: 1px solid #e5e7eb; padding: 0.45rem 0.6rem; text-align: left; vertical-align: top; }
 .manual th { background: #f8f6f1; }
+
+/* ==========================================================================
+   Colour bands — every part of a page sits in its own band so it can be told
+   apart while scrolling. Navy, gold and cream from the logo; a gold hairline
+   marks where one band ends and the next begins.
+   ========================================================================== */
+.band { position: relative; isolation: isolate; }
+.band + .band::before,
+.band-hero + .band::before,
+section + .band::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  z-index: 2;
+  background: linear-gradient(90deg, transparent, rgba(203, 154, 60, 0.6) 20%, rgba(203, 154, 60, 0.6) 80%, transparent);
+}
+.band-hero { background: #04121e; }
+.band-ivory { background: var(--color-sand); }
+.band-white { background: #ffffff; }
+.band-gold { background: linear-gradient(180deg, #fbf4e3 0%, #f6ead0 100%); }
+.band-navy { background: radial-gradient(ellipse at 15% 0%, #0f3557 0%, #0a1a2e 55%, #06111f 100%); color: #fff; }
+.band-gaming { background: #0b0a24; color: #fff; overflow: hidden; }
+.band-impact { background: linear-gradient(135deg, #f6e9c8 0%, #f1dfb2 100%); overflow: hidden; }
+.band-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.band-kicker::before { content: ''; width: 1.25rem; height: 2px; border-radius: 2px; background: var(--color-clay-400); }
+
+/* The globe as the hero background: no frame, no scan-lines over the words. */
+.enh-hud-bg::after { display: none; }
+.enh-hud-bg .maplibregl-ctrl-bottom-right { margin-bottom: 0.25rem; }
+
+/* Sideways rails scroll inside themselves only — a swipe never drags the page
+   or triggers the browser's back gesture. */
+.no-scrollbar { overscroll-behavior-x: contain; touch-action: pan-x pan-y pinch-zoom; }
+
+/* Footer: the deepest navy, set apart from the page by a gold rule. */
+.site-footer { background: radial-gradient(ellipse at 85% 0%, #0d2c4a 0%, #06142a 45%, #030b17 100%); color: #d6dde6; border-top: 3px solid var(--color-clay-400); }
+.site-footer .kicker { color: var(--color-clay-400); }
+
+/* A grid column may never grow wider than the screen because of one long word,
+   link or line of text (the usual cause of a page that drags sideways). */
+@layer base {
+  .grid > * { min-width: 0; }
+  img, video, iframe, canvas, svg { max-width: 100%; }
+}

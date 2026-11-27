@@ -13,7 +13,7 @@ export default async function ContactPage() {
   return (
     <PublicShell>
       <PageHero kicker="Contact" title="Talk to us" intro="WhatsApp is the quickest way to reach the team. Choose either number." />
-      <section className="shell grid gap-10 py-12 lg:grid-cols-[1fr_1.1fr]">
+      <section className="shell grid grid-cols-[minmax(0,1fr)] gap-10 py-12 lg:grid-cols-[1fr_1.1fr] [&>*]:min-w-0">
         <div className="space-y-5">
           {numbers.map((number, index) => (
             <div key={number.digits} className="rounded-[1.2rem] border border-line bg-white p-6">

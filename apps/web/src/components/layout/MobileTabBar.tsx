@@ -80,5 +80,5 @@ export function MobileTabBar() {
 export function MobileTabBarSpacer() {
   const visible = useTabBarVisible();
   if (!visible) return null;
-  return <div className="h-[calc(3.5rem+env(safe-area-inset-bottom))] md:hidden" aria-hidden="true" />;
+  return <div className="h-[calc(3.5rem+env(safe-area-inset-bottom))] bg-[#030b17] md:hidden" aria-hidden="true" />;
 }

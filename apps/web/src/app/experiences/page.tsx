@@ -43,7 +43,7 @@ export default async function ExperiencesHub({ searchParams }: { searchParams: P
   return (
     <PublicShell>
       {/* 1–2. Compact hero with search */}
-      <section className="relative overflow-hidden bg-acacia-700 text-white">
+      <section className="band band-navy relative overflow-hidden text-white">
         <SmartImage src={settings.gaming.heroImage} alt="" fill priority sizes="100vw" className="object-cover opacity-35" />
         <div className="absolute inset-0 bg-gradient-to-r from-acacia-900/95 via-acacia-900/70 to-acacia-900/30" />
         <div className="shell relative py-7 md:py-12">
@@ -79,8 +79,10 @@ export default async function ExperiencesHub({ searchParams }: { searchParams: P
       </section>
 
       {/* 3. Three journeys */}
-      <section className="shell -mt-0 py-4 md:py-8">
-        <div className="grid gap-2.5 md:grid-cols-3 md:gap-4">
+      <section className="band band-ivory">
+        <div className="shell py-5 md:py-9">
+        <p className="band-kicker mb-2.5 text-clay-600">Start here</p>
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-2.5 md:grid-cols-3 md:gap-4">
           {[
             { href: '#upcoming', title: 'Discover experiences', line: 'Find events, activities and communities', icon: '🔍', tone: 'bg-acacia-600 text-white' },
             { href: '/experiences/plan', title: 'Plan an event', line: 'Help with venue, catering and setup', icon: '🗓️', tone: 'bg-clay-400 text-acacia-700' },
@@ -95,12 +97,17 @@ export default async function ExperiencesHub({ searchParams }: { searchParams: P
             </Link>
           ))}
         </div>
+        </div>
       </section>
 
       {/* 4. Categories */}
-      <section className="shell pb-4 md:pb-8">
+      <section className="band band-white">
+        <div className="shell py-6 md:py-10">
         <div className="mb-3 flex items-end justify-between">
-          <h2 className="font-display text-[1.45rem] text-acacia-700 md:text-[2rem]">Browse by category</h2>
+          <div>
+            <p className="band-kicker text-clay-600">Categories</p>
+            <h2 className="font-display text-[1.45rem] text-acacia-700 md:text-[2rem]">Browse by category</h2>
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:gap-3">
           {(hub?.sections ?? []).map((section) => (
@@ -116,29 +123,35 @@ export default async function ExperiencesHub({ searchParams }: { searchParams: P
             </Link>
           ))}
         </div>
+        </div>
       </section>
 
       {/* 5. Upcoming */}
-      <section id="upcoming" className="shell scroll-mt-24 py-4 md:py-8">
+      <section id="upcoming" className="band band-gold scroll-mt-24">
+        <div className="shell py-6 md:py-10">
         <SectionTitle kicker="Upcoming" title={params.q ? `Upcoming: “${params.q}”` : 'Upcoming experiences'} />
         {upcoming.length ? (
           <UpcomingGrid items={upcoming} limit={9} />
         ) : (
           <Empty title="Nothing matches yet" body="New activities, events and tournaments appear here as soon as they are published." action={<Link href="/experiences/publish" className="inline-flex h-11 items-center rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">Publish an activity</Link>} />
         )}
+        </div>
       </section>
 
       {/* 6. Popular */}
       {hub?.popular.length ? (
-        <section className="shell py-4 md:py-8">
+        <section className="band band-white">
+          <div className="shell py-6 md:py-10">
           <SectionTitle kicker="Popular" title="Popular and most visited" subtitle="Ranked by members’ real views, saves and sign-ups — never by payment." />
           <UpcomingGrid items={hub.popular} />
+          </div>
         </section>
       ) : null}
 
       {/* 7. Gaming hub */}
-      <section className="relative overflow-hidden bg-acacia-900 text-white">
+      <section className="band band-gaming relative overflow-hidden text-white">
         <SmartImage src={settings.gaming.heroImage} alt="" fill sizes="100vw" className="object-cover opacity-30" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0b0a24]/70 to-[#04121e]/90" />
         <div className="shell relative py-7 md:py-12">
           <div className="mb-4 flex items-end justify-between">
             <div>
@@ -148,7 +161,7 @@ export default async function ExperiencesHub({ searchParams }: { searchParams: P
             <Link href="/experiences/gaming" className="shrink-0 text-sm font-semibold text-clay-400">Open hub →</Link>
           </div>
           {gaming.length ? (
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 [&>*]:min-w-0">
               {gaming.map((item) => (
                 <ListingCard key={item.id} href={item.href} image={item.image} kicker={item.category} title={item.title} meta={[item.where]} badges={[...(item.isDemo ? [{ label: 'Demo', tone: 'demo' as const }] : []), { label: 'Free', tone: 'green' as const }]} />
               ))}
@@ -161,7 +174,8 @@ export default async function ExperiencesHub({ searchParams }: { searchParams: P
 
       {/* 8. Communities and recurring activities */}
       {(hub?.communities.length || recurring.length) ? (
-        <section className="shell py-6 md:py-10">
+        <section className="band band-ivory">
+          <div className="shell py-7 md:py-10">
           {recurring.length > 0 && (
             <div className="mb-8">
               <SectionTitle kicker="Every week" title="Recurring activities" />
@@ -174,14 +188,17 @@ export default async function ExperiencesHub({ searchParams }: { searchParams: P
               <CardGrid>{hub.communities.map((community) => <CommunityTile key={community.id} community={community} />)}</CardGrid>
             </div>
           ) : null}
+          </div>
         </section>
       ) : null}
 
       {/* 9. Guided experiences */}
       {hub?.guided.length ? (
-        <section className="shell pb-10">
+        <section className="band band-white">
+          <div className="shell py-7 md:py-10">
           <SectionTitle kicker="Guided" title="Guided experiences and tours" action={<Link href="/experiences/guided" className="chip w-fit">See all →</Link>} />
           <CardGrid>{hub.guided.map((item) => <ExperienceCard key={item.id} item={item} />)}</CardGrid>
+          </div>
         </section>
       ) : null}
     </PublicShell>
