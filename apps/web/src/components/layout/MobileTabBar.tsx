@@ -19,8 +19,7 @@ const TABS = [
   { href: '/explore', label: 'Explore', icon: Icon.pin },
   { href: '/experiences', label: 'Experiences', icon: Icon.users },
   { href: '/travel', label: 'Travel', icon: Icon.compass },
-  // Impact stays one tap away in the header menu and on the homepage.
-  { href: '/account', label: 'Me', icon: Icon.user },
+  { href: '/impact', label: 'Impact', icon: Icon.heart },
 ];
 
 // Screens with their own pinned bottom action, or their own navigation.
@@ -59,11 +58,11 @@ export function MobileTabBar() {
                 href={tab.href}
                 aria-current={active ? 'page' : undefined}
                 className={cx(
-                  'flex h-[3.75rem] min-w-0 flex-col items-center justify-center gap-0.5 truncate px-0.5 text-[0.625rem] font-semibold tracking-wide transition-colors',
-                  active ? 'text-clay-600' : 'text-ink-soft',
+                  'mx-auto my-1.5 flex h-[3.25rem] w-[min(100%,4.75rem)] min-w-0 flex-col items-center justify-center gap-0.5 truncate rounded-2xl px-0.5 text-[0.625rem] font-semibold tracking-wide transition-colors',
+                  active ? 'bg-clay-400 text-acacia-700 shadow-[0_6px_16px_-8px_rgba(212,164,59,0.9)]' : 'text-ink-soft',
                 )}
               >
-                <span className={cx('flex h-7 w-10 items-center justify-center rounded-full transition-colors', active && 'bg-clay-50 text-clay-500')}><TabIcon size={21} /></span>
+                <TabIcon size={21} />
                 {tab.label}
               </Link>
             </li>

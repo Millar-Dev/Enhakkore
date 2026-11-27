@@ -8,7 +8,7 @@ import { SocialIcon } from '@/components/site/SocialIcon';
 import { apiGet } from '@/lib/api';
 import { getSite, waHref, waNumbers } from '@/lib/site';
 
-export const metadata: Metadata = { title: 'Donate', description: 'Support community outreach carried out by Enhakkore with WSC — We Save Children.' };
+export const metadata: Metadata = { title: 'Donate', description: 'Support Enhakkore Impact and its WSC — We Save Children initiative.' };
 export const revalidate = 60;
 
 /**
@@ -27,7 +27,7 @@ export default async function DonatePage({ searchParams }: { searchParams: Promi
     <PublicShell>
       <section className="bg-[color:var(--color-cream)]">
         <div className="shell py-14 md:py-20">
-          <div className="flex items-center gap-4"><WscLogo src={settings.brand.wscLogoUrl} height={48} /><p className="kicker">Enhakkore Impact · with WSC</p></div>
+          <div className="flex items-center gap-4"><WscLogo src={settings.brand.wscLogoUrl} height={48} /><p className="kicker">Enhakkore Impact · WSC</p></div>
           <h1 className="display-xl mt-5 max-w-3xl text-acacia-700">Give to community outreach</h1>
           <p className="mt-5 max-w-2xl text-[1.0625rem] leading-relaxed text-ink-soft">{settings.impact.donationIntro}</p>
           {project && <p className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-acacia-700 ring-1 ring-line">Giving to: {project.title}</p>}
@@ -99,7 +99,7 @@ export default async function DonatePage({ searchParams }: { searchParams: Promi
           </div>
           <div className="rounded-[1.2rem] border border-line bg-white p-5 text-sm leading-relaxed text-ink-soft">
             <p className="font-bold text-acacia-700">Who receives it</p>
-            <p className="mt-1">Donations go to the account shown, for Enhakkore’s community outreach carried out with WSC — We Save Children. WSC is an independent charity group; Enhakkore and WSC are separate organisations.</p>
+            <p className="mt-1">Donations go to the account shown and are used for Enhakkore Impact’s community work, including WSC — We Save Children. They are recorded separately from Enhakkore’s business income.</p>
           </div>
           {(projects ?? []).length > 0 && (
             <div className="rounded-[1.2rem] border border-line bg-white p-5 text-sm">

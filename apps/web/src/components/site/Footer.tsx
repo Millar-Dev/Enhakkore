@@ -1,169 +1,137 @@
 import Link from 'next/link';
 import type { SiteSettings } from '@enhakkore/shared';
+import { StayConnected } from '@/components/public/StayConnected';
 import { waHref, waNumbers } from '@/lib/site';
-import { OriginalLogo, WscLogo } from './BrandLogo';
+import { WscLogo } from './BrandLogo';
 import { SocialIcon } from './SocialIcon';
 
 const COLUMNS = [
   {
-    title: 'Discover',
+    title: 'Explore',
     links: [
-      { href: '/explore', label: 'Explore places' },
       { href: '/experiences', label: 'Experiences' },
-      { href: '/experiences/gaming', label: 'Gaming & esports' },
-      { href: '/experiences/communities', label: 'Communities' },
-      { href: '/travel', label: 'Travel' },
-      { href: '/catering', label: 'Catering & lunchboxes' },
+      { href: '/travel', label: 'Travel & trips' },
+      { href: '/explore', label: 'Discover places' },
+      { href: '/explore?section=FOOD', label: 'Food & dining' },
+      { href: '/destinations', label: 'Destinations' },
     ],
   },
   {
-    title: 'Enhakkore',
+    title: 'Community',
     links: [
-      { href: '/about', label: 'About Enhakkore' },
-      { href: '/contact', label: 'Contact' },
-      { href: '/faq', label: 'FAQs' },
-      { href: '/partner', label: 'Partner with us' },
-      { href: '/impact', label: 'WSC & impact' },
+      { href: '/experiences/communities', label: 'Communities' },
+      { href: '/experiences#upcoming', label: 'Events' },
+      { href: '/experiences/c/sports', label: 'Sports' },
+      { href: '/experiences/gaming', label: 'Gaming' },
+      { href: '/experiences/publish', label: 'Publish an activity' },
+    ],
+  },
+  {
+    title: 'Impact',
+    links: [
+      { href: '/impact', label: 'WSC — We Save Children' },
+      { href: '/impact#projects', label: 'Our projects' },
+      { href: '/impact#volunteer', label: 'Get involved' },
       { href: '/donate', label: 'Donate' },
     ],
   },
   {
-    title: 'Policies',
+    title: 'Support',
     links: [
-      { href: '/legal/privacy', label: 'Privacy policy' },
-      { href: '/legal/terms', label: 'Terms and conditions' },
-      { href: '/legal/community', label: 'Community guidelines' },
-      { href: '/legal/cancellation', label: 'Cancellation & refunds' },
-      { href: '/legal', label: 'Policy Centre' },
+      { href: '/contact', label: 'Contact us' },
+      { href: '/faq', label: 'Help & FAQs' },
+      { href: '/partner', label: 'Partner with us' },
+      { href: '/about', label: 'About Enhakkore' },
+      { href: '/legal', label: 'Privacy & terms' },
     ],
   },
 ];
 
+/**
+ * The site footer: deep navy with a gold rule, the original logo prepared for
+ * dark backgrounds, four link groups, a sign-up for updates and the WhatsApp
+ * numbers. On phones the link groups fold open so the footer stays short.
+ */
 export function Footer({ settings }: { settings: SiteSettings }) {
   const numbers = waNumbers(settings);
   return (
     <footer className="site-footer">
-      {/* Phones: short and centred. */}
-      <div className="shell py-8 text-center sm:hidden">
-        <Link href="/" aria-label="Enhakkore — home" className="inline-block">
-          {settings.brand.logoOnDarkUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={settings.brand.logoOnDarkUrl} alt="Enhakkore Travel & Impact" className="mx-auto h-16 w-auto" />
-          ) : (
-            <span className="inline-block rounded-2xl bg-[#f6f2ea] p-2"><OriginalLogo src={settings.brand.logoUrl} height={72} /></span>
-          )}
-        </Link>
-        <nav aria-label="Footer" className="mt-5 flex flex-wrap items-start justify-center gap-x-1 text-[0.875rem] text-white/85">
-          {[
-            { href: '/about', label: 'About' },
-            { href: '/contact', label: 'Contact' },
-            { href: '/faq', label: 'FAQs' },
-          ].map((link) => (
-            <Link key={link.href} href={link.href} className="inline-flex min-h-11 items-center px-2.5 hover:text-clay-400">{link.label}</Link>
-          ))}
-          <details className="group relative">
-            <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-1 px-2.5 hover:text-clay-400 [&::-webkit-details-marker]:hidden">
-              Policies <span className="text-xs transition-transform group-open:rotate-180" aria-hidden>▾</span>
-            </summary>
-            <ul className="absolute bottom-full right-0 z-10 mb-1 w-56 overflow-hidden rounded-xl border border-white/10 bg-[#0d2240] py-1 text-left shadow-2xl">
-              {COLUMNS[2]!.links.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="flex min-h-11 items-center px-4 text-[0.875rem] text-white/85 hover:bg-white/5 hover:text-clay-400">{link.label}</Link>
-                </li>
-              ))}
-            </ul>
-          </details>
-        </nav>
-        {settings.social.length > 0 && (
-          <ul className="mt-3 flex justify-center gap-3" aria-label="Social media">
-            {settings.social.map((link) => (
-              <li key={link.url}>
-                <a href={link.url} target="_blank" rel="noreferrer noopener" aria-label={link.handle || link.label} className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/15 text-white hover:border-clay-400">
-                  <SocialIcon platform={link.platform} size={19} />
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="mt-5 text-[0.75rem] text-white/55">© {new Date().getFullYear()} Enhakkore Travel &amp; Impact. Enquiries are confirmed by our team — they are not instant bookings.</p>
-      </div>
-
-      <div className="shell hidden py-12 sm:block md:py-20">
-        <div className="grid gap-12 lg:grid-cols-[1.3fr_2fr]">
-          <div>
-            <span className="inline-block rounded-2xl bg-[#f6f2ea] p-2.5 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]"><OriginalLogo src={settings.brand.logoUrl} height={96} /></span>
-            <p className="mt-5 font-display text-[1.35rem] text-clay-400">{settings.brand.slogan}</p>
-            <p className="mt-3 max-w-sm text-[0.9375rem] leading-relaxed text-white/70">{settings.brand.description}</p>
-
-            <div className="mt-7 grid gap-2.5">
-              {numbers.map((number, index) => (
-                <a
-                  key={number.digits}
-                  href={waHref(settings, 'general', null, index)}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="inline-flex w-fit max-w-full items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 text-[0.9375rem] font-semibold text-white transition hover:border-clay-400"
-                >
-                  <span className="text-[#1f9d55]">
-                    <SocialIcon platform="whatsapp" size={18} />
-                  </span>
-                  {number.display}
-                  <span className="truncate text-xs font-normal text-white/55">{number.label}</span>
-                </a>
-              ))}
-              {settings.contact.emails.map((email) => (
-                <a key={email.address} href={`mailto:${email.address}`} className="break-all text-[0.9375rem] font-medium text-white/80 hover:text-clay-400">
-                  {email.address}
-                </a>
-              ))}
-              {settings.contact.address && <p className="text-[0.9375rem] text-white/60">{settings.contact.address}</p>}
-            </div>
-
-            <ul className="mt-6 flex flex-wrap gap-2" aria-label="Social media">
+      <div className="shell py-10 md:py-16">
+        <div className="grid gap-8 lg:grid-cols-[1.15fr_2.6fr_1.3fr] lg:gap-10">
+          <div className="text-center lg:text-left">
+            <Link href="/" aria-label="Enhakkore Travel & Impact — home" className="inline-block">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/refined/enhakkore-logo-on-dark.png" alt="Enhakkore Travel & Impact" width={180} height={143} className="mx-auto h-28 w-auto lg:mx-0 lg:h-32" />
+            </Link>
+            <p className="mt-3 text-sm font-semibold text-clay-400">Explore · Connect · Create Impact</p>
+            <ul className="mt-4 flex justify-center gap-2 lg:justify-start" aria-label="Social media">
               {settings.social.map((link) => (
                 <li key={link.url}>
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="inline-flex items-center gap-2 rounded-full bg-clay-400 px-3.5 py-2 text-[0.8125rem] font-semibold text-acacia-700 transition hover:bg-clay-500 hover:text-white"
-                  >
-                    <SocialIcon platform={link.platform} size={15} />
-                    {link.handle || link.label}
+                  <a href={link.url} target="_blank" rel="noreferrer noopener" aria-label={link.handle || link.label} title={link.handle || link.label} className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/15 text-white hover:border-clay-400 hover:text-clay-400">
+                    <SocialIcon platform={link.platform} size={18} />
                   </a>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="hidden grid-cols-3 gap-8 sm:grid [&>*]:min-w-0">
-            {COLUMNS.map((column) => (
-              <div key={column.title}>
-                <p className="kicker">{column.title}</p>
-                <ul className="mt-4 space-y-2.5">
-                  {column.links.map((link) => (
-                    <li key={link.href}>
-                      <Link href={link.href} className="text-[0.9375rem] text-white/75 transition-colors hover:text-clay-400">
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+          {/* Link groups: columns on larger screens, folding groups on phones. */}
+          <div>
+            <div className="hidden grid-cols-4 gap-6 sm:grid">
+              {COLUMNS.map((column) => (
+                <div key={column.title}>
+                  <p className="text-sm font-bold text-white">{column.title}</p>
+                  <ul className="mt-3 space-y-1">
+                    {column.links.map((link) => (
+                      <li key={link.href}>
+                        <Link href={link.href} className="inline-flex min-h-9 items-center text-[0.875rem] text-white/70 transition-colors hover:text-clay-400">{link.label}</Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <div className="divide-y divide-white/10 border-y border-white/10 sm:hidden">
+              {COLUMNS.map((column) => (
+                <details key={column.title} className="group">
+                  <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between text-[0.9375rem] font-semibold [&::-webkit-details-marker]:hidden">
+                    {column.title}
+                    <span className="text-clay-400 transition-transform group-open:rotate-45" aria-hidden>+</span>
+                  </summary>
+                  <ul className="grid grid-cols-2 gap-x-4 pb-3">
+                    {column.links.map((link) => (
+                      <li key={link.href}>
+                        <Link href={link.href} className="flex min-h-10 items-center text-[0.875rem] text-white/75 hover:text-clay-400">{link.label}</Link>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-bold text-white">Stay connected</p>
+            <p className="mt-1 text-[0.8125rem] text-white/65">Get updates on trips, events and impact stories.</p>
+            <StayConnected />
+            <div className="mt-4 grid gap-1.5">
+              {numbers.map((number, index) => (
+                <a key={number.digits} href={waHref(settings, 'general', null, index)} target="_blank" rel="noreferrer noopener" className="inline-flex min-h-10 w-fit max-w-full items-center gap-2 text-[0.875rem] font-semibold text-white/85 hover:text-clay-400">
+                  <span className="text-[#25d366]"><SocialIcon platform="whatsapp" size={17} /></span>
+                  {number.display}
+                  <span className="truncate text-xs font-normal text-white/50">{number.label}</span>
+                </a>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col gap-5 border-t border-white/10 pt-7 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
-            <span className="shrink-0 rounded-lg bg-white p-1.5"><WscLogo src={settings.brand.wscLogoUrl} height={30} /></span>
-            <p className="max-w-md text-[0.8125rem] leading-relaxed text-white/60">
-              Our impact work is carried out together with WSC — We Save Children, an independent charity group.
-            </p>
+        <div className="mt-10 flex flex-col gap-4 border-t border-white/10 pt-6 text-[0.8125rem] text-white/55 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="shrink-0 rounded-lg bg-white p-1"><WscLogo src={settings.brand.wscLogoUrl} height={26} /></span>
+            <p>WSC — We Save Children is part of Enhakkore Impact.</p>
           </div>
-          <p className="text-[0.8125rem] text-white/50">
-            © {new Date().getFullYear()} {settings.brand.name}. Enquiries and applications are confirmed by our team — they are not instant bookings.
-          </p>
+          <p>© {new Date().getFullYear()} {settings.brand.name}. Enquiries are confirmed by our team — they are not instant bookings.</p>
         </div>
       </div>
     </footer>

@@ -84,6 +84,16 @@ Cloudinary uploads, and real devices — this was done in a development copy.
 
 ---
 
+## Design (latest)
+
+The whole site follows the navy-and-gold references: a dark header with the original
+emblem (prepared for dark backgrounds, artwork unchanged), a homepage hero whose
+background is a real WebGL globe (NASA night-Earth imagery served from the site, gold
+city lights and arcs, drag/pinch/wheel zoom), **Locate** mode with twelve categories,
+pins and detail cards, alternating navy and ivory sections, an Explore page with photo
+tiles, filters and a worldwide country → city location picker (also on Experiences,
+Travel, Gaming, Communities and Search), and a navy-and-gold control centre.
+
 ## 3. What still needs you (approval, accounts or decisions)
 
 1. **Create your founder (Super Admin) account — once.** No default admin

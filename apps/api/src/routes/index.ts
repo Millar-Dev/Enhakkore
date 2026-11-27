@@ -19,6 +19,7 @@ import { communityRouter } from './community';
 import { publicRouter } from './public';
 import { experiencesMember, experiencesPublic } from './experiences';
 import { geoMember, geoPublic } from './geo';
+import { globePublic } from './globe';
 
 export const apiRouter = Router();
 
@@ -72,6 +73,7 @@ apiRouter.use('/admin', adminRouter);
 apiRouter.use('/public', publicRouter);
 apiRouter.use('/public', experiencesPublic);
 apiRouter.use('/public', geoPublic);
+apiRouter.use('/public', globePublic);
 apiRouter.use('/community', experiencesMember);
 apiRouter.use('/community', geoMember);
 apiRouter.use('/community', communityRouter);

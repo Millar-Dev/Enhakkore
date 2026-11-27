@@ -17,11 +17,14 @@ const TABS = [
 ];
 
 export default async function TravelPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const tab = String((await searchParams).tab ?? 'upcoming');
+  const sp = await searchParams;
+  const tab = String(sp.tab ?? 'upcoming');
+  const loc = { country: typeof sp.country === 'string' ? sp.country : undefined, city: typeof sp.city === 'string' ? sp.city : undefined };
+  const locQuery = new URLSearchParams(Object.entries(loc).filter(([, value]) => value) as [string, string][]).toString();
   const [{ settings }, upcoming, past] = await Promise.all([
     getSite(),
-    apiGet<{ items: TripListing[] }>('/public/trips', 60),
-    apiGet<{ items: TripListing[] }>('/public/trips?when=past', 60),
+    apiGet<{ items: TripListing[] }>(`/public/trips${locQuery ? `?${locQuery}` : ''}`, 60),
+    apiGet<{ items: TripListing[] }>(`/public/trips?when=past${locQuery ? `&${locQuery}` : ''}`, 60),
   ]);
   const list = tab === 'completed' ? past?.items ?? [] : upcoming?.items ?? [];
   return (
@@ -30,16 +33,15 @@ export default async function TravelPage({ searchParams }: { searchParams: Promi
         title="Travel"
         subtitle="Group trips, safaris & custom journeys"
         search={{ action: '/search', placeholder: 'Search trips or destinations…', hidden: { type: 'trip' } }}
-        pills={[
-          { label: 'All destinations', icon: '🌍', href: '/destinations' },
-          { label: 'Custom dates', icon: '📅', href: '/private-trips' },
-        ]}
+        image={settings.pages.travelHeroImage}
+        location={loc}
+        pills={[{ label: 'Custom dates', icon: '📅', href: '/private-trips' }]}
       >
         <nav aria-label="Trips" className="no-scrollbar -mx-5 mt-4 flex gap-2 overflow-x-auto px-5 md:mx-0 md:px-0">
           {TABS.map((item) => (
             <Link
               key={item.key}
-              href={item.key === 'private' ? '/private-trips' : item.key === 'upcoming' ? '/travel' : `/travel?tab=${item.key}`}
+              href={item.key === 'private' ? '/private-trips' : `/travel?${new URLSearchParams({ ...(item.key === 'upcoming' ? {} : { tab: item.key }), ...(loc.country ? { country: loc.country } : {}), ...(loc.city ? { city: loc.city } : {}) }).toString()}`}
               aria-current={tab === item.key ? 'page' : undefined}
               className={`inline-flex h-10 shrink-0 items-center rounded-full px-4 text-sm font-semibold ${tab === item.key ? 'bg-clay-400 text-acacia-700' : 'bg-white/10 text-white hover:bg-white/15'}`}
             >

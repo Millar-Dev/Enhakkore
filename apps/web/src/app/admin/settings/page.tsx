@@ -24,6 +24,8 @@ const GROUPS: { key: SettingsGroup; label: string; help: string }[] = [
   { key: 'impact', label: 'Impact & donations', help: 'Donation wording, and confirming the donation account is authorised.' },
   { key: 'catering', label: 'Catering', help: 'The catering page introduction.' },
   { key: 'launch', label: 'Launch city', help: 'The city Weekend Radar and the homepage focus on.' },
+  { key: 'globe', label: 'Homepage globe', help: 'The categories in the globe’s Locate mode: rename them, hide them, or change their order.' },
+  { key: 'pages', label: 'Page pictures', help: 'The pictures at the top of Explore, Experiences, Travel and Impact. Use your own photos from the Media library.' },
 ];
 
 const IMAGE_KEYS = /url$|image/i;

@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { OriginalLogo } from '@/components/site/BrandLogo';
 import { Avatar, cx } from '@/components/ui';
 import { MENU, can, visibleMenu } from '@/lib/admin';
 import { useSession } from '@/lib/session';
@@ -56,15 +55,15 @@ export function AdminShell({ title, actions, children, permission }: { title?: s
     <nav className="space-y-6" aria-label="Control centre">
       {menu.map((group) => (
         <div key={group.title}>
-          <p className="px-3 text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-white/40">{group.title}</p>
+          <p className="px-3 text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-clay-400/80">{group.title}</p>
           <ul className="mt-2 space-y-0.5">
             {group.items.map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}
                   className={cx(
-                    'block rounded-lg px-3 py-2 text-[0.875rem] font-medium transition-colors',
-                    isActive(item.href) ? 'bg-white/12 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white',
+                    'relative flex min-h-10 items-center rounded-lg px-3 py-1.5 text-[0.875rem] font-medium transition-colors',
+                    isActive(item.href) ? 'bg-clay-400/15 text-clay-400 before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-clay-400' : 'text-white/75 hover:bg-white/5 hover:text-white',
                   )}
                 >
                   {item.label}
@@ -78,11 +77,12 @@ export function AdminShell({ title, actions, children, permission }: { title?: s
   );
 
   return (
-    <div className="min-h-screen bg-[#f6f4ef]">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 overflow-y-auto bg-acacia-700 px-3 py-5 lg:block">
-        <Link href="/admin" className="mb-6 flex items-center gap-3 rounded-xl bg-[color:var(--color-cream)] p-2.5">
-          <OriginalLogo src="/partners/enhakkore-mark.webp" height={30} alt="Enhakkore" />
-          <span className="text-[0.8125rem] font-bold leading-tight text-acacia-700">Control centre</span>
+    <div className="min-h-screen bg-[#f8f4ec]">
+      <aside className="no-scrollbar fixed inset-y-0 left-0 hidden w-64 overflow-y-auto border-r border-clay-400/20 bg-[#06172b] px-3 py-5 lg:block">
+        <Link href="/admin" className="mb-6 flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/refined/enhakkore-emblem-on-dark-96.png" alt="Enhakkore" width={50} height={35} className="h-9 w-auto" />
+          <span className="text-[0.8125rem] font-bold leading-tight text-white">Control centre<span className="block text-[0.6875rem] font-medium text-clay-400">Enhakkore Travel &amp; Impact</span></span>
         </Link>
         {nav}
       </aside>
@@ -90,14 +90,21 @@ export function AdminShell({ title, actions, children, permission }: { title?: s
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button className="absolute inset-0 bg-black/40" aria-label="Close menu" onClick={() => setOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-[82%] max-w-xs overflow-y-auto bg-acacia-700 px-3 py-5">{nav}</aside>
+          <aside className="enh-drawer absolute inset-y-0 left-0 w-[82%] max-w-xs overflow-y-auto bg-[#06172b] px-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-[calc(1.25rem+env(safe-area-inset-top))]">
+            <div className="mb-5 flex items-center justify-between px-1">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/refined/enhakkore-emblem-on-dark-96.png" alt="Enhakkore" width={50} height={35} className="h-9 w-auto" />
+              <button onClick={() => setOpen(false)} className="inline-flex h-11 w-11 items-center justify-center rounded-full text-white hover:bg-white/10" aria-label="Close menu">✕</button>
+            </div>
+            {nav}
+          </aside>
         </div>
       )}
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-40 border-b border-line bg-white/95 backdrop-blur">
+        <header className="sticky top-0 z-40 border-b border-clay-400/25 bg-[#06172b]/95 pt-[env(safe-area-inset-top)] text-white backdrop-blur">
           <div className="flex h-14 items-center gap-2 px-3 md:h-16 md:px-6">
-            <button onClick={() => setOpen(true)} className="inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-sand lg:hidden" aria-label="Open menu">
+            <button onClick={() => setOpen(true)} className="inline-flex h-11 w-11 items-center justify-center rounded-lg hover:bg-white/10 lg:hidden" aria-label="Open menu">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M4 7h16M4 12h16M4 17h16" /></svg>
             </button>
             <div className="relative flex-1">
@@ -105,11 +112,11 @@ export function AdminShell({ title, actions, children, permission }: { title?: s
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Find a section or setting — e.g. “WhatsApp”, “prices”, “expenses”"
-                className="h-10 w-full max-w-xl rounded-full border border-line bg-[#f6f4ef] px-4 text-sm"
+                className="h-10 w-full max-w-xl rounded-full border border-white/15 bg-white/10 px-4 text-sm text-white placeholder:text-white/50"
                 aria-label="Search the control centre"
               />
               {matches.length > 0 && (
-                <ul className="absolute left-0 top-12 w-full max-w-xl overflow-hidden rounded-xl border border-line bg-white shadow-[var(--shadow-raised)]">
+                <ul className="absolute left-0 top-12 w-full max-w-xl overflow-hidden rounded-xl border border-line bg-white text-ink shadow-[var(--shadow-raised)]">
                   {matches.map((item) => (
                     <li key={item.href}>
                       <Link href={item.href} onClick={() => setQuery('')} className="block px-4 py-2.5 text-sm hover:bg-sand">{item.label}</Link>
@@ -118,14 +125,17 @@ export function AdminShell({ title, actions, children, permission }: { title?: s
                 </ul>
               )}
             </div>
-            <Link href="/" target="_blank" className="hidden min-h-10 items-center text-sm font-semibold text-acacia-600 sm:inline-flex">View site ↗</Link>
+            <Link href="/admin/notifications" aria-label="Notifications" className="inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
+            </Link>
+            <Link href="/" target="_blank" className="hidden min-h-10 items-center text-sm font-semibold text-clay-400 sm:inline-flex">View site ↗</Link>
             <div className="flex items-center gap-2">
               <Avatar name={user.name} src={user.avatarUrl} size="sm" />
               <div className="hidden text-xs leading-tight md:block">
-                <p className="font-semibold text-ink">{user.name}</p>
-                <p className="text-ink-muted">{user.adminRoleName ?? 'Owner'}</p>
+                <p className="font-semibold text-white">{user.name}</p>
+                <p className="text-white/60">{user.adminRoleName ?? 'Owner'}</p>
               </div>
-              <button onClick={() => { signOut(); router.replace('/signin'); }} className="ml-1 inline-flex min-h-10 items-center px-1 text-xs font-semibold text-ink-muted hover:text-danger">Sign out</button>
+              <button onClick={() => { signOut(); router.replace('/signin'); }} className="ml-1 inline-flex min-h-10 items-center px-1 text-xs font-semibold text-white/65 hover:text-clay-400">Sign out</button>
             </div>
           </div>
         </header>
@@ -133,7 +143,7 @@ export function AdminShell({ title, actions, children, permission }: { title?: s
         <main className="px-3 py-5 md:px-8 md:py-8">
           {(title || actions) && (
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:mb-7">
-              {title && <h1 className="font-display text-[1.9rem] leading-tight text-acacia-700 md:text-[2.3rem]">{title}</h1>}
+              {title && <h1 className="font-display text-[1.9rem] leading-tight text-[#06172b] md:text-[2.3rem]"><span className="mb-2 block h-[3px] w-10 rounded-full bg-clay-400" aria-hidden />{title}</h1>}
               {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
             </div>
           )}
@@ -148,10 +158,10 @@ export function AdminShell({ title, actions, children, permission }: { title?: s
 
 export function Panel({ title, children, className, actions }: { title?: string; children: ReactNode; className?: string; actions?: ReactNode }) {
   return (
-    <section className={cx('rounded-2xl border border-line bg-white p-4 md:p-6', className)}>
+    <section className={cx('rounded-2xl border border-line bg-white p-4 shadow-[0_10px_30px_-24px_rgba(6,23,43,0.6)] md:p-6', className)}>
       {(title || actions) && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          {title && <h2 className="text-[1rem] font-bold text-acacia-700">{title}</h2>}
+          {title && <h2 className="flex items-center gap-2 text-[1rem] font-bold text-[#06172b]"><span className="h-4 w-[3px] rounded-full bg-clay-400" aria-hidden />{title}</h2>}
           {actions}
         </div>
       )}

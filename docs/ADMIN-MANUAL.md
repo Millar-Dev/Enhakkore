@@ -181,8 +181,9 @@ are protected from deletion. Stories, polls, challenges and banners are under
 
 ![Media](/manual/13-media.webp)
 
-## 17. WSC impact stories
+## 17. Enhakkore Impact and WSC
 
+WSC — We Save Children is part of Enhakkore Impact (not a separate organisation).
 Menu → **Travel & Impact → Impact / WSC projects**: projects, updates, photos. Never
 publish figures you have not verified. Donations are recorded under **Donations**
 and kept separate from business income.
@@ -227,10 +228,28 @@ and are recorded; *Change history → Restore previous value* undoes a mistake.
 
 ![Contacts](/manual/16-contacts.webp)
 
-## 23. Homepage sections
+## 23. Homepage sections, the globe and page pictures
 
-Menu → **Content → Homepage editor**: hero text and buttons, and each section's title,
-order (↑ ↓) and on/off switch.
+Menu → **Content → Homepage editor**: hero text and buttons (headline, introduction,
+"Explore Now" and "Discover Experiences"), and each section's title, order (↑ ↓) and
+on/off switch: Explore Our World, Upcoming Experiences, What's Happening Now,
+Upcoming Trips, Featured Destinations, Travel With Purpose, Enhakkore Impact,
+Discover & Review, Join the Community, Partner With Enhakkore.
+
+**The globe.** The homepage globe shows every published activity, event, trip,
+place, tournament, community and Impact project that has a city or coordinates.
+Visitors tap **Locate** to filter by category and open a card for each one. Rename,
+hide or reorder the Locate categories under **Settings → Homepage globe**. Something
+missing from the globe? Give it a city (or exact coordinates for places and projects).
+
+**Page pictures.** The photographs at the top of Explore, Experiences, Travel and
+Impact are under **Settings → Page pictures** — upload your own in the Media library
+and choose them there.
+
+**Logo on dark backgrounds.** The header, footer and control centre use the original
+logo prepared for navy backgrounds (the artwork unchanged, with a light outline).
+An official light version from your designer can replace it: **Settings → Brand &
+logos → Logo on dark URL**.
 
 ![Homepage](/manual/17-homepage.webp)
 

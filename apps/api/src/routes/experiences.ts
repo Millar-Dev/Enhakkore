@@ -385,6 +385,7 @@ experiencesPublic.get(
           { status: { in: past ? ['COMPLETED'] : ['REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'IN_PROGRESS'] } },
           kind ? { kind: kind.toUpperCase() } : {},
           game ? { game: { slug: game } } : {},
+          geo(req),
           q ? { OR: [{ title: textContains(q) }, { summary: textContains(q) }, { game: { name: textContains(q) } }] } : {},
         ],
       },

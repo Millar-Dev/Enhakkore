@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import type { CommunityCard } from '@/components/home/types';
 import { PublicShell } from '@/components/layout/PublicShell';
-import { CardGrid, Empty, PageHero, SectionTitle } from '@/components/public/Cards';
+import { AppHero } from '@/components/public/AppHero';
+import { CardGrid, Empty, SectionTitle } from '@/components/public/Cards';
 import { CommunityApplyForm } from '@/components/public/CommunityActions';
 import { CommunityTile } from '@/components/public/experience';
 import { apiGet, query } from '@/lib/api';
@@ -11,7 +12,7 @@ export const metadata: Metadata = { title: 'Communities', description: 'Join int
 export const revalidate = 60;
 
 export default async function CommunitiesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const params = pick(await searchParams, ['q', 'country']);
+  const params = pick(await searchParams, ['q', 'country', 'city']);
   const [data, catalogue, countries] = await Promise.all([
     apiGet<{ items: CommunityCard[] }>(`/public/communities${query(params)}`, 60),
     getCatalogue(),
@@ -20,12 +21,13 @@ export default async function CommunitiesPage({ searchParams }: { searchParams: 
   const categories = catalogue.categories.filter((item) => item.kind === 'ACTIVITY').map((item) => ({ id: item.id, name: item.name }));
   return (
     <PublicShell>
-      <PageHero kicker="Experiences · Communities" title="Find your community" intro="Communities bring people together around what they love — a weekly run, a game, a sport, a craft. Join one to get its announcements and meetups." />
+      <AppHero
+        title="Communities"
+        subtitle="People who meet around what they love — a weekly run, a game, a sport, a craft."
+        search={{ action: '/experiences/communities', placeholder: 'Search communities…', value: params.q, hidden: { country: params.country, city: params.city } }}
+        location={{ country: params.country, city: params.city }}
+      />
       <section className="shell py-8 md:py-12">
-        <form action="/experiences/communities" className="flex flex-col gap-2 rounded-[1.1rem] border border-line bg-white p-3 sm:flex-row">
-          <input name="q" defaultValue={params.q} placeholder="Search communities" className="field h-12 w-full sm:flex-1" aria-label="Search communities" />
-          <button className="h-12 rounded-[var(--radius-field)] bg-acacia-600 px-6 font-bold text-white">Search</button>
-        </form>
         <div className="mt-8">
           {data?.items.length ? (
             <CardGrid>{data.items.map((community) => <CommunityTile key={community.id} community={community} />)}</CardGrid>

@@ -11,7 +11,7 @@ import { SocialIcon } from '@/components/site/SocialIcon';
 import { apiGet } from '@/lib/api';
 import { getSite, waHref } from '@/lib/site';
 
-export const metadata: Metadata = { title: 'Impact', description: 'Community projects and outreach carried out with WSC — We Save Children.' };
+export const metadata: Metadata = { title: 'Impact', description: 'Enhakkore Impact — community projects and outreach, including WSC — We Save Children.' };
 export const revalidate = 60;
 
 export default async function ImpactPage() {
@@ -29,7 +29,7 @@ export default async function ImpactPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#06152a] via-[#06152a]/70 to-[#06152a]/25 md:bg-gradient-to-r md:from-[#06152a]/95 md:via-[#06152a]/60 md:to-transparent" />
         <div className="shell relative flex min-h-[min(32rem,76svh)] flex-col items-center justify-end py-7 text-center md:min-h-[30rem] md:items-start md:justify-center md:py-16 md:text-left">
           <span className="rounded-2xl bg-white p-2 shadow-lg"><WscLogo src="/brand/refined/wsc-logo.png" height={52} /></span>
-          <p className="mt-2 text-sm font-semibold text-white/85">We Save Children — with Enhakkore</p>
+          <p className="mt-2 text-sm font-semibold text-white/85">WSC · We Save Children — an Enhakkore Impact initiative</p>
           <h1 className="mt-3 max-w-xl font-display text-[clamp(1.7rem,6.5vw,3.4rem)] leading-[1.08]">Supporting children and communities to create brighter futures.</h1>
           <p className="mt-2 max-w-md text-[0.875rem] text-white/80 md:text-base">Recorded as it happened — real photographs, no invented figures.</p>
           <div className="mt-5 grid w-full max-w-xs gap-2.5 sm:max-w-md sm:grid-cols-2">
@@ -55,12 +55,12 @@ export default async function ImpactPage() {
         </div>
       </section>
 
-      {/* WSC — presented as its own organisation working with Enhakkore. */}
+      {/* WSC — We Save Children: an initiative within Enhakkore Impact. */}
       <section className="shell py-14 md:py-20">
         <div className="grid gap-8 rounded-[1.6rem] border border-line bg-white p-7 md:grid-cols-[auto_1fr] md:items-center md:p-10">
           <WscLogo src={settings.brand.wscLogoUrl} height={96} />
           <div>
-            <p className="kicker">Our impact partner</p>
+            <p className="kicker">Part of Enhakkore Impact</p>
             <h2 className="display-md mt-3 text-acacia-700">We Save Children (WSC)</h2>
             <p className="mt-3 max-w-2xl text-[1rem] leading-relaxed text-ink-soft">{settings.impact.wscIntro}</p>
             <a href="https://www.instagram.com/_wsc2022" target="_blank" rel="noreferrer noopener" className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-acacia-600">

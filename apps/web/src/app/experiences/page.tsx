@@ -47,28 +47,12 @@ export default async function ExperiencesHub({ searchParams }: { searchParams: P
       <AppHero
         title="Experiences"
         subtitle="Discover, join and create experiences"
-        search={{ action: '/experiences', placeholder: 'Search events, activities, communities…', value: params.q, hidden: { country: country?.code, city: params.city } }}
-        pills={[
-          { label: params.city ? (country?.cities.find((city) => city.slug === params.city)?.name ?? 'Anywhere') : country?.name ?? 'Anywhere', icon: '📍', href: `/experiences?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), filters: showFilters ? '0' : '1' }).toString()}`, active: !!(params.country || params.city) },
-          { label: 'Gaming', icon: '🎮', href: '/experiences/gaming' },
-        ]}
+        image={settings.pages.experiencesHeroImage}
+        search={{ action: '/experiences', placeholder: 'Search events, activities, communities…', value: params.q, hidden: { country: params.country, city: params.city } }}
+        location={{ country: params.country, city: params.city }}
+        pills={[{ label: 'Gaming', icon: '🎮', href: '/experiences/gaming' }]}
       >
-        {(params.q || params.country || params.city) && <Link href="/experiences" className="mt-2 inline-flex min-h-10 items-center text-xs text-white/70 underline">Clear search and filters</Link>}
-        {showFilters && (
-          <form action="/experiences" className="mx-auto mt-3 grid max-w-2xl grid-cols-2 gap-2 rounded-2xl bg-white/10 p-2 backdrop-blur md:mx-0">
-            {params.q && <input type="hidden" name="q" value={params.q} />}
-            <input type="hidden" name="filters" value="1" />
-            <select name="country" defaultValue={country?.code ?? ''} className="field h-11 text-ink" aria-label="Country">
-              <option value="">Any country</option>
-              {catalogue.countries.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
-            </select>
-            <select name="city" defaultValue={params.city ?? ''} className="field h-11 text-ink" aria-label="City">
-              <option value="">Any city</option>
-              {(country?.cities ?? catalogue.countries.flatMap((item) => item.cities)).map((city) => <option key={city.slug} value={city.slug}>{city.name}</option>)}
-            </select>
-            <button className="col-span-2 h-11 rounded-full bg-clay-400 text-sm font-bold text-acacia-700">Apply</button>
-          </form>
-        )}
+        {(params.q || params.country || params.city) && <Link href="/experiences" className="mt-2 inline-flex min-h-10 items-center text-xs text-white/70 underline">Clear search and location</Link>}
       </AppHero>
 
       {/* 3. Three journeys */}

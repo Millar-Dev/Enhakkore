@@ -22,6 +22,49 @@ import { COUNTRIES, DEFAULT_ROLES, slugify } from '@enhakkore/shared';
 
 const prisma = new PrismaClient();
 
+/**
+ * WSC is part of Enhakkore Impact, not a separate organisation. Rewrites the
+ * earlier wording in records already in the database — only where the text is
+ * still exactly what the bootstrap wrote, so the owner's own edits are kept.
+ */
+async function wscWording() {
+  const replacements: [string, string][] = [
+    ['This was Enhakkore’s own community outreach, carried out with the people who travel with us and with WSC.', 'This was Enhakkore’s own community outreach through WSC — We Save Children, part of Enhakkore Impact — carried out with the people who travel with us.'],
+  ];
+  for (const project of await prisma.impactProject.findMany({ select: { id: true, description: true, partnerNote: true } })) {
+    let description = project.description;
+    for (const [from, to] of replacements) description = description.replace(from, to);
+    const partnerNote = project.partnerNote === 'Carried out together with WSC. WSC is its own charity group, not a part of Enhakkore.' ? 'WSC — We Save Children is an initiative within Enhakkore Impact.' : project.partnerNote;
+    if (description !== project.description || partnerNote !== project.partnerNote) await prisma.impactProject.update({ where: { id: project.id }, data: { description, partnerNote } });
+  }
+  for (const trip of await prisma.trip.findMany({ select: { id: true, summary: true, description: true } })) {
+    const fix = (text: string) => text.replace('Built for a group of twenty-eight, and run by Enhakkore together with WSC.', 'Built for a group of twenty-eight, and run by Enhakkore.');
+    if (fix(trip.summary) !== trip.summary || fix(trip.description) !== trip.description) await prisma.trip.update({ where: { id: trip.id }, data: { summary: fix(trip.summary), description: fix(trip.description) } });
+  }
+  // Saved settings that still hold the old default wording.
+  const oldIntro = 'WSC — We Save Children — is a charity group working so that no child grows up in poverty. Enhakkore’s impact work is carried out together with WSC. WSC is its own organisation, not a part of Enhakkore.';
+  const impactRow = await prisma.platformSetting.findUnique({ where: { key: 'site.impact' } });
+  if (impactRow?.value.includes(oldIntro.slice(0, 60))) {
+    const value = JSON.parse(impactRow.value) as Record<string, unknown>;
+    if (value.wscIntro === oldIntro) {
+      value.wscIntro = 'WSC — We Save Children — is an initiative within Enhakkore Impact, working so that no child grows up in poverty.';
+      await prisma.platformSetting.update({ where: { key: 'site.impact' }, data: { value: JSON.stringify(value) } });
+    }
+  }
+  const heroRow = await prisma.platformSetting.findUnique({ where: { key: 'site.homepage' } });
+  if (heroRow) {
+    const value = JSON.parse(heroRow.value) as { hero?: Record<string, string> };
+    if (value.hero && value.hero.title === 'Travel Further. Connect Deeper. Create Impact.' && value.hero.primaryLabel === 'Explore the World') {
+      value.hero = { ...value.hero, eyebrow: 'Travel · Experiences · Community · Impact', title: 'Explore Experiences. Create Impact.', subtitle: 'Discover remarkable places, join activities, travel with purpose and connect with people across Tanzania and beyond.', primaryLabel: 'Explore Now', secondaryLabel: 'Discover Experiences', secondaryHref: '/experiences' };
+      await prisma.platformSetting.update({ where: { key: 'site.homepage' }, data: { value: JSON.stringify(value) } });
+    }
+  }
+  const homeRow = await prisma.platformSetting.findUnique({ where: { key: 'site.homepage' } });
+  if (homeRow?.value.includes('Community projects with WSC — We Save Children.')) {
+    await prisma.platformSetting.update({ where: { key: 'site.homepage' }, data: { value: homeRow.value.replace('Community projects with WSC — We Save Children.', 'Enhakkore Impact — including WSC, We Save Children.') } });
+  }
+}
+
 async function once(key: string, work: () => Promise<void>) {
   const marker = `bootstrap.${key}`;
   if (await prisma.platformSetting.findUnique({ where: { key: marker } })) return;
@@ -249,7 +292,7 @@ async function trips() {
         summary:
           'Three days away from the coast, in the green shadow of Mount Meru. A long road north with the people you will spend the weekend with, a day of waterfalls, craft and market colour in Arusha, and a last morning in the warm, impossibly clear water at Chemka before the journey home.',
         description:
-          'Three days away from the coast, in the green shadow of Mount Meru. A long road north with the people you will spend the weekend with, a day of waterfalls, craft and market colour in Arusha, and a last morning in the warm, impossibly clear water at Chemka before the journey home. Built for a group of twenty-eight, and run by Enhakkore together with WSC.',
+          'Three days away from the coast, in the green shadow of Mount Meru. A long road north with the people you will spend the weekend with, a day of waterfalls, craft and market colour in Arusha, and a last morning in the warm, impossibly clear water at Chemka before the journey home. Built for a group of twenty-eight, and run by Enhakkore.',
         destinationLabel: 'Arusha, Tanzania',
         departureCity: 'Dar es Salaam, Tanzania',
         meetingPoint: 'Mlimani City, Dar es Salaam',
@@ -405,7 +448,7 @@ async function impact() {
       description: [
         'The team travelled from Dar es Salaam to Hoyoyo village in Mkuranga for the day. What had been planned on paper turned into something simpler once everyone arrived: a large group of children, a shade of trees, and an afternoon together.',
         'Food was prepared and shared on mats in the open. The children ate together, the volunteers served and sat with them, and the afternoon carried on from there — the kind of day that is easier to show in photographs than to describe.',
-        'This was Enhakkore’s own community outreach, carried out with the people who travel with us and with WSC. It is recorded here as it happened, in October 2026, without claims about how much was spent or how many people it reached.',
+        'This was Enhakkore’s own community outreach through WSC — We Save Children, part of Enhakkore Impact — carried out with the people who travel with us. It is recorded here as it happened, in October 2026, without claims about how much was spent or how many people it reached.',
       ].join('\n\n'),
       beneficiaryGroup: 'Children of Hoyoyo village, Mkuranga',
       location: 'Hoyoyo village, Mkuranga, Tanzania',
@@ -417,7 +460,7 @@ async function impact() {
       heroImage: '/impact/mkuranga/cover.webp',
       gallery: JSON.stringify(MKURANGA_PHOTOS.map(([file]) => `/impact/mkuranga/${file}.webp`)),
       partnerName: 'WSC — We Save Children',
-      partnerNote: 'Carried out together with WSC. WSC is its own charity group, not a part of Enhakkore.',
+      partnerNote: 'WSC — We Save Children is an initiative within Enhakkore Impact.',
       featured: true,
       showFunding: false,
       isDemo: false,
@@ -933,6 +976,7 @@ async function main() {
   await once('arusha-published.v3', publishArusha);
   await once('demo-content.v3', demoContent);
   await once('researched-places.v3', researchedPlaces);
+  await once('wsc-wording.v5', wscWording);
   // Not run once: a fresh deploy with the variables set is how the owner is created.
   await owner();
 }

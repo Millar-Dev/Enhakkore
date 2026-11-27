@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { LocationSelector } from './LocationSelector';
 import type { ReactNode } from 'react';
 
 /**
@@ -11,17 +12,30 @@ export function AppHero({
   subtitle,
   search,
   pills = [],
+  location,
+  image,
   children,
 }: {
   title: string;
   subtitle?: string;
   search?: { action: string; placeholder: string; value?: string; hidden?: Record<string, string | undefined> };
   pills?: { label: string; href: string; icon?: string; active?: boolean }[];
+  /** Shows the site's location selector (country, then city) as the first pill. */
+  location?: { country?: string; city?: string };
+  /** An optional photograph behind the band. */
+  image?: string;
   children?: ReactNode;
 }) {
   return (
-    <section className="band band-dark-a text-white">
-      <div className="shell py-5 text-center md:py-10 md:text-left">
+    <section className="band band-dark-a relative isolate overflow-hidden text-white">
+      {image && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={image} alt="" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-45" />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#06172b]/50 via-[#06172b]/70 to-[#06172b]" />
+        </>
+      )}
+      <div className="shell py-6 text-center md:py-12 md:text-left">
         <h1 className="text-[clamp(1.35rem,5.2vw,2.6rem)] font-bold leading-tight tracking-tight">{title}</h1>
         {subtitle && <p className="mt-1 text-[0.8125rem] text-white/70 md:text-base">{subtitle}</p>}
         {search && (
@@ -35,8 +49,9 @@ export function AppHero({
             <button className="h-9 shrink-0 rounded-full bg-acacia-700 px-4 text-xs font-bold text-white md:h-10 md:text-sm">Search</button>
           </form>
         )}
-        {pills.length > 0 && (
+        {(pills.length > 0 || location) && (
           <div className="mt-3 flex flex-wrap justify-center gap-2 md:justify-start">
+            {location && <LocationSelector country={location.country} city={location.city} compact />}
             {pills.map((pill) => (
               <Link
                 key={pill.label}

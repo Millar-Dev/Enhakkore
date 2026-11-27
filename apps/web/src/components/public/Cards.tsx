@@ -68,7 +68,7 @@ export function ListingCard({
       </div>
       <div className="p-2.5 md:p-4">
         {kicker && <p className="truncate text-[0.5625rem] font-bold uppercase tracking-[0.12em] text-clay-600 md:text-[0.6875rem]">{kicker}</p>}
-        <h3 className="mt-1 line-clamp-2 font-display text-[1.02rem] leading-tight text-acacia-700 md:text-[1.3rem]">{title}</h3>
+        <h3 className="mt-1 line-clamp-2 text-[0.9375rem] font-bold leading-snug text-acacia-700 md:text-[1.05rem]">{title}</h3>
         <div className="mt-1 space-y-0.5 text-[0.72rem] text-ink-muted md:mt-1.5 md:text-[0.8125rem]">
           {meta.filter(Boolean).map((line) => (
             <p key={String(line)} className="truncate">

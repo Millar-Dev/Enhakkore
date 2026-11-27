@@ -408,3 +408,38 @@ describe('one-time founder setup', () => {
     await prisma.user.updateMany({ where: { id: { in: admins.map((a) => a.id) } }, data: { isDemo: false } });
   });
 });
+
+describe('homepage globe and location picker', () => {
+  test('the globe lists only published items, each with a place, a link and real categories', async () => {
+    const result = await api.request<{ items: { title: string; href: string; lat: number; lng: number; categories: string[]; isDemo: boolean }[]; categories: string[] }>('GET', '/public/globe');
+    assert.equal(result.status, 200);
+    assert.ok(result.body.items.length > 0);
+    for (const item of result.body.items) {
+      assert.ok(Number.isFinite(item.lat) && Number.isFinite(item.lng), `${item.title} has a position`);
+      assert.match(item.href, /^\//);
+      assert.ok(item.categories.every((key) => result.body.categories.includes(key)));
+    }
+    // A draft trip never appears.
+    const draft = await prisma.trip.findFirst({ where: { status: 'DRAFT' } });
+    if (draft) assert.ok(!result.body.items.some((item) => item.href === `/travel/${draft.slug}`));
+    // Trips are filed under Travel; tournaments under Gaming.
+    assert.ok(result.body.items.filter((item) => item.href.startsWith('/travel/')).every((item) => item.categories.includes('travel')));
+    assert.ok(result.body.items.filter((item) => item.href.startsWith('/experiences/gaming/')).every((item) => item.categories.includes('gaming')));
+  });
+
+  test('"use my location" finds the nearest town, and rejects nonsense', async () => {
+    const near = await api.request<{ country: string; city: { name: string } }>('GET', '/public/geo/nearest?lat=-3.37&lng=36.68');
+    assert.equal(near.status, 200);
+    assert.equal(near.body.country, 'TZ');
+    assert.ok(near.body.city.name.length > 1);
+    assert.equal((await api.request('GET', '/public/geo/nearest?lat=200&lng=0')).status, 400);
+  });
+
+  test('tournaments can be filtered by location', async () => {
+    const all = await api.request<{ items: unknown[] }>('GET', '/public/tournaments');
+    const nowhere = await api.request<{ items: unknown[] }>('GET', '/public/tournaments?country=IS');
+    assert.equal(nowhere.status, 200);
+    assert.ok(nowhere.body.items.length <= all.body.items.length);
+    assert.equal(nowhere.body.items.length, 0);
+  });
+});

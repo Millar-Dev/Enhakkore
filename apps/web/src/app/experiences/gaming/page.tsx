@@ -8,6 +8,7 @@ import { apiGet, query } from '@/lib/api';
 import { pick } from '@/lib/public';
 import { getSite } from '@/lib/site';
 import { SmartImage } from '@/components/public/SmartImage';
+import { LocationSelector } from '@/components/public/LocationSelector';
 
 export const metadata: Metadata = {
   title: 'Gaming & esports',
@@ -88,7 +89,7 @@ function Feature({ item }: { item: TournamentCard }) {
 }
 
 export default async function GamingPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const params = pick(await searchParams, ['q', 'game', 'kind']);
+  const params = pick(await searchParams, ['q', 'game', 'kind', 'country', 'city']);
   const { settings } = await getSite();
   const [current, past] = await Promise.all([
     apiGet<Data>(`/public/tournaments${query(params)}`, 60),
@@ -139,10 +140,15 @@ export default async function GamingPage({ searchParams }: { searchParams: Promi
       )}
 
       <section className="shell py-6 md:py-12">
-        <form action="/experiences/gaming" role="search" className="mb-4 flex h-11 items-center gap-2 rounded-full border border-line bg-white pl-4 pr-1 md:max-w-xl">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+        <LocationSelector country={params.country} city={params.city} tone="light" compact />
+        <form action="/experiences/gaming" role="search" className="flex h-11 min-w-[14rem] flex-1 items-center gap-2 rounded-full border border-line bg-white pl-4 pr-1 md:max-w-xl">
           <input name="q" defaultValue={params.q} placeholder="Search a game — e.g. Free Fire" className="h-full min-w-0 flex-1 bg-transparent text-sm text-ink outline-none" aria-label="Search gaming" />
+          {params.country && <input type="hidden" name="country" value={params.country} />}
+          {params.city && <input type="hidden" name="city" value={params.city} />}
           <button className="h-9 shrink-0 rounded-full bg-acacia-700 px-4 text-xs font-bold text-white">Search</button>
         </form>
+        </div>
         <div id="games" className="no-scrollbar -mx-5 flex scroll-mt-24 gap-2 overflow-x-auto overscroll-x-contain px-5 pb-1 md:mx-0 md:flex-wrap md:px-0">
           <Link href={href({ game: undefined })} className={cx('chip', !params.game && 'chip-active')}>All games</Link>
           {games.map((game) => (

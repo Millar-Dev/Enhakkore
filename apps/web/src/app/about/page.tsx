@@ -19,7 +19,7 @@ export default async function AboutPage() {
             { href: '/explore', title: 'Explore', body: 'Stays, food, venues and places worth visiting.' },
             { href: '/experiences', title: 'Experiences', body: 'Events, activities, communities and gaming.' },
             { href: '/travel', title: 'Travel', body: 'Group and private trips, travelling together.' },
-            { href: '/impact', title: 'Impact', body: 'Community projects with WSC — We Save Children.' },
+            { href: '/impact', title: 'Impact', body: 'Enhakkore Impact, including WSC — We Save Children.' },
           ].map((item) => (
             <Link key={item.href} href={item.href} className="card-lift rounded-[1.1rem] border border-line bg-white p-5">
               <p className="font-display text-xl text-acacia-700">{item.title}</p>

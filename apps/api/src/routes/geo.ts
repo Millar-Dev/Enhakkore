@@ -85,6 +85,29 @@ geoPublic.get(
   }),
 );
 
+/** The nearest city to a point — for "Use my current location". */
+geoPublic.get(
+  '/geo/nearest',
+  route(async (req, res) => {
+    const lat = Number(req.query.lat);
+    const lng = Number(req.query.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) throw ApiError.badRequest('A valid location is needed.');
+    let best: { country: string; city: GeoCity; d: number } | null = null;
+    const cos = Math.cos((lat * Math.PI) / 180);
+    for (const [country, list] of cities()) {
+      for (const city of list) {
+        // Equirectangular distance is plenty to find the closest town.
+        const dx = (city.lng - lng) * cos;
+        const dy = city.lat - lat;
+        const d = dx * dx + dy * dy;
+        if (!best || d < best.d) best = { country, city, d };
+      }
+    }
+    if (!best) throw ApiError.notFound('No place found.');
+    res.json({ country: best.country, city: { geonameId: best.city.id, name: best.city.name, latitude: best.city.lat, longitude: best.city.lng } });
+  }),
+);
+
 const ensureSchema = z.object({ country: z.string().length(2), geonameId: z.number().int().positive() });
 
 /** Returns the platform's City record for a GeoNames city, creating it the first time. */

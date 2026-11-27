@@ -56,7 +56,7 @@ const p = (...paragraphs: string[]) => paragraphs.join('\n\n');
 export const LEGAL_DRAFTS: Record<LegalKey, string> = {
   terms: p(
     '1. Who we are. Enhakkore Travel & Impact ("Enhakkore", "we") runs this website and its services from Tanzania.',
-    '2. What the website is. A platform to discover places, join experiences and communities, take part in free gaming tournaments, enquire about trips, stays and tables, and support community projects with WSC — We Save Children.',
+    '2. What the website is. A platform to discover places, join experiences and communities, take part in free gaming tournaments, enquire about trips, stays and tables, and support Enhakkore Impact’s community projects, including WSC — We Save Children.',
     '3. What is free. Creating a member account, browsing, joining communities and free activities, entering gaming tournaments and sending enquiries are free.',
     '4. Requests are not bookings. An enquiry, reservation request or trip request is a request. Nothing is confirmed until Enhakkore, or the business concerned, confirms it to you directly.',
     '5. Third parties. Many listings describe businesses that are not Enhakkore. Each listing shows who provided its details. Enhakkore is not responsible for the services of third-party businesses or community organisers unless it says so in writing.',
@@ -166,7 +166,7 @@ export const LEGAL_DRAFTS: Record<LegalKey, string> = {
     'Meet in public places, especially the first time. Tell a friend where you are going. Never share your home address or live location with people you have not met. Activities are reviewed before they are published, but Enhakkore does not supervise community-organised activities — use your own judgement, and report anything that feels wrong.',
   ),
   donations: p(
-    '1. Donations support community projects carried out with WSC — We Save Children, an independent charity group. They are recorded separately from Enhakkore’s business income.',
+    '1. Donations support Enhakkore Impact’s community projects, including WSC — We Save Children, Enhakkore’s initiative for children and families. They are recorded separately from Enhakkore’s business income.',
     '2. Online donation payments are not active. The donate page shows the account to use and how to confirm your gift.',
     '3. No impact figures are published unless they are verified.',
   ),

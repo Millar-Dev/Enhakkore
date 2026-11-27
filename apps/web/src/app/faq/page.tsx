@@ -12,7 +12,7 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
   { q: 'Can I publish my own activity?', a: <>Yes — <Link href="/experiences/publish" className="underline">publish an event or activity</Link>. Every submission is reviewed before it goes live. Large or paid events need enhanced review.</> },
   { q: 'Do gaming tournaments cost money?', a: 'Not at launch. Every tournament is free to enter.' },
   { q: 'Can my business be listed?', a: <>Apply on <Link href="/partner" className="underline">Partner with us</Link>. Businesses cannot publish themselves: our team verifies and publishes every listing. Sponsored listings are always labelled.</> },
-  { q: 'How do donations work?', a: <>See the <Link href="/donate" className="underline">donate page</Link>. Donations go to community projects with WSC and are kept separate from Enhakkore’s business income.</> },
+  { q: 'How do donations work?', a: <>See the <Link href="/donate" className="underline">donate page</Link>. Donations support Enhakkore Impact’s community projects, including WSC — We Save Children, and are kept separate from Enhakkore’s business income.</> },
   { q: 'How is my information protected?', a: <>Your phone number, email and registrations are never shown publicly. Read the <Link href="/legal/privacy" className="underline">privacy policy</Link>.</> },
 ];
 

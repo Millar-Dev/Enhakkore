@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LocationSelector } from '@/components/public/LocationSelector';
 import { PublicShell } from '@/components/layout/PublicShell';
 import { SmartImage } from '@/components/public/SmartImage';
 import { apiGet, query } from '@/lib/api';
@@ -36,14 +37,17 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
 
   return (
     <PublicShell>
-      <section className="bg-acacia-700 text-white">
+      <section className="band-dark-a text-white">
         <div className="shell max-w-3xl py-5 md:py-8">
           <form action="/search" className="flex items-center gap-1 rounded-full bg-white p-1 pl-4 text-ink">
             {params.type && <input type="hidden" name="type" value={params.type} />}
+            {params.country && <input type="hidden" name="country" value={params.country} />}
+            {params.city && <input type="hidden" name="city" value={params.city} />}
             <input name="q" defaultValue={q} placeholder="Search — e.g. restaurants in Arusha" className="h-10 min-w-0 flex-1 bg-transparent outline-none" aria-label="Search" />
             <button className="h-10 rounded-full bg-acacia-600 px-4 text-sm font-bold text-white">Search</button>
           </form>
-          <div className="mt-3 flex items-center gap-3 text-xs">
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
+            <LocationSelector country={params.country} city={params.city} compact />
             <Link href={link({ filters: showFilters ? undefined : '1' })} className="inline-flex min-h-10 items-center font-semibold text-clay-400">{showFilters ? 'Hide filters' : 'Filters'}</Link>
             {active && <Link href="/search" className="inline-flex min-h-10 min-w-10 items-center justify-center px-2 text-white/70 underline">Clear</Link>}
           </div>
@@ -52,14 +56,8 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
               <input type="hidden" name="q" value={q} />
               <input type="hidden" name="filters" value="1" />
               {params.type && <input type="hidden" name="type" value={params.type} />}
-              <select name="country" defaultValue={params.country ?? ''} className="field h-10 text-ink" aria-label="Country">
-                <option value="">Any country</option>
-                {catalogue.countries.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
-              </select>
-              <select name="city" defaultValue={params.city ?? ''} className="field h-10 text-ink" aria-label="City">
-                <option value="">Any city</option>
-                {(country?.cities ?? catalogue.countries.flatMap((item) => item.cities)).map((city) => <option key={city.slug} value={city.slug}>{city.name}</option>)}
-              </select>
+              {params.country && <input type="hidden" name="country" value={params.country} />}
+              {params.city && <input type="hidden" name="city" value={params.city} />}
               <input type="date" name="from" defaultValue={params.from} className="field h-10 text-ink" aria-label="From date" />
               <input type="date" name="to" defaultValue={params.to} className="field h-10 text-ink" aria-label="To date" />
               <button className="col-span-2 h-10 rounded-full bg-clay-400 text-sm font-bold text-acacia-700 sm:col-span-4">Apply filters</button>
