@@ -138,7 +138,7 @@ export function CommunityPanel({ communityId }: { communityId: string }) {
     void load();
   }, [load]);
   return (
-    <Panel title={`Members & announcements${data ? ` (${data.members.length} members)` : ''}`}>
+    <Panel title={`Members & announcements${data ? ` (${data.members.filter((m) => !m.status || m.status === 'ACTIVE').length} members${data.members.some((m) => m.status === 'PENDING') ? `, ${data.members.filter((m) => m.status === 'PENDING').length} waiting` : ''})` : ''}`}>
       <form
         className="grid gap-2"
         onSubmit={async (event) => {
@@ -167,8 +167,18 @@ export function CommunityPanel({ communityId }: { communityId: string }) {
         <ul className="mt-4 divide-y divide-line text-sm">
           {data.members.map((member) => (
             <li key={member.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-              <span>{member.user.name} <span className="text-xs text-ink-muted">{member.user.email}{member.role === 'MODERATOR' ? ' · moderator' : ''}</span></span>
+              <span>
+                {member.user.name}{member.user.username ? ` · @${member.user.username}` : ''} <span className="text-xs text-ink-muted">{member.user.email}{member.role === 'MODERATOR' ? ' · moderator' : ''}</span>
+                {member.status && member.status !== 'ACTIVE' && <span className={`ml-2 rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${member.status === 'PENDING' ? 'bg-[#fff1c9] text-[#7a5a14]' : 'bg-sand text-ink-muted'}`}>{member.status === 'PENDING' ? 'Request' : 'Declined'}</span>}
+                {member.message && <span className="block text-xs text-ink-muted">“{member.message}”</span>}
+              </span>
               <span className="flex gap-2 text-xs">
+                {member.status === 'PENDING' && (
+                  <>
+                    <button className="font-semibold text-safari-700" onClick={async () => { await api.post(`/cc/communities/${communityId}/members/${member.user.id}/role`, { role: 'APPROVE' }); await load(); }}>Approve</button>
+                    <button className="font-semibold text-danger" onClick={async () => { await api.post(`/cc/communities/${communityId}/members/${member.user.id}/role`, { role: 'DECLINE' }); await load(); }}>Decline</button>
+                  </>
+                )}
                 <button className="font-semibold text-acacia-600" onClick={async () => { await api.post(`/cc/communities/${communityId}/members/${member.user.id}/role`, { role: member.role === 'MODERATOR' ? 'MEMBER' : 'MODERATOR' }); await load(); }}>{member.role === 'MODERATOR' ? 'Make member' : 'Make moderator'}</button>
                 <button className="font-semibold text-danger" onClick={async () => { if (window.confirm('Remove from the community?')) { await api.post(`/cc/communities/${communityId}/members/${member.user.id}/role`, { role: 'REMOVE' }); await load(); } }}>Remove</button>
               </span>

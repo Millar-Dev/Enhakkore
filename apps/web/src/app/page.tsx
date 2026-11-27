@@ -231,7 +231,7 @@ function renderSection(section: HomepageSection, ctx: Ctx, tone: 'navy' | 'ivory
                 {tile.image && <SmartImage src={tile.image} alt="" fill sizes="(max-width:1024px) 50vw, 25vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.06]" />}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#06172b]/95 via-[#06172b]/25 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
-                  <p className="text-lg font-bold leading-tight text-white sm:text-xl">{tile.label}</p>
+                  <p className="text-[clamp(0.95rem,4.6vw,1.25rem)] font-bold leading-tight text-white [overflow-wrap:anywhere]">{tile.label}</p>
                   <p className="mt-0.5 text-[0.6875rem] leading-snug text-white/75 sm:text-xs">{tile.sub}</p>
                   <span className="mt-2 inline-flex text-xs font-bold text-clay-400">Open →</span>
                 </div>

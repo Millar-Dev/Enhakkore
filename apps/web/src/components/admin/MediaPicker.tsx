@@ -69,7 +69,9 @@ export function MediaPicker({
       setFolders(result.folders);
     }).catch((caught) => setError(caught instanceof ApiError ? caught.message : 'Could not load the library.'));
   }, [kind, folder, q]);
-  useEffect(() => load(), [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const toggle = (url: string) => {
     if (!multiple) return onPick([url]);

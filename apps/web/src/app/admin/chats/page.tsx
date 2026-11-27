@@ -10,7 +10,7 @@ import { useApi } from '@/lib/useApi';
 export default function ChatsPage() {
   const { data } = useApi<{ openReports: number; items: any[] }>('/cc/chats');
   return (
-    <AdminShell title="Trip group chats" permission="trips.view">
+    <AdminShell title="Group chats" permission="trips.view">
       {data && data.openReports > 0 && (
         <p className="mb-4 rounded-xl bg-danger-soft p-3 text-sm text-danger">
           {data.openReports} reported message{data.openReports === 1 ? '' : 's'} waiting — <Link href="/admin/moderation" className="font-bold underline">review them</Link>.
@@ -21,13 +21,13 @@ export default function ChatsPage() {
           <ul className="divide-y divide-line">
             {data.items.map((chat) => (
               <li key={chat.id}>
-                <Link href={`/account/groups/${chat.id}`} className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-sand">
+                <Link href={chat.kind === 'TRIP' ? `/account/groups/${chat.id}` : `/account/chats/${chat.id}`} className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-sand">
                   <span>
                     <span className="block font-semibold text-ink">{chat.title}</span>
-                    <span className="block text-xs text-ink-muted">{new Date(chat.startDate).toLocaleDateString('en-GB')} → {new Date(chat.endDate).toLocaleDateString('en-GB')} · {chat.members} participants · {chat.messages} messages{chat.lastMessageAt ? ` · last ${new Date(chat.lastMessageAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}` : ''}</span>
+                    <span className="block text-xs text-ink-muted">{chat.kind === 'TRIP' ? `${new Date(chat.startDate).toLocaleDateString('en-GB')} → ${new Date(chat.endDate).toLocaleDateString('en-GB')}` : `${String(chat.kind).toLowerCase()} chat`} · {chat.members} participants · {chat.messages} messages{chat.lastMessageAt ? ` · last ${new Date(chat.lastMessageAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}` : ''}</span>
                   </span>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${chat.archivedAt || new Date(chat.endDate).getTime() + 30 * 86400000 < Date.now() ? 'bg-sand text-ink-muted' : 'bg-safari-50 text-safari-700'}`}>
-                    {chat.archivedAt || new Date(chat.endDate).getTime() + 30 * 86400000 < Date.now() ? 'Archived (read-only)' : 'Active'}
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${chat.archivedAt || (chat.endDate && new Date(chat.endDate).getTime() + 30 * 86400000 < Date.now()) ? 'bg-sand text-ink-muted' : 'bg-safari-50 text-safari-700'}`}>
+                    {chat.archivedAt || (chat.endDate && new Date(chat.endDate).getTime() + 30 * 86400000 < Date.now()) ? 'Archived (read-only)' : 'Active'}
                   </span>
                 </Link>
               </li>

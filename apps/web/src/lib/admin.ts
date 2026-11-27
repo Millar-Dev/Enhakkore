@@ -56,13 +56,15 @@ export const MENU: MenuGroup[] = [
       resource('tournaments', 'Gaming & tournaments', 'free fire pubg efootball console esports'),
       resource('experiences', 'Guided experiences', 'tours cooking'),
       resource('catering', 'Catering & lunchboxes', 'food menu chef'),
+      { href: '/admin/organisers', label: 'Organiser applications', permission: 'experiences.view', keywords: 'host organise organiser approve verify identity' },
+      { href: '/account/scanner', label: 'Check-in scanner & passes', permission: 'events.view', keywords: 'qr pass scan entrance attendance check-in offline' },
     ],
   },
   {
     title: 'Travel & Impact',
     items: [
       resource('trips', 'Travel — trips', 'prices dates departures itinerary stage'),
-      { href: '/admin/chats', label: 'Trip group chats', permission: 'trips.view', keywords: 'chat messages group moderation archive' },
+      { href: '/admin/chats', label: 'Group chats', permission: 'trips.view', keywords: 'chat messages group moderation archive trip event community' },
       resource('impact', 'Impact / WSC projects', 'charity wsc outreach volunteer'),
       { href: '/admin/donations', label: 'Donations', permission: 'donations.view', keywords: 'charity give selcom' },
     ],

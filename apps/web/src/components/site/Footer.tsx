@@ -23,7 +23,7 @@ const COLUMNS = [
       { href: '/experiences#upcoming', label: 'Events' },
       { href: '/experiences/c/sports', label: 'Sports' },
       { href: '/experiences/gaming', label: 'Gaming' },
-      { href: '/experiences/publish', label: 'Publish an activity' },
+      { href: '/experiences/host', label: 'Host & Organise' },
     ],
   },
   {

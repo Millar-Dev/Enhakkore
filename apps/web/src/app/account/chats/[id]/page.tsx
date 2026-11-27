@@ -50,7 +50,9 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       setError(caught instanceof ApiError ? caught.message : 'Could not load this chat.');
     }
   }, [id]);
-  useEffect(() => void load(), [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   useEffect(() => {
     const token = getToken();
@@ -75,7 +77,9 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     return () => window.clearInterval(timer);
   }, [live, id, load]);
 
-  useEffect(() => end.current?.scrollIntoView({ block: 'end' }), [messages.length]);
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: 'end' });
+  }, [messages.length]);
 
   async function send(kind: 'TEXT' | 'ANNOUNCEMENT' = 'TEXT') {
     if (!id || !text.trim()) return;

@@ -30,11 +30,11 @@ const SUBNAV: Record<string, { label: string; href: string }[]> = {
     { label: 'Destinations', href: '/destinations' },
   ],
   '/experiences': [
-    { label: 'Events & activities', href: '/experiences#upcoming' },
+    { label: 'Discover experiences', href: '/experiences/discover' },
     { label: 'Gaming & esports', href: '/experiences/gaming' },
     { label: 'Communities', href: '/experiences/communities' },
-    { label: 'Plan an event', href: '/experiences/plan' },
-    { label: 'Publish an activity', href: '/experiences/publish' },
+    { label: 'Host & Organise', href: '/experiences/host' },
+    { label: 'Plan an event with us', href: '/experiences/plan' },
   ],
   '/travel': [
     { label: 'Upcoming trips', href: '/travel' },

@@ -77,9 +77,11 @@ export default function SettingsPage() {
                       setOff(next);
                       void saveNotifications(next);
                     }}
-                    className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${enabled ? 'bg-acacia-600' : 'bg-line'}`}
+                    className="relative inline-flex h-11 w-14 shrink-0 items-center justify-center"
                   >
-                    <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${enabled ? 'left-6' : 'left-1'}`} />
+                    <span className={`relative h-7 w-12 rounded-full transition-colors ${enabled ? 'bg-acacia-600' : 'bg-line'}`}>
+                      <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${enabled ? 'left-6' : 'left-1'}`} />
+                    </span>
                   </button>
                 </li>
               );
