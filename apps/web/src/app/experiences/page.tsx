@@ -105,7 +105,7 @@ export default async function ExperiencesHub({ searchParams }: { searchParams: P
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:gap-3">
           {(hub?.sections ?? []).map((section) => (
-            <Link key={section.key} href={sectionHref(section.key)} className={`group relative flex h-[4.5rem] items-center gap-2.5 overflow-hidden rounded-xl bg-gradient-to-br px-3 text-white md:h-24 ${TILE_COLOURS[section.key] ?? 'from-acacia-600 to-acacia-900'}`}>
+            <Link key={section.key} href={sectionHref(section.key)} className={`group relative flex min-h-[4.5rem] items-center gap-2.5 overflow-hidden rounded-xl bg-gradient-to-br px-3 py-2 text-white md:min-h-24 ${TILE_COLOURS[section.key] ?? 'from-acacia-600 to-acacia-900'}`}>
               {TILE_IMAGES[section.key] && (
                 <>
                   <SmartImage src={TILE_IMAGES[section.key]!} alt="" fill sizes="25vw" className="object-cover opacity-60 transition-transform duration-500 group-hover:scale-110" />

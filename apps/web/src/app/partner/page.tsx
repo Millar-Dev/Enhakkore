@@ -30,7 +30,7 @@ export default async function PartnerPage() {
               <li><strong>Sponsored</strong> placements are paid and always labelled “Sponsored”. They never change how other listings are ranked.</li>
               <li><strong>Referral and booking partnerships</strong> follow a commission agreed with you in writing.</li>
             </ul>
-            <Link href="/legal/partners" className="mt-3 inline-block font-semibold text-acacia-600 underline">Partner agreements policy</Link>
+            <Link href="/legal/partners" className="mt-2 inline-flex min-h-10 items-center font-semibold text-acacia-600 underline">Partner agreements policy</Link>
           </div>
           <div className="rounded-[1.2rem] border border-line bg-white p-5">
             <p className="font-bold text-acacia-700">Option A — WhatsApp</p>

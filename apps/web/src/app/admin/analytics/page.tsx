@@ -16,13 +16,13 @@ export default function AnalyticsPage() {
   const { data } = useApi<any>(`/cc/analytics?days=${days}`);
   return (
     <AdminShell title="Reports & analytics" permission="analytics.view">
-      <div className="mb-4 flex gap-2">{[7, 30, 90].map((value) => <button key={value} className={`chip ${days === value ? 'chip-active' : ''}`} onClick={() => setDays(value)}>Last {value} days</button>)}</div>
+      <div className="mb-4 flex flex-wrap gap-2">{[7, 30, 90].map((value) => <button key={value} className={`chip ${days === value ? 'chip-active' : ''}`} onClick={() => setDays(value)}>Last {value} days</button>)}</div>
       {!data ? <p className="text-sm text-ink-muted">Loading…</p> : (
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-            <Panel><p className="text-xs text-ink-muted">New members</p><p className="font-display text-3xl text-acacia-700">{data.newMembers}</p></Panel>
-            <Panel><p className="text-xs text-ink-muted">Event registrations</p><p className="font-display text-3xl text-acacia-700">{data.eventRegistrations}</p></Panel>
-            {KINDS.map((kind) => <Panel key={kind}><p className="text-xs text-ink-muted">{kind.toLowerCase()}s</p><p className="font-display text-3xl text-acacia-700">{data.byKind[kind] ?? 0}</p></Panel>)}
+            <Panel><p className="break-words text-xs text-ink-muted">New members</p><p className="font-display text-3xl text-acacia-700">{data.newMembers}</p></Panel>
+            <Panel><p className="break-words text-xs text-ink-muted">Event registrations</p><p className="font-display text-3xl text-acacia-700">{data.eventRegistrations}</p></Panel>
+            {KINDS.map((kind) => <Panel key={kind}><p className="break-words text-xs text-ink-muted">{kind.toLowerCase()}s</p><p className="font-display text-3xl text-acacia-700">{data.byKind[kind] ?? 0}</p></Panel>)}
           </div>
           <Panel title="Enquiries by type">
             {Object.keys(data.enquiries).length === 0 ? <p className="text-sm text-ink-muted">None in this period.</p> : (

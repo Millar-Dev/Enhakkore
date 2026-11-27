@@ -177,8 +177,8 @@ export function Facts({ items }: { items: { label: string; value: ReactNode | nu
     <dl className="grid grid-cols-2 gap-x-6 gap-y-4 rounded-[1.1rem] border border-line bg-white p-5 sm:grid-cols-3">
       {shown.map((item) => (
         <div key={item.label}>
-          <dt className="text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-ink-muted">{item.label}</dt>
-          <dd className="mt-1 text-[0.9375rem] font-semibold text-ink">{item.value}</dd>
+          <dt className="text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-ink-muted [overflow-wrap:anywhere]">{item.label}</dt>
+          <dd className="mt-1 text-[0.9375rem] font-semibold text-ink [overflow-wrap:anywhere]">{item.value}</dd>
         </div>
       ))}
     </dl>

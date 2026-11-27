@@ -617,3 +617,6 @@ section + .band::before {
   .enh-hud .maplibregl-ctrl-group button { width: 40px; height: 40px; }
   .enh-hud .maplibregl-ctrl-attrib-button { width: 32px; height: 32px; }
 }
+@media (pointer: coarse) {
+  .enh-hud-bg button[title='World view'] { width: 40px; height: 40px; }
+}

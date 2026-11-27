@@ -223,17 +223,17 @@ export function Checkbox({
 }: { label: ReactNode; description?: ReactNode } & InputHTMLAttributes<HTMLInputElement>) {
   const id = useId();
   return (
-    <div className={cx('flex gap-3', className)}>
+    <label htmlFor={id} className={cx('flex min-h-11 cursor-pointer gap-3 py-1 text-[0.875rem] leading-relaxed text-ink-soft', className)}>
       <input
         id={id}
         type="checkbox"
         className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded-[5px] border-line-strong accent-acacia-700"
         {...props}
       />
-      <label htmlFor={id} className="cursor-pointer text-[0.875rem] leading-relaxed text-ink-soft">
+      <span>
         <span className="font-medium text-ink">{label}</span>
         {description && <span className="mt-0.5 block text-[0.8125rem] text-ink-muted">{description}</span>}
-      </label>
-    </div>
+      </span>
+    </label>
   );
 }

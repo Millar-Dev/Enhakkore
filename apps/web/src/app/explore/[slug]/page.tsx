@@ -230,14 +230,14 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
           <div className="rounded-[1.2rem] border border-line bg-white p-5 text-sm">
             <p className="font-bold text-acacia-700">Contact the place</p>
             <div className="mt-3 grid gap-2">
-              {place.phone ? <a className="font-semibold text-acacia-600" href={`tel:${String(place.phone).replace(/\s/g, '')}`}>{String(place.phone)}</a> : null}
-              {place.whatsapp ? <a className="font-semibold text-acacia-600" target="_blank" rel="noreferrer noopener" href={`https://wa.me/${String(place.whatsapp).replace(/\D/g, '')}`}>WhatsApp {String(place.whatsapp)}</a> : null}
-              {place.email ? <a className="font-semibold text-acacia-600" href={`mailto:${place.email}`}>{String(place.email)}</a> : null}
-              {place.website ? <a className="font-semibold text-acacia-600" target="_blank" rel="noreferrer noopener" href={String(place.website)}>Website</a> : null}
+              {place.phone ? <a className="inline-flex min-h-10 items-center font-semibold text-acacia-600 [overflow-wrap:anywhere]" href={`tel:${String(place.phone).replace(/\s/g, '')}`}>{String(place.phone)}</a> : null}
+              {place.whatsapp ? <a className="inline-flex min-h-10 items-center font-semibold text-acacia-600 [overflow-wrap:anywhere]" target="_blank" rel="noreferrer noopener" href={`https://wa.me/${String(place.whatsapp).replace(/\D/g, '')}`}>WhatsApp {String(place.whatsapp)}</a> : null}
+              {place.email ? <a className="inline-flex min-h-10 items-center font-semibold text-acacia-600 [overflow-wrap:anywhere]" href={`mailto:${place.email}`}>{String(place.email)}</a> : null}
+              {place.website ? <a className="inline-flex min-h-10 items-center font-semibold text-acacia-600 [overflow-wrap:anywhere]" target="_blank" rel="noreferrer noopener" href={String(place.website)}>Website</a> : null}
               {socials.map((link) => (
-                <a key={link.url} className="font-semibold text-acacia-600" target="_blank" rel="noreferrer noopener" href={link.url}>{link.label}</a>
+                <a key={link.url} className="inline-flex min-h-10 items-center font-semibold text-acacia-600 [overflow-wrap:anywhere]" target="_blank" rel="noreferrer noopener" href={link.url}>{link.label}</a>
               ))}
-              {mapLink && <a className="font-semibold text-acacia-600" target="_blank" rel="noreferrer noopener" href={mapLink}>Open in Google Maps</a>}
+              {mapLink && <a className="inline-flex min-h-10 items-center font-semibold text-acacia-600 [overflow-wrap:anywhere]" target="_blank" rel="noreferrer noopener" href={mapLink}>Open in Google Maps</a>}
               {!place.phone && !place.whatsapp && !place.email && !place.website && socials.length === 0 && <p className="text-ink-muted">No direct contact details listed — message Enhakkore and we will help.</p>}
             </div>
             <div className="mt-4"><ReportButton targetType="PLACE" targetId={place.id} /></div>

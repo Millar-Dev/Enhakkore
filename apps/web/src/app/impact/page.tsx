@@ -63,7 +63,7 @@ export default async function ImpactPage() {
             <p className="kicker">Our impact partner</p>
             <h2 className="display-md mt-3 text-acacia-700">We Save Children (WSC)</h2>
             <p className="mt-3 max-w-2xl text-[1rem] leading-relaxed text-ink-soft">{settings.impact.wscIntro}</p>
-            <a href="https://www.instagram.com/_wsc2022" target="_blank" rel="noreferrer noopener" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-acacia-600">
+            <a href="https://www.instagram.com/_wsc2022" target="_blank" rel="noreferrer noopener" className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-acacia-600">
               <SocialIcon platform="instagram" size={16} /> WSC on Instagram (@_wsc2022)
             </a>
           </div>
@@ -106,7 +106,7 @@ export default async function ImpactPage() {
             <div key={title} className="rounded-[1.2rem] border border-line bg-white p-6">
               <p className="font-display text-2xl text-acacia-700">{title}</p>
               <p className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">{body}</p>
-              <a href={href} {...(href.startsWith('http') ? { target: '_blank', rel: 'noreferrer noopener' } : {})} className="mt-4 inline-flex font-semibold text-acacia-600 underline underline-offset-4">{label}</a>
+              <a href={href} {...(href.startsWith('http') ? { target: '_blank', rel: 'noreferrer noopener' } : {})} className="mt-4 inline-flex min-h-10 items-center font-semibold text-acacia-600 underline underline-offset-4">{label}</a>
             </div>
           ))}
         </div>

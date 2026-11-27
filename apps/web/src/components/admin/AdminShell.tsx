@@ -118,7 +118,7 @@ export function AdminShell({ title, actions, children, permission }: { title?: s
                 </ul>
               )}
             </div>
-            <Link href="/" target="_blank" className="hidden text-sm font-semibold text-acacia-600 sm:block">View site ↗</Link>
+            <Link href="/" target="_blank" className="hidden min-h-10 items-center text-sm font-semibold text-acacia-600 sm:inline-flex">View site ↗</Link>
             <div className="flex items-center gap-2">
               <Avatar name={user.name} src={user.avatarUrl} size="sm" />
               <div className="hidden text-xs leading-tight md:block">

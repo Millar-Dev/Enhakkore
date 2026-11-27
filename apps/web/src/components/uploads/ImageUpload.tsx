@@ -174,7 +174,7 @@ export function ImageUpload({
               <button
                 type="button"
                 onClick={() => inputRef.current?.click()}
-                className="text-[0.9375rem] font-semibold text-acacia-700 underline-offset-4 hover:underline focus:outline-none focus:ring-4 focus:ring-acacia-600/10"
+                className="inline-flex min-h-10 items-center text-[0.9375rem] font-semibold text-acacia-700 underline-offset-4 hover:underline focus:outline-none focus:ring-4 focus:ring-acacia-600/10"
               >
                 Choose {max > 1 ? 'photos' : 'a photo'}
               </button>

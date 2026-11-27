@@ -95,7 +95,7 @@ export function EventPlanForm({ whatsappHref }: { whatsappHref: string }) {
         <legend className="text-[0.8125rem] font-semibold text-ink-soft">Services you may need</legend>
         <div className="mt-2 flex flex-wrap gap-2">
           {SERVICES.map((service) => (
-            <label key={service} className="chip cursor-pointer">
+            <label key={service} className="chip h-auto min-h-10 max-w-full cursor-pointer whitespace-normal py-1.5">
               <input type="checkbox" name="services" value={service} className="mr-1.5" /> {service}
             </label>
           ))}

@@ -58,13 +58,13 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
                 key={section.key}
                 href={href({ section: on ? undefined : section.key, category: undefined })}
                 aria-current={on ? 'page' : undefined}
-                className={cx('group flex flex-col items-center gap-1.5 rounded-2xl p-1.5 text-center transition md:flex-row md:items-start md:gap-3 md:border md:p-4 md:text-left', on ? 'md:border-acacia-600 md:bg-acacia-600 md:text-white' : 'md:border-line md:bg-white md:hover:border-acacia-600')}
+                className={cx('group flex flex-col items-center gap-1.5 rounded-2xl p-1.5 text-center transition lg:flex-row lg:items-start lg:gap-3 lg:border lg:p-4 lg:text-left', on ? 'lg:border-acacia-600 lg:bg-acacia-600 lg:text-white' : 'lg:border-line lg:bg-white lg:hover:border-acacia-600')}
               >
                 <span className={cx('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border text-2xl shadow-sm transition', on ? 'border-clay-400 bg-clay-50' : 'border-line bg-white group-hover:border-acacia-600')} aria-hidden>{section.icon}</span>
                 <span className="min-w-0">
-                  <span className={cx('block text-xs font-semibold md:hidden', on ? 'text-clay-600' : 'text-acacia-700')}>{SHORT[section.key]}</span>
-                  <span className="hidden font-display text-lg leading-tight md:block">{section.label}</span>
-                  <span className={cx('hidden text-xs md:block', on ? 'text-white/75' : 'text-ink-muted')}>{section.kinds.slice(0, 4).join(' · ')}</span>
+                  <span className={cx('block text-xs font-semibold md:text-sm lg:hidden', on ? 'text-clay-600' : 'text-acacia-700')}>{SHORT[section.key]}</span>
+                  <span className="hidden font-display text-lg leading-tight lg:block">{section.label}</span>
+                  <span className={cx('hidden text-xs lg:block', on ? 'text-white/75' : 'text-ink-muted')}>{section.kinds.slice(0, 4).join(' · ')}</span>
                 </span>
               </Link>
             );

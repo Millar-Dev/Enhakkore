@@ -32,7 +32,7 @@ export default async function ContactPage() {
             <p className="font-bold text-acacia-700">Follow us</p>
             <ul className="mt-3 grid gap-2">
               {settings.social.map((link) => (
-                <li key={link.url}><a href={link.url} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-2 font-semibold text-acacia-600"><SocialIcon platform={link.platform} size={18} />{link.label} <span className="font-normal text-ink-muted">{link.handle}</span></a></li>
+                <li key={link.url}><a href={link.url} target="_blank" rel="noreferrer noopener" className="inline-flex min-h-11 max-w-full flex-wrap items-center gap-x-2 font-semibold text-acacia-600 [overflow-wrap:anywhere]"><SocialIcon platform={link.platform} size={18} />{link.label} <span className="font-normal text-ink-muted">{link.handle}</span></a></li>
               ))}
             </ul>
           </div>

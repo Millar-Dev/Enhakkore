@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { Footer } from '@/components/site/Footer';
 import { Header } from '@/components/site/Header';
-import { SocialIcon } from '@/components/site/SocialIcon';
+import { FloatingWhatsApp } from '@/components/site/FloatingWhatsApp';
 import { getSite, waHref, waNumbers } from '@/lib/site';
 import { MobileTabBar, MobileTabBarSpacer } from './MobileTabBar';
 
@@ -68,15 +68,7 @@ export async function PublicShell({
       {footer && <Footer settings={settings} />}
 
       {numbers.length > 0 && (
-        <a
-          href={waHref(settings, 'general')}
-          target="_blank"
-          rel="noreferrer noopener"
-          aria-label={`Chat with Enhakkore on WhatsApp (${numbers[0]!.display})`}
-          className="fixed bottom-6 right-6 z-40 hidden h-14 w-14 items-center justify-center rounded-full bg-[#1f9d55] text-white shadow-[0_10px_30px_-8px_rgba(0,0,0,0.45)] transition hover:scale-105 md:inline-flex"
-        >
-          <SocialIcon platform="whatsapp" size={28} />
-        </a>
+        <FloatingWhatsApp href={waHref(settings, 'general')} label={`Chat with Enhakkore on WhatsApp (${numbers[0]!.display})`} />
       )}
       <MobileTabBarSpacer />
       <MobileTabBar />

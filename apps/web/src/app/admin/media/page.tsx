@@ -59,7 +59,7 @@ export default function MediaPage() {
           {(data?.items ?? []).map((item) => (
             <button key={item.id} onClick={() => setSelected(item)} className={`relative aspect-square overflow-hidden rounded-lg border-2 ${selected?.id === item.id ? 'border-clay-400' : 'border-transparent'} bg-sand`}>
               {item.kind === 'VIDEO' ? <span className="flex h-full items-center justify-center bg-acacia-700 p-2 text-xs text-white">▶ {item.title}</span> : <SmartImage src={item.url} alt={item.alt ?? ''} fill sizes="140px" className="object-cover" />}
-              {item.isSystem && <span className="absolute left-1 top-1 rounded bg-white/90 px-1 text-[0.5625rem] font-bold text-acacia-700">ORIGINAL</span>}
+              {item.isSystem && <span className="absolute left-1 top-1 max-w-[calc(100%-0.5rem)] truncate rounded bg-white/90 px-1 text-[0.5625rem] font-bold text-acacia-700">ORIGINAL</span>}
             </button>
           ))}
         </div>

@@ -123,7 +123,7 @@ function SignInForm() {
         <div className="-mt-1 flex justify-end">
           <Link
             href={email ? `/forgot-password?email=${encodeURIComponent(email)}` : '/forgot-password'}
-            className="text-[0.8125rem] font-semibold text-acacia-700 hover:underline"
+            className="inline-flex min-h-10 items-center text-[0.8125rem] font-semibold text-acacia-700 hover:underline"
           >
             Forgot password?
           </Link>
