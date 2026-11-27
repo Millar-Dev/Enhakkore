@@ -5,7 +5,7 @@ import { ApiError, pageParams, paginated, route } from '../../lib/http';
 import { prisma } from '../../lib/prisma';
 import { assertPermission } from '../../middleware/auth';
 import { audit } from '../../services/audit';
-import { notifyMany } from '../../services/notifications';
+import { notify, notifyMany } from '../../services/notifications';
 import { engagementTotals } from '../../services/popularity';
 import { whatsappConfigured } from '../../services/whatsapp';
 
@@ -178,7 +178,7 @@ ccExperiencesRouter.get(
     assertPermission(req, 'communities.view');
     const community = await prisma.community.findUniqueOrThrow({ where: { id: req.params.id } });
     const [members, announcements] = await Promise.all([
-      prisma.communityMember.findMany({ where: { communityId: community.id }, include: { user: { select: { id: true, name: true, email: true, city: true } } }, orderBy: { joinedAt: 'asc' } }),
+      prisma.communityMember.findMany({ where: { communityId: community.id }, include: { user: { select: { id: true, name: true, username: true, email: true, city: true } } }, orderBy: { joinedAt: 'asc' } }),
       prisma.communityAnnouncement.findMany({ where: { communityId: community.id }, orderBy: { createdAt: 'desc' } }),
     ]);
     res.json({ community: { id: community.id, name: community.name, slug: community.slug }, members, announcements });
@@ -192,7 +192,7 @@ ccExperiencesRouter.post(
     const input = z.object({ title: z.string().trim().min(3).max(160), body: z.string().trim().min(3).max(4000) }).parse(req.body);
     const community = await prisma.community.findUniqueOrThrow({ where: { id: req.params.id } });
     const announcement = await prisma.communityAnnouncement.create({ data: { communityId: community.id, authorId: req.auth!.id, title: input.title, body: input.body } });
-    const members = await prisma.communityMember.findMany({ where: { communityId: community.id }, select: { userId: true } });
+    const members = await prisma.communityMember.findMany({ where: { communityId: community.id, status: 'ACTIVE' }, select: { userId: true } });
     await notifyMany(members.map((row) => row.userId), { type: 'COMMUNITY_ANNOUNCEMENT', title: `${community.name}: ${input.title}`, body: input.body.slice(0, 160), link: `/experiences/communities/${community.slug}` });
     await audit(req, { action: 'create', entityType: 'communities', entityId: community.id, summary: `Announcement in ${community.name}: ${input.title}` });
     res.status(201).json(announcement);
@@ -203,8 +203,21 @@ ccExperiencesRouter.post(
   '/communities/:id/members/:userId/role',
   route(async (req, res) => {
     assertPermission(req, 'communities.edit');
-    const input = z.object({ role: z.enum(['MEMBER', 'MODERATOR', 'REMOVE']) }).parse(req.body);
-    if (input.role === 'REMOVE') {
+    const input = z.object({ role: z.enum(['MEMBER', 'MODERATOR', 'REMOVE', 'APPROVE', 'DECLINE']) }).parse(req.body);
+    if (input.role === 'APPROVE' || input.role === 'DECLINE') {
+      const community = await prisma.community.findUniqueOrThrow({ where: { id: req.params.id } });
+      const status = input.role === 'APPROVE' ? 'ACTIVE' : 'DECLINED';
+      const changed = await prisma.communityMember.updateMany({ where: { communityId: community.id, userId: req.params.userId, status: { not: status } }, data: { status } });
+      if (changed.count) {
+        await notify({
+          userId: req.params.userId,
+          type: 'ENQUIRY_UPDATE',
+          title: input.role === 'APPROVE' ? `Welcome to ${community.name}` : `${community.name}: request not approved`,
+          body: input.role === 'APPROVE' ? 'Your membership request was approved.' : 'The community team did not approve your request this time.',
+          link: `/experiences/communities/${community.slug}`,
+        });
+      }
+    } else if (input.role === 'REMOVE') {
       await prisma.communityMember.deleteMany({ where: { communityId: req.params.id, userId: req.params.userId } });
     } else {
       await prisma.communityMember.updateMany({ where: { communityId: req.params.id, userId: req.params.userId }, data: { role: input.role } });
@@ -234,9 +247,10 @@ ccExperiencesRouter.get(
       items: rows.map((row) => ({
         id: row.id,
         title: row.title,
-        trip: row.departure.trip.title,
-        startDate: row.departure.startDate,
-        endDate: row.departure.endDate,
+        kind: row.departure ? 'TRIP' : row.subjectType,
+        trip: row.departure?.trip.title ?? row.title,
+        startDate: row.departure?.startDate ?? null,
+        endDate: row.departure?.endDate ?? null,
         members: row._count.members,
         messages: row._count.messages,
         lastMessageAt: row.messages[0]?.createdAt ?? null,

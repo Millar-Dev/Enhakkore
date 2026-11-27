@@ -582,3 +582,106 @@ export const SUGGESTED_INTERESTS = [
   'Fitness',
   'Books',
 ];
+
+
+/* ------------------------------------------------------------------------- */
+/* Subcategories (the second level everywhere: globe, category pages, forms)  */
+/* ------------------------------------------------------------------------- */
+
+/** Experience subcategories per section. Category records with these names are created by the bootstrap. */
+export const EXPERIENCE_SUBCATEGORIES: Record<ExperienceSection, string[]> = {
+  PARTIES: ['House Parties', 'Birthday Parties', 'Concerts', 'Music Festivals', 'Awards Events', 'Nightlife', 'Social Gatherings', 'Cultural Celebrations', 'Private Events', 'Other Events'],
+  SPORTS: ['Jogging and Running', 'Football', 'Basketball', 'Tennis', 'Volleyball', 'Roller Skating', 'Cycling', 'Gym and Fitness', 'Swimming', 'Sports Competitions', 'Fitness Challenges', 'Other Sports'],
+  GAMING: ['Online Tournaments', 'PS & Console Gaming', 'Gaming Meetups'],
+  ARTS: ['Art Exhibitions', 'Painting', 'Music', 'Dance', 'Photography', 'Creative Workshops', 'Cultural Celebrations', 'Other Creative Experiences'],
+  OUTDOOR: ['Hiking', 'Camping', 'Nature Walks', 'Outdoor Challenges', 'Exploration', 'Adventure Activities', 'Other Outdoor Experiences'],
+  COMMUNITIES: ['Sports Communities', 'Gaming Communities', 'Photography Communities', 'Art Communities', 'Business Communities', 'Country-based Communities', 'Social Communities', 'Travel Communities', 'Other Interest Groups'],
+  LEARNING: ['Training', 'Skills Workshops', 'Language Learning', 'Creative Classes', 'Educational Events', 'Professional Development'],
+  OTHER: ['Other Experiences'],
+};
+
+/** Display names for the experience sections, in the order of the brief. */
+export const EXPERIENCE_SECTION_NAMES: Record<ExperienceSection, string> = {
+  PARTIES: 'Events & Social',
+  SPORTS: 'Sports & Fitness',
+  GAMING: 'Gaming & Esports',
+  ARTS: 'Arts & Culture',
+  OUTDOOR: 'Outdoor & Adventure',
+  COMMUNITIES: 'Communities & Meetups',
+  LEARNING: 'Workshops & Learning',
+  OTHER: 'Other Experiences',
+};
+
+/** Games offered for tournaments (admins can add more under Categories & games). */
+export const ONLINE_GAMES = ['Free Fire', 'PUBG Mobile', 'Call of Duty Mobile', 'Delta Force', 'Mobile Legends', 'Brawl Stars', 'Fortnite', 'eFootball', 'EA FC Mobile'];
+export const CONSOLE_GAMES = ['EA SPORTS FC', 'eFootball', 'Mortal Kombat', 'Tekken', 'WWE', 'NBA 2K'];
+
+export const TRAVEL_SUBCATEGORIES = [
+  { key: 'GROUP', label: 'Group Trips' },
+  { key: 'PRIVATE', label: 'Private Trips' },
+  { key: 'SAFARI', label: 'Safaris' },
+  { key: 'BEACH', label: 'Beach & Island' },
+  { key: 'HOLIDAY', label: 'Holiday Packages' },
+  { key: 'INTERNATIONAL', label: 'International Travel' },
+] as const;
+
+export const IMPACT_SUBCATEGORIES = [
+  { key: 'COMMUNITY', label: 'Community Projects' },
+  { key: 'CHILDREN', label: 'Children’s Initiatives' },
+  { key: 'VOLUNTEERING', label: 'Volunteering' },
+  { key: 'DONATIONS', label: 'Donations' },
+  { key: 'STORIES', label: 'Impact Stories' },
+] as const;
+
+/* ------------------------------------------------------------------------- */
+/* Organisers, passes, entry checks                                           */
+/* ------------------------------------------------------------------------- */
+
+export const ORGANISER_APPLICATION_STATUSES = ['SUBMITTED', 'UNDER_REVIEW', 'MORE_INFO', 'APPROVED', 'REJECTED', 'SUSPENDED'] as const;
+export type OrganiserApplicationStatus = (typeof ORGANISER_APPLICATION_STATUSES)[number];
+export const ORGANISER_APPLICATION_LABELS: Record<OrganiserApplicationStatus, string> = {
+  SUBMITTED: 'Submitted',
+  UNDER_REVIEW: 'Under review',
+  MORE_INFO: 'More information required',
+  APPROVED: 'Approved',
+  REJECTED: 'Rejected',
+  SUSPENDED: 'Suspended',
+};
+
+/** How entry to an activity or event is checked. NONE is the default for ordinary free activities. */
+export const ENTRY_VERIFICATION = ['NONE', 'QR', 'MANUAL'] as const;
+export type EntryVerification = (typeof ENTRY_VERIFICATION)[number];
+export const ENTRY_VERIFICATION_LABELS: Record<EntryVerification, string> = {
+  NONE: 'No verification (default)',
+  QR: 'QR code — Enhakkore Pass',
+  MANUAL: 'Manual — names checked at the door',
+};
+
+export const PASS_STATUS_LABELS: Record<string, string> = { VALID: 'Confirmed', CHECKED_IN: 'Checked in', CANCELLED: 'Cancelled', EXPIRED: 'Expired' };
+export const SCAN_RESULT_LABELS: Record<string, string> = {
+  VALID: 'Valid — checked in',
+  ALREADY_CHECKED_IN: 'Already checked in',
+  CANCELLED: 'Cancelled',
+  EXPIRED: 'Expired',
+  NOT_FOUND: 'Not found',
+  REVIEW: 'Needs review',
+};
+
+export const COMMUNITY_ACCESS = ['FREE', 'PAID', 'PRIVATE'] as const;
+export const COMMUNITY_ACCESS_LABELS: Record<string, string> = { FREE: 'Free to join', PAID: 'Paid membership', PRIVATE: 'Private — apply to join' };
+
+/** Profile fields with their own visibility. */
+export const PROFILE_FIELDS = ['bio', 'interests', 'location', 'communities', 'activities'] as const;
+export const VISIBILITY_LEVELS = ['PUBLIC', 'MEMBERS', 'PRIVATE'] as const;
+
+/** Non-essential notification kinds a member can switch off. Safety, cancellation and booking notices are always sent. */
+export const OPTIONAL_NOTIFICATIONS: { key: string; label: string; types: string[] }[] = [
+  { key: 'chat', label: 'New group chat messages', types: ['CHAT_MESSAGE'] },
+  { key: 'invites', label: 'Invitations from members', types: ['INVITATION'] },
+  { key: 'community', label: 'Community announcements', types: ['COMMUNITY_ANNOUNCEMENT'] },
+  { key: 'nearby', label: 'Nearby members', types: ['NEARBY'] },
+  { key: 'impact', label: 'Impact updates', types: ['IMPACT_UPDATE'] },
+];
+
+/** Usernames: 3–20 characters, lowercase letters, numbers, dot and underscore. */
+export const USERNAME_PATTERN = /^[a-z0-9](?:[a-z0-9._]{1,18})[a-z0-9]$/;

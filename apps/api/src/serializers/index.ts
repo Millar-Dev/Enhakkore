@@ -47,7 +47,22 @@ export function toPublicUser(user: any): PublicUser {
     interests: parseList(user.interests),
     activityPrefs: parseList(user.activityPrefs),
     profileVisibility: user.profileVisibility ?? 'MEMBERS',
+    username: user.username ?? null,
+    coverImage: user.coverImage ?? null,
+    profileFields: parseObject(user.profileFields),
+    nearbyMode: user.nearbyMode ?? 'OFF',
+    notificationPrefs: parseObject(user.notificationPrefs),
   };
+}
+
+function parseObject(value: unknown): Record<string, any> {
+  if (typeof value !== 'string') return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
 }
 
 /** The minimal public shape of a fellow traveller. Never includes email or phone. */

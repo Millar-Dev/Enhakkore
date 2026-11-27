@@ -40,6 +40,14 @@ export interface PublicUser {
   interests?: string[];
   activityPrefs?: string[];
   profileVisibility?: string;
+  username?: string | null;
+  coverImage?: string | null;
+  /** Visibility of each profile field: PUBLIC | MEMBERS | PRIVATE. */
+  profileFields?: Record<string, string>;
+  nearbyMode?: string;
+  notificationPrefs?: { off?: string[]; quietStart?: string | null; quietEnd?: string | null };
+  /** Experience sections this member is approved to organise. */
+  organiserSections?: string[];
   /** Admin control centre permissions. Empty for members. */
   permissions?: string[];
   adminRoleName?: string | null;

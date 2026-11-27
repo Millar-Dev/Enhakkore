@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { OPTIONAL_NOTIFICATIONS, PROFILE_FIELDS, VISIBILITY_LEVELS } from '@enhakkore/shared';
 import { ApiError, route } from '../lib/http';
 import { stringify } from '../lib/json';
 import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
 import { travellerStats } from '../services/stats';
+import { usernameProblem } from '../services/usernames';
 import { refreshRatings } from '../services/stats';
 import { toDonation, toNotification, toPublicUser, toReview, toTripSummary } from '../serializers';
 import { TRIP_SUMMARY_INCLUDE } from '../lib/includes';
@@ -24,12 +26,56 @@ const profileSchema = z.object({
   interests: z.array(z.string().trim().min(1).max(40)).max(30).optional(),
   activityPrefs: z.array(z.string().trim().min(1).max(40)).max(30).optional(),
   profileVisibility: z.enum(['MEMBERS', 'HIDDEN']).optional(),
+  username: z.string().trim().toLowerCase().max(20).optional(),
+  coverImage: z.string().max(600).optional().or(z.literal('')),
+  profileFields: z.record(z.enum(PROFILE_FIELDS), z.enum(VISIBILITY_LEVELS)).optional(),
 });
+
+/** Is this username free? */
+meRouter.get(
+  '/username-available',
+  route(async (req, res) => {
+    const username = String(req.query.u ?? '').trim().toLowerCase();
+    const problem = await usernameProblem(username, req.auth!.id);
+    res.json({ username, available: !problem, reason: problem });
+  }),
+);
+
+/** Enhakkore Nearby preference. Off by default; detection itself needs the mobile app (see the page). */
+meRouter.put(
+  '/nearby',
+  route(async (req, res) => {
+    const { mode } = z.object({ mode: z.enum(['OFF', 'M4', 'M10']) }).parse(req.body);
+    await prisma.user.update({ where: { id: req.auth!.id }, data: { nearbyMode: mode } });
+    res.json({ mode, active: false, reason: 'Nearby discovery needs the Enhakkore mobile app. Web browsers cannot detect nearby phones.' });
+  }),
+);
+
+/** Which optional notifications to receive, and quiet hours. Essential notices are always sent. */
+meRouter.put(
+  '/notification-prefs',
+  route(async (req, res) => {
+    const keys = OPTIONAL_NOTIFICATIONS.map((item) => item.key) as [string, ...string[]];
+    const input = z
+      .object({
+        off: z.array(z.enum(keys)).max(20).default([]),
+        quietStart: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
+        quietEnd: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
+      })
+      .parse(req.body);
+    await prisma.user.update({ where: { id: req.auth!.id }, data: { notificationPrefs: JSON.stringify(input) } });
+    res.json(input);
+  }),
+);
 
 meRouter.patch(
   '/',
   route(async (req, res) => {
     const input = profileSchema.parse(req.body);
+    if (input.username) {
+      const problem = await usernameProblem(input.username, req.auth!.id);
+      if (problem) throw ApiError.conflict(problem, 'username_unavailable');
+    }
     const user = await prisma.user.update({
       where: { id: req.auth!.id },
       data: {
@@ -43,6 +89,9 @@ meRouter.patch(
         ...(input.interests ? { interests: JSON.stringify(Array.from(new Set(input.interests))) } : {}),
         ...(input.activityPrefs ? { activityPrefs: JSON.stringify(Array.from(new Set(input.activityPrefs))) } : {}),
         ...(input.profileVisibility ? { profileVisibility: input.profileVisibility } : {}),
+        ...(input.username ? { username: input.username } : {}),
+        ...(input.coverImage !== undefined ? { coverImage: input.coverImage || null } : {}),
+        ...(input.profileFields ? { profileFields: JSON.stringify(input.profileFields) } : {}),
       },
       include: { organizer: { select: { id: true } } },
     });

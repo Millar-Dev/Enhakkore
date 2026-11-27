@@ -41,10 +41,18 @@ export async function sessionPayload(userId: string) {
     include: { organizer: true, adminRole: true },
   });
   const permissions = permissionsFor(user);
+  const organiser = await prisma.organiserApplication.findFirst({ where: { userId, status: 'APPROVED' }, orderBy: { updatedAt: 'desc' }, select: { approvedCategories: true } });
+  let organiserSections: string[] = [];
+  try {
+    organiserSections = organiser ? JSON.parse(organiser.approvedCategories) : [];
+  } catch {
+    organiserSections = [];
+  }
   return {
     user: {
       ...toPublicUser(user),
       permissions,
+      organiserSections,
       adminRoleName: user.role === 'ADMIN' ? 'Owner' : (user.adminRole?.name ?? null),
       adminScope: user.role === 'STAFF' && user.adminRole?.scope === 'OWN' ? 'OWN' : 'ALL',
     },

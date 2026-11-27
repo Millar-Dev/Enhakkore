@@ -34,11 +34,14 @@ async function authorize(
   });
 
   if (!conversation) throw ApiError.notFound('That trip group does not exist.');
+  // Event, activity and community groups have their own routes (experience-chats).
+  if (!conversation.departure) throw ApiError.notFound('That trip group does not exist.');
+  const departure = conversation.departure;
 
-  const organizerUserId = conversation.departure.trip.organizer.userId;
+  const organizerUserId = departure.trip.organizer.userId;
   // Enhakkore's own trips are run by the team: whoever may edit trips speaks
   // for the organiser in those groups.
-  const isEnhakkoreTrip = conversation.departure.trip.organizer.slug === 'enhakkore';
+  const isEnhakkoreTrip = departure.trip.organizer.slug === 'enhakkore';
   const isOrganizer =
     viewer.id === organizerUserId || (isEnhakkoreTrip && hasPermission(viewer.permissions ?? [], 'trips.edit'));
   const isMember = conversation.members.some((member) => member.userId === viewer.id);
@@ -51,7 +54,7 @@ async function authorize(
   }
 
   const canModerate = isOrganizer || viewer.role === 'ADMIN' || hasPermission(viewer.permissions ?? [], 'trips.edit');
-  return { conversation, isOrganizer, isMember, isAdmin, canModerate, organizerUserId, readOnly: isReadOnly(conversation) };
+  return { conversation: { ...conversation, departure }, isOrganizer, isMember, isAdmin, canModerate, organizerUserId, readOnly: isReadOnly({ archivedAt: conversation.archivedAt, departure }) };
 }
 
 /** A group becomes read-only when archived, or 30 days after its departure ends. History is kept. */
@@ -68,7 +71,7 @@ conversationsRouter.get(
     const viewer = req.auth!;
 
     const memberships = await prisma.conversationMember.findMany({
-      where: { userId: viewer.id },
+      where: { userId: viewer.id, conversation: { tripDateId: { not: null } } },
       include: {
         conversation: {
           include: {
@@ -88,7 +91,8 @@ conversationsRouter.get(
     const items = await Promise.all(
       memberships.map(async (membership) => {
         const { conversation } = membership;
-        const trip = conversation.departure.trip;
+        const departure = conversation.departure!;
+        const trip = departure.trip;
         const unreadCount = await prisma.message.count({
           where: {
             conversationId: conversation.id,
@@ -102,7 +106,7 @@ conversationsRouter.get(
           title: conversation.title,
           tripId: trip.id,
           tripSlug: trip.slug,
-          departure: toTripDate(conversation.departure, trip.currency, trip.basePrice),
+          departure: toTripDate(departure, trip.currency, trip.basePrice),
           heroImage: trip.heroImage,
           memberCount: conversation._count.members,
           unreadCount,

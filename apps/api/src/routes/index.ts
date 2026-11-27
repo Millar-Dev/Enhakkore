@@ -15,11 +15,14 @@ import { requestsRouter } from './requests';
 import { tripsRouter } from './trips';
 import { uploadsRouter } from './uploads';
 import { controlCentreRouter } from './cc';
-import { communityRouter } from './community';
+import { communityRouter, profilePublic } from './community';
 import { publicRouter } from './public';
 import { experiencesMember, experiencesPublic } from './experiences';
 import { geoMember, geoPublic } from './geo';
 import { globePublic } from './globe';
+import { passesRouter } from './passes';
+import { groupChatsRouter } from './groupChats';
+import { hostingAdmin, hostingMember } from './hosting';
 
 export const apiRouter = Router();
 
@@ -74,7 +77,12 @@ apiRouter.use('/public', publicRouter);
 apiRouter.use('/public', experiencesPublic);
 apiRouter.use('/public', geoPublic);
 apiRouter.use('/public', globePublic);
+apiRouter.use('/public', profilePublic);
 apiRouter.use('/community', experiencesMember);
 apiRouter.use('/community', geoMember);
 apiRouter.use('/community', communityRouter);
+apiRouter.use('/passes', passesRouter);
+apiRouter.use('/experience-chats', groupChatsRouter);
+apiRouter.use('/community', hostingMember);
+apiRouter.use('/cc', hostingAdmin);
 apiRouter.use('/cc', controlCentreRouter);

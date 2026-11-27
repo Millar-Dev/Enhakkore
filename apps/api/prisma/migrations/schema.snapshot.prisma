@@ -25,6 +25,16 @@ datasource db {
 
 model User {
   id                String    @id @default(cuid())
+  /// Unique public handle shown in chats, teams and profiles (no phone or email is ever shown).
+  username          String?   @unique
+  /// Profile card wallpaper.
+  coverImage        String?
+  /// Who sees each profile field: { field: PUBLIC | MEMBERS | PRIVATE }.
+  profileFields     String    @default("{}")
+  /// Enhakkore Nearby: OFF | M4 | M10. Off unless the member turns it on.
+  nearbyMode        String    @default("OFF")
+  /// Notification preferences and quiet hours (JSON).
+  notificationPrefs String    @default("{}")
   email             String    @unique
   passwordHash      String
   name              String
@@ -541,16 +551,22 @@ model Review {
 /// confirmed bookings — there is no way to join a conversation without one.
 model Conversation {
   id         String    @id @default(cuid())
-  tripDateId String    @unique
+  /// Trip groups belong to a departure; other groups (events, activities, communities) use subjectType/subjectId.
+  tripDateId String?   @unique
+  /// ACTIVITY | EVENT | COMMUNITY | TOURNAMENT (null for trip groups)
+  subjectType String?
+  subjectId   String?
   title      String
   /// After this the group is read-only. History is kept.
   archivedAt DateTime?
 
   createdAt DateTime @default(now())
 
-  departure TripDate             @relation(fields: [tripDateId], references: [id], onDelete: Cascade)
+  departure TripDate?            @relation(fields: [tripDateId], references: [id], onDelete: Cascade)
   members   ConversationMember[]
   messages  Message[]
+
+  @@unique([subjectType, subjectId])
 }
 
 model ConversationMember {
@@ -884,6 +900,10 @@ model Category {
 
 model Activity {
   id          String  @id @default(cuid())
+  /// How entry is checked: NONE (default) | QR | MANUAL.
+  verification   String  @default("NONE")
+  /// Group chat for registered participants and the organiser.
+  chatEnabled    Boolean @default(false)
   slug        String  @unique
   title       String
   summary     String?
@@ -1114,6 +1134,8 @@ model Experience {
 
 model Event {
   id                  String    @id @default(cuid())
+  verification        String    @default("NONE")
+  chatEnabled         Boolean   @default(false)
   slug                String    @unique
   title               String
   categoryId          String?
@@ -1688,6 +1710,15 @@ model SessionRegistration {
 
 model Community {
   id          String  @id @default(cuid())
+  /// FREE | PAID | PRIVATE. Paid membership needs admin approval; payments stay off until a merchant account is configured.
+  accessType         String  @default("FREE")
+  membershipPrice    Int?
+  membershipCurrency String?
+  /// MONTH | YEAR | ONCE
+  membershipPeriod   String?
+  membershipBenefits String?
+  membershipTerms    String?
+  chatEnabled        Boolean @default(false)
   slug        String  @unique
   name        String
   summary     String?
@@ -1725,6 +1756,10 @@ model CommunityMember {
   userId      String
   /// MEMBER | MODERATOR
   role        String   @default("MEMBER")
+  /// ACTIVE | PENDING (private or paid communities wait for approval) | DECLINED
+  status      String   @default("ACTIVE")
+  /// What the member wrote when asking to join.
+  message     String?
   joinedAt    DateTime @default(now())
 
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
@@ -1899,4 +1934,84 @@ model NotificationDelivery {
 
   @@index([createdAt])
   @@index([status])
+}
+
+
+/// A member's application to host experiences. Approval is per category and per risk.
+model OrganiserApplication {
+  id            String    @id @default(cuid())
+  userId        String
+  legalName     String
+  phone         String
+  email         String
+  country       String?
+  city          String?
+  /// JSON list of experience sections applied for, e.g. ["SPORTS","GAMING"].
+  categories    String    @default("[]")
+  /// JSON list of sections approved — may be fewer than applied for.
+  approvedCategories String @default("[]")
+  hasExperience Boolean   @default(false)
+  description   String
+  links         String?
+  agreedRules   Boolean   @default(false)
+  /// How identity was checked by staff (e.g. "Video call, national ID seen") — no ID numbers or images are stored.
+  identityCheck String?
+  identityCheckedAt DateTime?
+  /// SUBMITTED | UNDER_REVIEW | MORE_INFO | APPROVED | REJECTED | SUSPENDED
+  status        String    @default("SUBMITTED")
+  reviewNotes   String?
+  reviewedById  String?
+  reviewedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+/// An Enhakkore Pass: one per eligible registration or booking. The QR holds only a random token.
+model Pass {
+  id          String    @id @default(cuid())
+  reference   String    @unique
+  token       String    @unique
+  userId      String?
+  /// EVENT_REGISTRATION | SESSION_REGISTRATION | ACTIVITY_PARTICIPANT | TOURNAMENT_ENTRY | BOOKING | ENQUIRY
+  subjectType String
+  subjectId   String
+  /// The listing it admits to (for organiser scanners): ACTIVITY | EVENT | TOURNAMENT | TRIP | PLACE
+  listingType String
+  listingId   String
+  title       String
+  holderName  String
+  startsAt    DateTime?
+  location    String?
+  qr          Boolean   @default(true)
+  /// VALID | CHECKED_IN | CANCELLED | EXPIRED
+  status      String    @default("VALID")
+  checkedInAt DateTime?
+  checkedInById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  scans PassScan[]
+
+  @@unique([subjectType, subjectId])
+  @@index([userId])
+  @@index([listingType, listingId])
+}
+
+/// Every check-in attempt, online or synchronised from an offline scanner.
+model PassScan {
+  id          String   @id @default(cuid())
+  passId      String?
+  attempted   String
+  /// VALID | ALREADY_CHECKED_IN | CANCELLED | EXPIRED | NOT_FOUND | REVIEW
+  result      String
+  scannedById String
+  offline     Boolean  @default(false)
+  scannedAt   DateTime @default(now())
+
+  pass Pass? @relation(fields: [passId], references: [id], onDelete: SetNull)
+
+  @@index([passId])
 }

@@ -117,6 +117,30 @@ communityRouter.post(
   route(async (req, res) => {
     rejectBots(req);
     const input = enquirySchema.parse(req.body);
+    // A double tap, a retry on a slow connection or a second submit of the same
+    // request returns the first one instead of creating a duplicate.
+    const contact = req.auth?.id ? { userId: req.auth.id } : input.phone ? { phone: input.phone } : input.email ? { email: input.email } : null;
+    if (contact) {
+      const duplicate = await prisma.enquiry.findFirst({
+        where: {
+          ...contact,
+          type: input.type,
+          subjectId: input.subjectId ?? null,
+          startDate: input.startDate ? new Date(`${input.startDate}T12:00:00Z`) : null,
+          status: { notIn: ['CANCELLED', 'DECLINED', 'CLOSED', 'SPAM'] },
+          createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (duplicate) {
+        return res.status(200).json({
+          reference: duplicate.reference,
+          duplicate: true,
+          notice: null,
+          message: `You already sent this request a few minutes ago (reference ${duplicate.reference}). We have it — there is no need to send it again.`,
+        });
+      }
+    }
     const enquiry = await prisma.enquiry.create({
       data: {
         reference: `ENQ-${shortCode(6)}`,
@@ -512,22 +536,49 @@ async function blockedIds(userId: string): Promise<string[]> {
 }
 
 /** A member as other members see them: no email, no phone, no address, no location. */
-function memberCard(user: { id: string; name: string; avatarUrl: string | null; country: string | null; city: string | null; headline: string | null; bio?: string | null; interests: string; activityPrefs: string; createdAt: Date }) {
+type CardUser = { id: string; name: string; username?: string | null; avatarUrl: string | null; coverImage?: string | null; country: string | null; city: string | null; headline: string | null; bio?: string | null; interests: string; activityPrefs: string; profileFields?: string | null; createdAt: Date };
+
+/** Field visibility a member chose. Default: shown to members. */
+export function fieldVisibility(user: { profileFields?: string | null }): Record<string, string> {
+  try {
+    const parsed = JSON.parse(user.profileFields || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * A member's profile card. `audience` is who is looking: MEMBERS (signed in)
+ * or PUBLIC (anyone). Fields the member set to Private are never included,
+ * and no phone number or email ever is.
+ */
+export function memberCard(user: CardUser, audience: 'MEMBERS' | 'PUBLIC' | 'SELF' = 'MEMBERS') {
+  const vis = fieldVisibility(user);
+  const show = (field: string) => {
+    if (audience === 'SELF') return true;
+    const level = vis[field] ?? 'MEMBERS';
+    return level === 'PUBLIC' || (level === 'MEMBERS' && audience === 'MEMBERS');
+  };
   return {
     id: user.id,
-    name: user.name,
+    // Usernames are the public handle; the full name is shown to signed-in members only.
+    name: audience === 'PUBLIC' ? (user.username ? `@${user.username}` : user.name.split(' ')[0]) : user.name,
+    username: user.username ?? null,
     avatarUrl: user.avatarUrl,
-    country: user.country,
-    city: user.city,
+    coverImage: user.coverImage ?? null,
+    country: show('location') ? user.country : null,
+    city: show('location') ? user.city : null,
     headline: user.headline,
-    bio: user.bio ?? null,
-    interests: parseList(user.interests),
-    activityPrefs: parseList(user.activityPrefs),
+    bio: show('bio') ? (user.bio ?? null) : null,
+    interests: show('interests') ? parseList(user.interests) : [],
+    activityPrefs: show('interests') ? parseList(user.activityPrefs) : [],
     memberSince: user.createdAt,
+    visibility: { communities: show('communities'), activities: show('activities') },
   };
 }
 
-const MEMBER_FIELDS = { id: true, name: true, avatarUrl: true, country: true, city: true, headline: true, bio: true, interests: true, activityPrefs: true, createdAt: true } as const;
+const MEMBER_FIELDS = { id: true, name: true, username: true, coverImage: true, profileFields: true, avatarUrl: true, country: true, city: true, headline: true, bio: true, interests: true, activityPrefs: true, createdAt: true } as const;
 
 communityRouter.get(
   '/members',
@@ -546,7 +597,7 @@ communityRouter.get(
     const interest = typeof req.query.interest === 'string' && req.query.interest ? req.query.interest : null;
     if (interest) and.push({ OR: [{ interests: textContains(interest) }, { activityPrefs: textContains(interest) }] });
     const q = typeof req.query.q === 'string' && req.query.q.trim() ? req.query.q.trim() : null;
-    if (q) and.push({ OR: [{ name: textContains(q) }, { headline: textContains(q) }] });
+    if (q) and.push({ OR: [{ name: textContains(q) }, { username: textContains(q.replace(/^@/, '').toLowerCase()) }, { headline: textContains(q) }] });
     const rows = await prisma.user.findMany({ where: { AND: and }, select: MEMBER_FIELDS, orderBy: { lastLoginAt: 'desc' }, take: 60 });
     const connections = await prisma.connection.findMany({
       where: { OR: [{ requesterId: req.auth!.id }, { addresseeId: req.auth!.id }] },
@@ -583,17 +634,18 @@ communityRouter.get(
         select: { activity: { select: { title: true, slug: true } } },
         take: 6,
       }),
-      prisma.communityMember.findMany({ where: { userId: user.id, community: { status: 'PUBLISHED' } }, select: { community: { select: { name: true, slug: true } } }, take: 20 }),
+      prisma.communityMember.findMany({ where: { userId: user.id, status: 'ACTIVE', community: { status: 'PUBLISHED' } }, select: { community: { select: { name: true, slug: true } } }, take: 20 }),
       prisma.activity.findMany({ where: { organiserUserId: user.id, status: { in: ['PUBLISHED', 'FULL', 'COMPLETED'] } }, select: { title: true, slug: true }, take: 12 }),
     ]);
+    const card = memberCard(user, user.id === req.auth!.id ? 'SELF' : 'MEMBERS');
     res.json({
-      ...memberCard(user),
+      ...card,
       connection: link ? { id: link.id, status: link.status, incoming: link.addresseeId === req.auth!.id } : null,
-      activities: going.map((row) => row.activity),
-      communities: communities.map((row) => row.community),
+      activities: card.visibility.activities ? going.map((row) => row.activity) : [],
+      communities: card.visibility.communities ? communities.map((row) => row.community) : [],
       published: published,
-      // An organiser is "approved" once the team has published one of their activities.
-      approvedOrganiser: published.length > 0,
+      // Approved by the team as an organiser (per category), or has had an activity published.
+      approvedOrganiser: published.length > 0 || (await prisma.organiserApplication.count({ where: { userId: user.id, status: 'APPROVED' } })) > 0,
     });
   }),
 );
@@ -848,5 +900,95 @@ communityRouter.post(
       update: { ...input, status: 'PENDING' },
     });
     res.status(201).json({ ok: true, message: 'Thank you — reviews appear once they have been checked.' });
+  }),
+);
+
+/* ---------------------------------- Invites -------------------------------- */
+
+const inviteSchema = z.object({
+  subjectType: z.enum(['ACTIVITY', 'EVENT', 'COMMUNITY', 'TRIP', 'TOURNAMENT']),
+  subjectId: z.string().min(5).max(60),
+  usernames: z.array(z.string().trim().toLowerCase().max(21)).min(1).max(20),
+});
+
+/**
+ * Invites existing members by username. An invitation is only a notification
+ * with a link: it does not register anyone or hold a place. Blocked members
+ * and people who switched invitations off are skipped silently.
+ */
+communityRouter.post(
+  '/invites',
+  requireAuth,
+  socialLimiter,
+  route(async (req, res) => {
+    const input = inviteSchema.parse(req.body);
+    const target = await inviteTarget(input.subjectType, input.subjectId);
+    if (!target) throw ApiError.notFound('That listing is not available.');
+    const usernames = [...new Set(input.usernames.map((u) => u.replace(/^@/, '')))];
+    const users = await prisma.user.findMany({ where: { username: { in: usernames }, status: 'ACTIVE' }, select: { id: true, username: true } });
+    const blocks = await prisma.block.findMany({ where: { OR: [{ blockerId: req.auth!.id }, { blockedId: req.auth!.id }] }, select: { blockerId: true, blockedId: true } });
+    const avoid = new Set(blocks.flatMap((b) => [b.blockerId, b.blockedId]));
+    const me = await prisma.user.findUniqueOrThrow({ where: { id: req.auth!.id }, select: { username: true, name: true } });
+    const from = me.username ? `@${me.username}` : me.name.split(' ')[0];
+    const recipients = users.filter((u) => u.id !== req.auth!.id && !avoid.has(u.id));
+    for (const user of recipients) {
+      await notify({ userId: user.id, type: 'INVITATION', title: `${from} invited you`, body: `${target.title} — open it to see the details and register if you would like to go.`, link: target.href });
+    }
+    const found = new Set(users.map((u) => u.username));
+    res.json({ sent: recipients.length, notFound: usernames.filter((u) => !found.has(u)) });
+  }),
+);
+
+async function inviteTarget(type: string, id: string): Promise<{ title: string; href: string } | null> {
+  if (type === 'ACTIVITY') {
+    const row = await prisma.activity.findFirst({ where: { id, status: { in: ['PUBLISHED', 'FULL'] } }, select: { title: true, slug: true } });
+    return row && { title: row.title, href: `/activities/${row.slug}` };
+  }
+  if (type === 'EVENT') {
+    const row = await prisma.event.findFirst({ where: { id, status: 'PUBLISHED' }, select: { title: true, slug: true } });
+    return row && { title: row.title, href: `/events/${row.slug}` };
+  }
+  if (type === 'COMMUNITY') {
+    const row = await prisma.community.findFirst({ where: { id, status: 'PUBLISHED' }, select: { name: true, slug: true } });
+    return row && { title: row.name, href: `/experiences/communities/${row.slug}` };
+  }
+  if (type === 'TRIP') {
+    const row = await prisma.trip.findFirst({ where: { id, status: 'PUBLISHED' }, select: { title: true, slug: true } });
+    return row && { title: row.title, href: `/travel/${row.slug}` };
+  }
+  const row = await prisma.tournament.findFirst({ where: { id, status: { not: 'DRAFT' } }, select: { title: true, slug: true } });
+  return row && { title: row.title, href: `/experiences/gaming/${row.slug}` };
+}
+
+/** Username lookup for the invite picker: handle and first name only. */
+communityRouter.get(
+  '/usernames',
+  requireAuth,
+  route(async (req, res) => {
+    const q = String(req.query.q ?? '').trim().replace(/^@/, '').toLowerCase();
+    if (q.length < 2) return res.json({ items: [] });
+    const hidden = await blockedIds(req.auth!.id);
+    const rows = await prisma.user.findMany({
+      where: { username: { startsWith: q }, status: 'ACTIVE', isDemo: false, id: { notIn: [req.auth!.id, ...hidden] } },
+      select: { username: true, name: true, avatarUrl: true },
+      take: 8,
+      orderBy: { username: 'asc' },
+    });
+    res.json({ items: rows.map((row) => ({ username: row.username, firstName: row.name.split(' ')[0], avatarUrl: row.avatarUrl })) });
+  }),
+);
+
+/** Public profile card by username — only fields the member made Public. */
+export const profilePublic = Router();
+profilePublic.get(
+  '/u/:username',
+  route(async (req, res) => {
+    const user = await prisma.user.findFirst({
+      where: { username: req.params.username.toLowerCase(), status: 'ACTIVE', isDemo: false, profileVisibility: { not: 'HIDDEN' } },
+      select: MEMBER_FIELDS,
+    });
+    if (!user) throw ApiError.notFound('That profile is not available.');
+    const card = memberCard(user, 'PUBLIC');
+    res.json({ ...card, id: undefined });
   }),
 );

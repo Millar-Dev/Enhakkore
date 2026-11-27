@@ -18,7 +18,7 @@
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
-import { COUNTRIES, DEFAULT_ROLES, slugify } from '@enhakkore/shared';
+import { COUNTRIES, DEFAULT_ROLES, EXPERIENCE_SUBCATEGORIES, slugify } from '@enhakkore/shared';
 
 const prisma = new PrismaClient();
 
@@ -977,6 +977,7 @@ async function main() {
   await once('demo-content.v3', demoContent);
   await once('researched-places.v3', researchedPlaces);
   await once('wsc-wording.v5', wscWording);
+  await once('subcategories.v6', subcategories);
   // Not run once: a fresh deploy with the variables set is how the owner is created.
   await owner();
 }
@@ -987,3 +988,28 @@ main()
     process.exitCode = 1;
   })
   .finally(() => prisma.$disconnect());
+
+/**
+ * The subcategories each Experiences section lists (R6). Existing categories
+ * with the same name in a section are kept as they are; only missing ones are
+ * added. Nothing is deleted or renamed.
+ */
+async function subcategories() {
+  for (const [section, names] of Object.entries(EXPERIENCE_SUBCATEGORIES)) {
+    for (const [index, name] of names.entries()) {
+      const existing = await prisma.category.findFirst({ where: { kind: 'ACTIVITY', section, name } });
+      if (existing) continue;
+      let slug = slugify(name);
+      if (await prisma.category.findUnique({ where: { kind_slug: { kind: 'ACTIVITY', slug } } })) slug = `${slug}-${section.toLowerCase()}`;
+      if (await prisma.category.findUnique({ where: { kind_slug: { kind: 'ACTIVITY', slug } } })) continue;
+      await prisma.category.create({ data: { kind: 'ACTIVITY', name, slug, section, sortOrder: index } });
+    }
+  }
+  // Console and online groups for games the R6 brief lists.
+  const extra: { name: string; group: string }[] = [{ name: 'WWE', group: 'Console' }];
+  for (const game of extra) {
+    const slug = slugify(game.name);
+    if (await prisma.category.findFirst({ where: { kind: 'GAME', OR: [{ slug }, { name: { startsWith: game.name } }] } })) continue;
+    await prisma.category.create({ data: { kind: 'GAME', name: game.name, slug, group: game.group, section: 'GAMING', icon: '🎮', sortOrder: 50 } });
+  }
+}

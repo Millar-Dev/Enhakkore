@@ -107,6 +107,9 @@ export const NOTIFICATION_TYPES = [
   'COMMUNITY_ANNOUNCEMENT',
   'ORGANISER_APPROVAL',
   'PARTNERSHIP_UPDATE',
+  'INVITATION',
+  'PASS_UPDATE',
+  'NEARBY',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

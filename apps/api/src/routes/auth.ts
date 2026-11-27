@@ -1,3 +1,4 @@
+import { usernameProblem } from '../services/usernames';
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
@@ -41,6 +42,9 @@ const registerSchema = z.object({
   password: z.string().min(8, 'Use at least 8 characters.').max(200),
   accountType: z.enum(['TRAVELER', 'ORGANIZER']).default('TRAVELER'),
   country: z.string().trim().max(80).optional(),
+  city: z.string().trim().max(80).optional(),
+  /** Public handle shown instead of a phone number or email. */
+  username: z.string().trim().toLowerCase().max(20).optional(),
   phone: z.string().trim().max(40).optional(),
   /** Required when accountType is ORGANIZER. */
   companyName: z.string().trim().min(2).max(120).optional(),
@@ -66,6 +70,10 @@ authRouter.post(
     if (existing) {
       throw ApiError.conflict('An account with that email already exists.', 'email_taken');
     }
+    if (input.username) {
+      const problem = await usernameProblem(input.username);
+      if (problem) throw ApiError.conflict(problem, 'username_unavailable');
+    }
 
     const passwordHash = await bcrypt.hash(input.password, 12);
 
@@ -78,6 +86,8 @@ authRouter.post(
         passwordHash,
         role: input.accountType,
         country: input.country ?? null,
+        city: input.city ?? null,
+        username: input.username || null,
         phone: input.phone ?? null,
         ...(input.accountType === 'ORGANIZER'
           ? {

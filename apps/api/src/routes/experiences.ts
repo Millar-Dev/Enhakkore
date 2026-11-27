@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { organiserSections } from './hosting';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import {
@@ -76,7 +77,7 @@ function toTournament(row: Row): Row {
 }
 
 const TOURNAMENT_INCLUDE = { game: true, country: true, city: true, _count: { select: { entries: { where: { status: { in: ['REGISTERED', 'CONFIRMED'] } } } } } };
-const COMMUNITY_INCLUDE = { category: true, country: true, city: true, _count: { select: { members: true } } };
+const COMMUNITY_INCLUDE = { category: true, country: true, city: true, _count: { select: { members: { where: { status: 'ACTIVE' } } } } };
 
 /* ----------------------------- Popularity signals -------------------------- */
 
@@ -289,8 +290,8 @@ experiencesPublic.get(
     // Members are listed to signed-in members only, and only those whose profile is not hidden. No contact details.
     const members = req.auth
       ? await prisma.communityMember.findMany({
-          where: { communityId: row.id, user: { profileVisibility: { not: 'HIDDEN' }, status: 'ACTIVE' } },
-          include: { user: { select: { id: true, name: true, avatarUrl: true, city: true } } },
+          where: { communityId: row.id, status: 'ACTIVE', user: { profileVisibility: { not: 'HIDDEN' }, status: 'ACTIVE' } },
+          include: { user: { select: { id: true, name: true, username: true, avatarUrl: true, city: true } } },
           orderBy: { joinedAt: 'asc' },
           take: 100,
         })
@@ -299,8 +300,8 @@ experiencesPublic.get(
       community: toCommunity(row),
       announcements: announcements.map((item) => ({ id: item.id, title: item.title, body: item.body, createdAt: item.createdAt })),
       activities: activities.map(toActivity),
-      members: members.map((item) => ({ id: item.user.id, name: item.user.name, avatarUrl: item.user.avatarUrl, city: item.user.city, role: item.role })),
-      viewer: req.auth ? { isMember: !!membership, role: membership?.role ?? null } : null,
+      members: members.map((item) => ({ id: item.user.id, name: item.user.name, username: item.user.username, avatarUrl: item.user.avatarUrl, city: item.user.city, role: item.role })),
+      viewer: req.auth ? { isMember: membership?.status === 'ACTIVE', status: membership?.status ?? null, role: membership?.role ?? null } : null,
     });
   }),
 );
@@ -312,13 +313,31 @@ experiencesMember.post(
     const community = await prisma.community.findFirst({ where: { slug: req.params.slug, status: 'PUBLISHED' } });
     if (!community) throw ApiError.notFound('That community is not listed.');
     if (community.isDemo) throw ApiError.conflict('This is an example (DEMO) community, so it cannot be joined.');
+    const input = z.object({ message: z.string().trim().max(1000).optional() }).parse(req.body ?? {});
+    const key = { communityId_userId: { communityId: community.id, userId: req.auth!.id } };
+    const existing = await prisma.communityMember.findUnique({ where: key });
+    if (existing?.status === 'ACTIVE') return res.json({ joined: true, status: 'ACTIVE' });
+    // Free communities: join at once. Private and paid: a request the community team approves.
+    const status = community.accessType === 'FREE' ? 'ACTIVE' : 'PENDING';
+    if (status === 'PENDING' && community.accessType === 'PRIVATE' && !input.message) {
+      throw ApiError.badRequest('Tell the community team a little about yourself.');
+    }
     await prisma.communityMember.upsert({
-      where: { communityId_userId: { communityId: community.id, userId: req.auth!.id } },
-      create: { communityId: community.id, userId: req.auth!.id },
-      update: {},
+      where: key,
+      create: { communityId: community.id, userId: req.auth!.id, status, message: input.message || null },
+      update: { status, message: input.message || null, joinedAt: new Date() },
     });
-    await recordEngagement(req, 'COMMUNITY', community.id, 'REGISTER');
-    res.json({ joined: true });
+    if (status === 'ACTIVE') await recordEngagement(req, 'COMMUNITY', community.id, 'REGISTER');
+    res.json({
+      joined: status === 'ACTIVE',
+      status,
+      message:
+        community.accessType === 'PAID'
+          ? 'Request sent. Online payment is not switched on yet — the community team will contact you about the membership fee. You become a member once they approve.'
+          : community.accessType === 'PRIVATE'
+            ? 'Request sent. The community team will review it and let you know.'
+            : 'You have joined.',
+    });
   }),
 );
 
@@ -630,6 +649,11 @@ const submitSchema = z.object({
   gallery: z.array(z.string().url()).max(12).optional(),
   videoUrl: z.string().url().optional().or(z.literal('')),
   paid: z.boolean().default(false),
+  /** How entry is checked. NONE unless the organiser asks for QR or manual check-in. */
+  verification: z.enum(['NONE', 'QR', 'MANUAL']).default('NONE'),
+  chatEnabled: z.boolean().default(false),
+  ageRestriction: z.string().trim().max(60).optional(),
+  safetyNotes: z.string().trim().max(2000).optional(),
   acceptedRules: z.literal(true, { errorMap: () => ({ message: 'Please accept the activity rules.' }) }),
 });
 
@@ -648,6 +672,10 @@ experiencesMember.post(
     if (user.status !== 'ACTIVE') throw ApiError.forbidden('Your account cannot submit activities.');
     let slug = slugify(input.title) || `activity-${shortCode(4).toLowerCase()}`;
     if (await prisma.activity.findUnique({ where: { slug } })) slug = `${slug}-${shortCode(4).toLowerCase()}`;
+    const category = await prisma.category.findUnique({ where: { id: input.categoryId }, select: { section: true } });
+    const approvedFor = await organiserSections(user.id);
+    const approvedHere = !!category?.section && approvedFor.includes(category.section);
+    // Paid or large: enhanced review. The reviewer also sees whether the organiser is approved for this category.
     const enhanced = input.paid || (input.capacity ?? 0) > 50;
     const activity = await prisma.activity.create({
       data: {
@@ -664,8 +692,11 @@ experiencesMember.post(
         timezone: input.timezone,
         capacity: input.capacity ?? null,
         registrationDeadline: input.registrationDeadline ? new Date(input.registrationDeadline) : null,
-        eligibility: input.eligibility ?? null,
+        eligibility: [input.eligibility, input.ageRestriction ? `Age: ${input.ageRestriction}` : null].filter(Boolean).join('\n') || null,
         rules: input.rules ?? null,
+        requirements: input.safetyNotes ?? null,
+        verification: input.verification,
+        chatEnabled: input.chatEnabled,
         cancellationTerms: input.cancellationTerms ?? null,
         organiserName: user.name,
         organiserPhone: input.organiserPhone,
@@ -673,7 +704,13 @@ experiencesMember.post(
         source: 'COMMUNITY',
         status: 'PENDING_REVIEW',
         reviewLevel: enhanced ? 'ENHANCED' : 'STANDARD',
-        reviewNotes: input.paid ? 'The organiser says this is a paid activity — verify the organiser and the payment arrangements before publishing.' : null,
+        reviewNotes:
+          [
+            input.paid ? 'The organiser says this is a paid activity — verify the organiser and the payment arrangements before publishing.' : null,
+            approvedHere ? null : 'The organiser is not yet approved for this category.',
+          ]
+            .filter(Boolean)
+            .join(' ') || null,
         coverImage: input.coverImage || null,
         gallery: JSON.stringify(input.gallery ?? []),
         videoUrl: input.videoUrl || null,
@@ -684,6 +721,7 @@ experiencesMember.post(
       id: activity.id,
       status: activity.status,
       reviewLevel: activity.reviewLevel,
+      organiserApproved: approvedHere,
       message: enhanced
         ? 'Thank you — your submission needs enhanced review because it is large or paid. The team will contact you to verify the details before anything is published.'
         : 'Thank you — the Enhakkore team will review your activity before it is published. You can follow it under My Experiences.',
@@ -705,7 +743,7 @@ experiencesMember.get(
       prisma.eventRegistration.findMany({ where: { userId }, include: { event: true }, orderBy: { createdAt: 'desc' } }),
       prisma.tournamentEntry.findMany({ where: { captainId: userId }, include: { tournament: { include: { game: true } }, members: { select: { playerName: true } } } }),
       prisma.tournamentTeamMember.findMany({ where: { userId }, include: { entry: { include: { tournament: { include: { game: true } } } } } }),
-      prisma.communityMember.findMany({ where: { userId }, include: { community: true } }),
+      prisma.communityMember.findMany({ where: { userId, status: { not: 'DECLINED' } }, include: { community: true } }),
       prisma.enquiry.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 50 }),
       prisma.activity.findMany({ where: { organiserUserId: userId }, orderBy: { createdAt: 'desc' } }),
       prisma.savedItem.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 50 }),
@@ -725,7 +763,7 @@ experiencesMember.get(
         ...entries.filter((row) => row.teamName).map((row) => ({ teamName: row.teamName, tournament: row.tournament.title, href: `/experiences/gaming/${row.tournament.slug}`, captain: true, inviteCode: row.inviteCode, members: row.members.map((m) => m.playerName) })),
         ...teams.map((row) => ({ teamName: row.entry.teamName, tournament: row.entry.tournament.title, href: `/experiences/gaming/${row.entry.tournament.slug}`, captain: false, inviteCode: null, members: [] })),
       ],
-      communities: communities.map((row) => ({ name: row.community.name, href: `/experiences/communities/${row.community.slug}`, role: row.role })),
+      communities: communities.map((row) => ({ name: row.community.name, href: `/experiences/communities/${row.community.slug}`, role: row.role, status: row.status })),
       eventPlans: enquiries.filter((row) => row.type === 'EVENT_PLAN').map((row) => ({ reference: row.reference, status: row.status, createdAt: row.createdAt, message: row.message })),
       published: published.map((row) => ({ title: row.title, href: `/activities/${row.slug}`, status: row.status, startsAt: row.startsAt })),
       savedCount: saved.length,
