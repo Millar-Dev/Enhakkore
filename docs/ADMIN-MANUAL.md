@@ -480,6 +480,76 @@ assistant never verifies payments, refunds, deletes records or changes staff
 permissions. It needs an Anthropic API key (`ANTHROPIC_API_KEY`) on the API; until then
 it says it is not connected and does nothing.
 
+## 38. Your Super Admin account: sign-in, setup and recovery
+
+- **Sign in:** https://enhakkore-one.vercel.app/admin/login (password, then the
+  6-digit code once two-factor is on).
+- **First setup (once):** with `SETUP_TOKEN` set on the API, open `/admin/setup`,
+  enter the token, your name, email and a 12+ character password. Setup then closes
+  for good. Delete `SETUP_TOKEN` from Render afterwards. Turn on two-factor at
+  `/admin/two-factor`.
+- **Forgot the password:** `/forgot-password` works once email is connected. Until
+  then: in Render → API service → Environment add `OWNER_RECOVERY_TOKEN` (24+ random
+  characters), wait for the redeploy, open `/admin/recover`, enter the token, your
+  email and a new password (tick the box if you also lost your authenticator).
+  Every session is signed out and the recovery is audited. Delete the variable after.
+
+## 39. Team accounts and roles
+
+Menu → **People & settings → Team & permissions**. Accounts are invitation-only:
+**Give someone access** → email, name, one or more **roles** (permissions add up).
+A new person gets a one-time link (72 h) to choose their own password — no password
+is ever shown to you. Copy the link and send it privately (it is emailed too once email
+is connected). Change roles with **Roles ▾**, issue a new **Password link** (24 h),
+or **Revoke access**. Built-in roles include General Admin, Travel, Gaming, Community,
+Content, Impact and Finance Managers and Moderator. Everything is in Security & audit.
+
+Members who cannot receive the reset email: **Member management** → open the member →
+**Password reset link** (2 hours, recorded).
+
+## 40. Gaming
+
+Menu → **Experiences → Gaming**. Member tournaments are published immediately — you
+monitor, you do not pre-approve.
+- **Tournaments:** filter *Not checked* / *Restricted*. Open one to see the organiser's
+  phone and email (viewing is recorded), **Add note**, **Log contact**, **Request
+  information** (sent to the organiser), **Mark as checked**, **Restrict registration**,
+  **Hide**, **Suspend** (a reason is required and shown to the organiser), **Restore**,
+  or **Suspend organiser's account**. Results and fixtures can be corrected from the
+  tournament page (the organiser tools appear for the gaming team).
+- **Esports organisers:** review history, authority and documents (private; opening is
+  recorded); **Verify (12 months)**, **Request more information**, **Reject**,
+  **Suspend**, **Mark expired**. Only verified organisers' esports tournaments show the
+  ✓ badge; prize claims are always shown as "stated by the organiser".
+- **Sessions**, **Squads & guilds** (hide / suspend / restore), **Disputes** (players
+  dispute a result; resolve or dismiss), **Invitations** (counts only — no locations).
+- **Game directory:** Categories of kind "Game" (button on the Overview tab).
+- Entry fees are not available: every tournament is free to enter.
+
+## 41. Communities and study groups created by members
+
+They go live immediately; you are notified. **Community & study-group moderation**:
+**Restrict** (no new members), **Suspend** (hidden while you look into it), **Restore**,
+**Creator contact** (recorded). Private groups are joined by invitation link or
+password; the password is stored scrambled — nobody can read it, the group admin can
+reset it.
+
+## 42. Reported messages (restricted)
+
+Menu → **Today → Reported messages**. Private messages are encrypted and the team
+never browses inboxes. Open a *reported* message with a written reason (recorded) to
+see it and a few around it; then **Remove message & close**, **Remove & suspend
+author**, or **Dismiss**. **Messaging settings:** how long members can unsend, and how
+many messages a request may contain before it is accepted. Staff reading a group chat
+they are not part of is also recorded.
+
+## 43. Nia (member assistant)
+
+Menu → **Content → Nia AI**: switch Nia, text and voice on/off, the daily question limit
+per member, and which areas she searches; usage counts (no question text). Conversation
+needs `ANTHROPIC_API_KEY` on the API (optional `NIA_MODEL`); without it Nia searches and
+lists real results only. Voice uses the member's browser (not every browser can).
+
 ## 33. Troubleshooting
 
 | Problem | What to do |
@@ -493,6 +563,9 @@ it says it is not connected and does nothing.
 | A member says their pass QR "does not work" | Ask them to reopen the pass: if the date or place changed, a new code was issued. Otherwise check in by reference. |
 | A customer cannot send a hotel request | They must be signed in — the form shows Sign in / Create account. |
 | A traveller uploaded a receipt but is not confirmed | Correct: approve it under Payments & receipts after checking the money arrived. |
+| I cannot sign in to the control centre | Section 38: setup, or recovery with OWNER_RECOVERY_TOKEN. |
+| Pages are slow the first time | The API is on Render's free plan and sleeps after 15 minutes; the first visit wakes it (up to a minute). The Starter plan removes this. |
+| A member was logged out of private messages history | Never change JWT_SECRET unless MESSAGE_ENCRYPTION_KEY is set. |
 | The assistant says “not connected” | Add ANTHROPIC_API_KEY to the API service on Render and redeploy. |
 | Camera scanning does not start | That phone's browser cannot read QR codes. Type the reference instead, or use Chrome on Android. |
 | Someone needs to be removed quickly | Security & audit → sign them out everywhere; Team & permissions → revoke. |

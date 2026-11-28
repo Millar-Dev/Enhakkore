@@ -103,7 +103,7 @@ export default function NotificationsPage() {
       <div className="mx-auto max-w-2xl">
         <div className="grid grid-cols-3 gap-1 rounded-full border border-line bg-white p-1" role="tablist" aria-label="Notifications and activity">
           {(['inbox', 'activity', 'settings'] as const).map((key) => (
-            <button key={key} type="button" role="tab" aria-selected={section === key} onClick={() => setSection(key)} className={`h-10 rounded-full text-sm font-semibold ${section === key ? 'bg-[#06152a] text-white' : 'text-ink-soft'}`}>
+            <button key={key} type="button" role="tab" aria-selected={section === key} onClick={() => setSection(key)} className={`min-h-10 rounded-full px-1 py-1 text-sm font-semibold leading-tight [overflow-wrap:anywhere] ${section === key ? 'bg-[#06152a] text-white' : 'text-ink-soft'}`}>
               {key === 'inbox' ? `Notifications${counts.unread ? ` (${counts.unread})` : ''}` : key === 'activity' ? 'Activity' : 'Settings'}
             </button>
           ))}
@@ -140,8 +140,8 @@ export default function NotificationsPage() {
                   </button>
                   <span className="flex shrink-0 flex-col items-end gap-1 text-xs">
                     {!note.read && <span className="h-2.5 w-2.5 rounded-full bg-clay-400" aria-label="Unread" />}
-                    <button type="button" onClick={() => mark([note.id], !note.read)} className="text-ink-faint underline">{note.read ? 'Unread' : 'Read'}</button>
-                    <button type="button" onClick={() => archive([note.id], !note.archived)} className="text-ink-faint underline">{note.archived ? 'Restore' : 'Archive'}</button>
+                    <button type="button" onClick={() => mark([note.id], !note.read)} className="inline-flex min-h-10 items-center px-1 text-ink-faint underline">{note.read ? 'Unread' : 'Read'}</button>
+                    <button type="button" onClick={() => archive([note.id], !note.archived)} className="inline-flex min-h-10 items-center px-1 text-ink-faint underline">{note.archived ? 'Restore' : 'Archive'}</button>
                   </span>
                 </li>
               ))}

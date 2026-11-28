@@ -135,7 +135,7 @@ export default async function GamingPage({ searchParams }: { searchParams: Promi
             { href: '/account/gaming?tab=friends&view=find', label: 'Find players', icon: '📍' },
             { href: '/experiences/gaming/organisers/apply', label: 'Esports organisers', icon: '✓' },
           ].map((item) => (
-            <Link key={item.href} href={item.href} className="flex min-h-12 items-center gap-2 rounded-xl border border-line px-3 text-sm font-semibold text-ink hover:border-acacia-600">
+            <Link key={item.href} href={item.href} className="flex min-h-12 items-center gap-2 rounded-xl border border-line px-3 py-2 text-sm font-semibold leading-tight text-ink [overflow-wrap:anywhere] hover:border-acacia-600">
               <span aria-hidden>{item.icon}</span>{item.label}
             </Link>
           ))}

@@ -66,7 +66,7 @@ function Overview({ onTab }: { onTab: (tab: Tab) => void }) {
         {tiles.map((tile) => (
           <button key={tile.label} type="button" onClick={() => onTab(tile.tab)} className="rounded-2xl border border-line bg-white p-4 text-left">
             <p className="text-3xl font-bold text-[#06172b]">{tile.value ?? '…'}</p>
-            <p className="mt-1 text-sm text-ink-muted">{tile.label}</p>
+            <p className="mt-1 text-sm text-ink-muted [overflow-wrap:anywhere]">{tile.label}</p>
           </button>
         ))}
       </div>

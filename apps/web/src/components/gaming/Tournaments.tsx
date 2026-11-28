@@ -54,9 +54,9 @@ export function TournamentDiscover() {
   return (
     <div className="shell py-8 md:py-12">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <Link href="/experiences/gaming" className="kicker inline-flex min-h-10 items-center">← Gaming Hub</Link>
-          <h1 className="text-h1">Tournaments</h1>
+          <h1 className="text-h1 [overflow-wrap:anywhere]">Tournaments</h1>
           <p className="mt-1 text-sm text-ink-muted">Free to enter. Member tournaments are published straight away and monitored by the Enhakkore team.</p>
         </div>
         <Link href="/experiences/gaming/tournaments/new" className="inline-flex h-11 items-center rounded-full bg-clay-400 px-5 text-sm font-bold text-acacia-700">+ Create tournament</Link>
@@ -129,7 +129,7 @@ export function CreateTournamentForm() {
   if (status === 'anonymous') {
     return (
       <div className="shell max-w-xl py-12 text-center">
-        <h1 className="text-h1">Create a tournament</h1>
+        <h1 className="text-h1 [overflow-wrap:anywhere]">Create a tournament</h1>
         <p className="mt-3 text-ink-muted">Sign in or create a free account to publish a tournament.</p>
         <div className="mt-6 flex justify-center gap-2">
           <Link href="/signin?next=/experiences/gaming/tournaments/new" className="inline-flex h-12 items-center rounded-full bg-clay-400 px-6 font-bold text-acacia-700">Sign in</Link>
@@ -166,7 +166,7 @@ export function CreateTournamentForm() {
   return (
     <div className="shell max-w-2xl py-8 md:py-12">
       <Link href="/account/gaming" className="kicker inline-flex min-h-10 items-center">← Gaming Hub</Link>
-      <h1 className="text-h1">Create a tournament</h1>
+      <h1 className="text-h1 [overflow-wrap:anywhere]">Create a tournament</h1>
       <p className="mt-2 text-sm text-ink-muted">Your tournament is published as soon as you submit it. The Enhakkore team sees it straight away and may contact you on the phone number below. Entry is free — paid entry is not available yet.</p>
       <form onSubmit={submit} className="mt-6 grid gap-5" noValidate>
         {error && <p role="alert" className="rounded-xl bg-danger-soft p-3 text-sm text-danger">{error}</p>}

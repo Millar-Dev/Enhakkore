@@ -66,3 +66,18 @@ services:
         sync: false
       - key: ASSISTANT_MODEL
         value: claude-opus-5-5
+      # Owner access recovery when email is not connected. Set only when needed
+      # (24+ random characters), use /admin/recover, then delete it.
+      - key: OWNER_RECOVERY_TOKEN
+        sync: false
+      # Encryption key for private messages (32 bytes, base64). Optional: without
+      # it a key is derived from JWT_SECRET — then never change JWT_SECRET, or
+      # existing private messages can no longer be read.
+      - key: MESSAGE_ENCRYPTION_KEY
+        sync: false
+      # Browser push (VAPID). Optional: without them a key pair is generated once
+      # and kept in the database.
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false

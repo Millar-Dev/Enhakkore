@@ -49,7 +49,7 @@ export default function AdminNiaPage() {
                 <legend className="font-semibold">What Nia may search</legend>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {data?.categories.map((c) => (
-                    <label key={c.key} className={`chip cursor-pointer ${form.categories.includes(c.key) ? 'chip-active' : ''}`}>
+                    <label key={c.key} className={`chip h-auto min-h-10 max-w-full cursor-pointer whitespace-normal py-1.5 ${form.categories.includes(c.key) ? 'chip-active' : ''}`}>
                       <input type="checkbox" className="sr-only" checked={form.categories.includes(c.key)} onChange={() => setForm((f) => (f ? { ...f, categories: f.categories.includes(c.key) ? f.categories.filter((k) => k !== c.key) : [...f.categories, c.key] } : f))} />
                       {c.label}
                     </label>

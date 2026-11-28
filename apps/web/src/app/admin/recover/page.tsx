@@ -30,7 +30,7 @@ export default function RecoverPage() {
             <Link href="/admin/login" className="inline-flex h-11 items-center rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">Sign in</Link>
           </div>
         ) : !open ? (
-          <div className="mt-4 space-y-3 text-[0.9375rem] text-ink-soft">
+          <div className="mt-4 space-y-3 text-[0.9375rem] text-ink-soft [overflow-wrap:anywhere]">
             <p>Recovery is not switched on. To use it, add <strong>OWNER_RECOVERY_TOKEN</strong> (a random secret of 24+ characters) to the API service’s environment on Render, wait for it to redeploy, then reload this page.</p>
             <p>If email is connected, use <Link href="/forgot-password" className="font-semibold underline">Forgot password</Link> instead.</p>
           </div>

@@ -124,9 +124,9 @@ export default function MessagesPage() {
           </button>
         </div>
 
-        <div className="mt-4 flex gap-2" role="tablist" aria-label="Inbox">
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-1 no-scrollbar" role="tablist" aria-label="Inbox">
           {BOXES.map((item) => (
-            <button key={item.key} type="button" role="tab" aria-selected={box === item.key} onClick={() => setBox(item.key)} className={`chip ${box === item.key ? 'chip-active' : ''}`}>
+            <button key={item.key} type="button" role="tab" aria-selected={box === item.key} onClick={() => setBox(item.key)} className={`chip shrink-0 ${box === item.key ? 'chip-active' : ''}`}>
               {item.label}
               {item.key === 'requests' && requests > 0 && <span className="ml-1 rounded-full bg-clay-400 px-1.5 text-[0.6875rem] font-bold text-acacia-700">{requests}</span>}
             </button>

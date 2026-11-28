@@ -140,7 +140,7 @@ export function DashboardShell({
       <main id="main" className={cx(wide ? 'mx-auto w-full max-w-[96rem] px-5 md:px-8' : 'shell', 'py-5 md:py-10')}>
         {(title || action) && (
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            {title && <h1 className="text-h1">{title}</h1>}
+            {title && <h1 className="text-h1 min-w-0 [overflow-wrap:anywhere]">{title}</h1>}
             {action}
           </div>
         )}

@@ -63,7 +63,7 @@ export default async function StudyGroupsPage({ searchParams }: { searchParams: 
               ) : (
                 <Empty title="No study groups match yet" body="Start one for this subject and invite classmates." action={<Link href="/experiences/study-groups/new" className="inline-flex h-11 items-center rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">Create a study group</Link>} />
               )}
-              <Link href="/experiences/study-groups" className="mt-6 inline-block text-sm font-semibold text-acacia-700 underline">See all study groups</Link>
+              <Link href="/experiences/study-groups" className="mt-6 inline-flex min-h-10 items-center text-sm font-semibold text-acacia-700 underline">See all study groups</Link>
             </div>
           ) : (
           <>

@@ -164,6 +164,42 @@ Travel, Gaming, Communities and Search), and a navy-and-gold control centre.
 - Tested: 144 API tests (SQLite and PostgreSQL), 20 browser checks for R7 and 25 for
   R6, and a responsive audit of the new pages.
 
+## R8 — Account Centre phases 1A–1H
+
+- **Admin access:** `/admin/setup` (one-time, `SETUP_TOKEN` — set for you on Render),
+  `/admin/login`, `/admin/recover` (`OWNER_RECOVERY_TOKEN`). Invitation-only team
+  accounts with several roles each; password links instead of shown passwords.
+- **Accounts:** date of birth at sign-up (13+; under-18s hidden from discovery, no
+  nearby features, messages only with friends), signed-in devices, privacy switches.
+- **My Messages:** friends, or mutual follows with a request the recipient accepts;
+  text, photos, videos, documents, links, replies, reactions, read receipts (both must
+  allow), search, shared media, mute, archive, block, report, delete for me, unsend
+  (time limit set by the team). Encrypted at rest. Voice notes not in private messages.
+- **Communities & study groups:** members create and publish immediately; public join
+  instantly; private by invitation link or password (hashed); sessions with RSVP and
+  reminders; notes, files and links; meaning-aware search ("human heart" → cardiology).
+  My Study Groups is the conversation inbox with Discover and a gold +.
+- **Gaming Hub:** My Tournaments and Game Friends. Tournaments publish immediately with
+  category and organiser type; single/double elimination, league, round-robin with
+  fixtures, results, standings and disputes; esports organiser verification; gaming
+  sessions; squads inside guilds, teams; friend requests; nearby invitations (adults who
+  opted in, 2 km, approximate positions only, atomic places, declines never shown);
+  friends invitations; outside links that return to the invitation after sign-up;
+  temporary chats that block coordinates and map pins.
+- **My Group Chats** (communities, study, teams, tournaments, temporary gaming chats),
+  **Trip Group Chats** kept separate.
+- **Notifications & Activity Centre:** All/Unread/Messages/Requests/Updates/Archived,
+  search, mark read, archive, no duplicates, browser push, quiet hours, per-type
+  settings; Activity history.
+- **Nia:** navy-and-gold orb (no face), history (new, rename, reopen, delete, clear, off),
+  voice where the browser supports it, real records only, actions confirmed by the member.
+- **Admin:** Gaming, Reported messages, Nia, Community moderation, Team roles.
+- **Speed:** compressed API responses, short public caching, early connection and a
+  background wake-up of the API, and members are no longer signed out when the API is
+  slow to wake.
+- **Tested:** 159 API tests (SQLite and PostgreSQL with migrations), 44 browser checks
+  of the new journeys, 504 layout runs of the new pages.
+
 ## 3. What still needs you (approval, accounts or decisions)
 
 1. **Create your founder (Super Admin) account — once.** No default admin
@@ -321,6 +357,14 @@ name ("WhatsApp", "prices", "expenses").
   WhatsApp Business Platform is connected; emails are only password resets.
 - Currency conversion is not done — every total is shown per currency, and trip
   payments are accepted only in the trip's own currency.
+- Render free plan: the API sleeps after 15 minutes idle; the first request after that
+  can take up to a minute. Upgrading the API service to Starter removes this.
+- Background jobs (session reminders, expiring invitations) run while the API is awake;
+  invitations also expire when opened, so nothing depends on the timer alone.
+- Semantic search uses a built-in concept map, not an AI embedding service.
+- Chat photos/files are stored with unguessable addresses (public CDN), not encrypted;
+  message text is encrypted at rest. Encryption is server-side, not end-to-end.
+- Google/Apple sign-in, SMS/WhatsApp to members and paid tournaments are not available.
 - Trip deposits are verified by hand from uploaded receipts; a receipt never confirms
   a booking by itself.
 - No new Tanzanian businesses were researched in R7; existing listings are unchanged

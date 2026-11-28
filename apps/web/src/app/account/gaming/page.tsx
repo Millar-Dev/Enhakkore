@@ -42,8 +42,8 @@ export default function GamingHubPage() {
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-clay-400">Gaming Hub</p>
           <p className="mt-1 text-xl font-bold">Compete, connect and play.</p>
           <div className="mt-4 grid grid-cols-2 gap-2" role="tablist" aria-label="Gaming Hub">
-            <button type="button" role="tab" aria-selected={tab === 'tournaments'} onClick={() => setTab('tournaments')} className={`min-h-14 rounded-xl px-3 text-left text-sm font-bold ${tab === 'tournaments' ? 'bg-clay-400 text-acacia-700' : 'bg-white/10 text-white'}`}>🏆 My Tournaments</button>
-            <button type="button" role="tab" aria-selected={tab === 'friends'} onClick={() => setTab('friends')} className={`min-h-14 rounded-xl px-3 text-left text-sm font-bold ${tab === 'friends' ? 'bg-clay-400 text-acacia-700' : 'bg-white/10 text-white'}`}>👥 Game Friends</button>
+            <button type="button" role="tab" aria-selected={tab === 'tournaments'} onClick={() => setTab('tournaments')} className={`min-h-14 rounded-xl px-3 py-2 text-left text-sm font-bold leading-tight [overflow-wrap:anywhere] ${tab === 'tournaments' ? 'bg-clay-400 text-acacia-700' : 'bg-white/10 text-white'}`}>🏆 My Tournaments</button>
+            <button type="button" role="tab" aria-selected={tab === 'friends'} onClick={() => setTab('friends')} className={`min-h-14 rounded-xl px-3 py-2 text-left text-sm font-bold leading-tight [overflow-wrap:anywhere] ${tab === 'friends' ? 'bg-clay-400 text-acacia-700' : 'bg-white/10 text-white'}`}>👥 Game Friends</button>
           </div>
         </div>
         <div className="mt-5">{tab === 'tournaments' ? <MyTournaments view={viewParam} /> : <GameFriends initialView={viewParam} />}</div>

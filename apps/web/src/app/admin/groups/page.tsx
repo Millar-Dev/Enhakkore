@@ -49,15 +49,15 @@ export default function AdminGroupsPage() {
             <li key={row.id} className="rounded-xl border border-line p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span>
-                  <Link href={`/experiences/communities/${row.slug}`} target="_blank" className="font-semibold underline">{row.name}</Link>
+                  <Link href={`/experiences/communities/${row.slug}`} target="_blank" className="inline-flex min-h-10 items-center px-1 font-semibold underline">{row.name}</Link>
                   <span className="block text-xs text-ink-muted">{row.kind === 'STUDY_GROUP' ? 'Study group' : 'Community'} · {row.accessType === 'PRIVATE' ? 'private' : row.accessType === 'PAID' ? 'paid' : 'public'} · {row.status.toLowerCase()}{row.official ? ' · official' : ''}{row.isDemo ? ' · demo' : ''}</span>
                 </span>
                 <span className="flex flex-wrap gap-2 text-xs">
-                  <button type="button" onClick={() => showContact(row)} className="underline">Creator contact</button>
-                  <Link href={`/admin/r/communities/${row.id}`} className="underline">Edit</Link>
-                  {row.status !== 'RESTRICTED' && row.status !== 'SUSPENDED' && <button type="button" onClick={() => moderate(row, 'restrict')} className="underline">Restrict</button>}
-                  {row.status !== 'SUSPENDED' && <button type="button" onClick={() => moderate(row, 'suspend')} className="text-danger underline">Suspend</button>}
-                  {(row.status === 'RESTRICTED' || row.status === 'SUSPENDED') && <button type="button" onClick={() => moderate(row, 'restore')} className="font-semibold underline">Restore</button>}
+                  <button type="button" onClick={() => showContact(row)} className="inline-flex min-h-10 items-center px-1 underline">Creator contact</button>
+                  <Link href={`/admin/r/communities/${row.id}`} className="inline-flex min-h-10 items-center px-1 underline">Edit</Link>
+                  {row.status !== 'RESTRICTED' && row.status !== 'SUSPENDED' && <button type="button" onClick={() => moderate(row, 'restrict')} className="inline-flex min-h-10 items-center px-1 underline">Restrict</button>}
+                  {row.status !== 'SUSPENDED' && <button type="button" onClick={() => moderate(row, 'suspend')} className="inline-flex min-h-10 items-center px-1 text-danger underline">Suspend</button>}
+                  {(row.status === 'RESTRICTED' || row.status === 'SUSPENDED') && <button type="button" onClick={() => moderate(row, 'restore')} className="inline-flex min-h-10 items-center px-1 font-semibold underline">Restore</button>}
                 </span>
               </div>
               {contact?.id === row.id && (

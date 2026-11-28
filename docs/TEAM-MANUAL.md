@@ -120,6 +120,15 @@ Private and paid communities send join **requests**. Open the community → **Me
 is not switched on: approve only after the payment has been arranged and recorded by
 finance. Membership fees are separate from the cost of any event.
 
+## 7b. Gaming and reported messages (Gaming Manager, Moderator)
+
+- New member tournaments appear under **Gaming → Tournaments → Not checked**. Look at
+  the rules and prize claims, contact the organiser if something is unclear (log it),
+  then **Mark as checked**. Restrict, hide or suspend only with a reason.
+- Esports applications: judge credible identity, authority and history; independent
+  organisers are not refused for lacking company registration.
+- Reported private messages: open only with a reason; every opening is recorded.
+
 ## 8. Privacy rules for everyone
 
 - Members are shown by **@username**. Phone numbers and emails are for the team only
