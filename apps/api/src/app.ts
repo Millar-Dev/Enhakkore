@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
@@ -22,6 +23,8 @@ export function createApp() {
       credentials: true,
     }),
   );
+  // Gzip responses: listing pages send large JSON, and most visitors are on mobile data.
+  app.use(compression({ threshold: 1024 }));
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true }));
 
@@ -53,6 +56,18 @@ export function createApp() {
     fs.mkdirSync(publicDir, { recursive: true });
     app.use('/uploads', express.static(publicDir, { maxAge: '1y', index: false, dotfiles: 'deny' }));
   }
+
+  // Public, signed-out reads can be reused by the browser for a short while.
+  // Anything personal (a signed-in request) is never cached.
+  app.use('/api/public', (req, res, next) => {
+    if (req.method === 'GET' && !req.headers.authorization) res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=300');
+    else res.setHeader('Cache-Control', 'private, no-store');
+    next();
+  });
+  app.get('/api/health', (_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
 
   app.use('/api', apiRouter);
 

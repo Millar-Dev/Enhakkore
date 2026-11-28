@@ -71,6 +71,20 @@ export default function MembersPage() {
                     >
                       {detail.data.user.status === 'ACTIVE' ? 'Suspend account' : 'Reactivate account'}
                     </button>
+                    <button
+                      className={btn.secondary}
+                      onClick={async () => {
+                        if (!window.confirm('Create a one-time password link for this member? Use it when they cannot receive the reset email. Send it only to them, privately. This is recorded.')) return;
+                        try {
+                          const result = await api.post<{ link: string; expiresAt: string }>(`/cc/people/people/${openId}/password-link`);
+                          setError(`One-time link (expires ${new Date(result.expiresAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}): ${result.link}`);
+                        } catch (caught) {
+                          setError(caught instanceof ApiError ? caught.message : 'Could not create a link.');
+                        }
+                      }}
+                    >
+                      Password reset link
+                    </button>
                   </div>
                 )}
                 {error && <p className="text-danger">{error}</p>}

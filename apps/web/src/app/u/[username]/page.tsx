@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PublicShell } from '@/components/layout/PublicShell';
 import { apiGet } from '@/lib/api';
+import { ProfileActions } from '@/components/public/ProfileActions';
 
 interface Card {
   name: string;
@@ -52,7 +52,7 @@ export default async function PublicCard({ params }: { params: Promise<{ usernam
               </ul>
             )}
             <p className="mt-5 text-xs text-ink-faint">Member since {new Date(card.memberSince).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</p>
-            <p className="mt-4 text-sm text-ink-muted"><Link href="/signin" className="font-semibold text-acacia-700 underline">Sign in</Link> to connect or invite them to an experience.</p>
+            <ProfileActions username={username} />
           </div>
         </article>
       </section>

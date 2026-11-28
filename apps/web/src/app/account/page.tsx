@@ -20,26 +20,28 @@ export default function AccountHome() {
   const { user, signOut } = useSession();
   const [applications, setApplications] = useState<Application[] | null>(null);
   const [unread, setUnread] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   useEffect(() => {
     api.get<Application[]>('/community/applications').then(setApplications).catch(() => setApplications([]));
     api
       .get<{ items: { read: boolean }[]; unread?: number }>('/me/notifications')
       .then((data) => setUnread(data.unread ?? data.items.filter((item) => !item.read).length))
       .catch(() => undefined);
+    api.get<{ counts: { unread: number } }>('/messages').then((data) => setUnreadMessages(data.counts.unread)).catch(() => undefined);
   }, []);
   const openApplications = (applications ?? []).filter((item) => !['CANCELLED', 'DECLINED', 'COMPLETED'].includes(item.status)).length;
 
   /** The Account Centre, in groups — counts only where they are real. */
-  const groups: { title: string; items: { href: string; label: string; icon: string; body: string; count?: number }[] }[] = [
+  const groups: { title: string; items: { href: string; label: string; icon: string; body: string; count?: number; badge?: string }[] }[] = [
     {
       title: 'Bookings & trips',
       items: [
         { href: '/account/enquiries', label: 'My reservations', icon: '🛎️', body: 'Hotel, restaurant and venue requests, with status and reference.' },
-        { href: '/account/enquiries#other', label: 'My booking requests', icon: '✉️', body: 'Trip requests, event plans and other enquiries.' },
-        { href: '/account/applications', label: 'My trips', icon: '🧭', body: 'Trip bookings, confirmation and remaining balance.', count: openApplications },
-        { href: '/account/applications', label: 'My trip payments', icon: '💳', body: 'Deposits, receipts and payment status.' },
+        { href: '/account/enquiries#other', label: 'My booking requests', icon: '✉️', body: 'Trip requests, event plans and other enquiries, with our replies.' },
+        { href: '/account/applications', label: 'My trips', icon: '🧭', body: 'Upcoming, active and completed trips, with status and itinerary.', count: openApplications },
+        { href: '/account/applications?view=payments', label: 'My trip payments', icon: '💳', body: 'Deposits, receipts, balances and payment status.' },
         { href: '/account/passes', label: 'My passes', icon: '🎟️', body: 'Enhakkore Pass for confirmed events, trips and reservations.' },
-        { href: '/account/saved', label: 'Wishlist', icon: '🔖', body: 'Saved trips, places, events and activities.' },
+        { href: '/account/saved', label: 'Wishlist', icon: '❤️', body: 'Saved trips, places, events and activities.' },
       ],
     },
     {
@@ -47,24 +49,26 @@ export default function AccountHome() {
       items: [
         { href: '/account/experiences', label: 'My experiences', icon: '📋', body: 'Upcoming and past experiences.' },
         { href: '/account/experiences#registrations', label: 'My registrations', icon: '📝', body: 'Activities, sessions, events and tournaments you registered for.' },
-        { href: '/account/experiences#communities', label: 'My communities', icon: '👥', body: 'Communities you belong to or asked to join.' },
-        { href: '/account/study-groups', label: 'My study groups', icon: '📚', body: 'Groups you run or belong to.' },
-        { href: '/account/experiences#teams', label: 'My teams', icon: '🎮', body: 'Gaming teams and squads.' },
+        { href: '/account/experiences#communities', label: 'My communities', icon: '👥', body: 'Communities you belong to.' },
+        { href: '/account/study-groups', label: 'My study groups', icon: '📚', body: 'Your study group conversations, Discover and create.' },
+        { href: '/account/gaming', label: 'Gaming Hub', icon: '🎮', body: 'My Tournaments and Game Friends.', badge: 'New' },
+        { href: '/account/gaming?tab=friends&view=squads', label: 'My teams', icon: '🛡️', body: 'Squads, guilds and teams.' },
         { href: '/account/experiences#plans', label: 'My event plans', icon: '🎉', body: 'Events you asked Enhakkore to plan.' },
       ],
     },
     {
-      title: 'Messages',
+      title: 'Messages & conversations',
       items: [
-        { href: '/account/chats', label: 'My messages', icon: '💬', body: 'Group chats for events, communities and study groups.' },
+        { href: '/account/messages', label: 'My messages', icon: '💬', body: 'Private one-to-one conversations.', count: unreadMessages },
+        { href: '/account/chats', label: 'My group chats', icon: '🗨️', body: 'Communities, study groups, teams and tournaments.' },
         { href: '/account/groups', label: 'Trip group chats', icon: '🚌', body: 'Chat with the people on your confirmed trips.' },
-        { href: '/account/notifications', label: 'My notifications', icon: '🔔', body: 'Updates, invitations and announcements.', count: unread },
+        { href: '/account/notifications', label: 'My notifications', icon: '🔔', body: 'Updates, requests, activity and notification settings.', count: unread },
       ],
     },
     {
       title: 'Host & organise',
       items: [
-        { href: '/experiences/host', label: 'Host & Organise', icon: '🏁', body: 'Apply as an organiser and submit experiences.' },
+        { href: '/experiences/host', label: 'Host & organise', icon: '🏁', body: 'Apply as an organiser and submit experiences.' },
         { href: '/account/hosting', label: 'Activities you host', icon: '🗂️', body: 'Approve people who asked to join.' },
         { href: '/account/scanner', label: 'Check-in scanner', icon: '📷', body: 'Check people in at the entrance.' },
       ],
@@ -73,10 +77,10 @@ export default function AccountHome() {
       title: 'Profile & settings',
       items: [
         { href: user?.username ? `/u/${user.username}` : '/account/profile', label: 'Profile', icon: '🪪', body: 'Your public profile card.' },
-        { href: '/account/profile', label: 'Edit profile', icon: '👤', body: 'Photo, cover, introduction and interests.' },
+        { href: '/account/profile', label: 'Edit profile', icon: '✏️', body: 'Photo, cover, introduction and interests.' },
         { href: '/account/profile#username', label: 'Username', icon: '@', body: 'Your public handle.' },
         { href: '/account/profile#privacy', label: 'Privacy settings', icon: '🛡️', body: 'Who sees each part of your profile.' },
-        { href: '/account/settings', label: 'Settings', icon: '⚙️', body: 'Notifications, Nearby and password.' },
+        { href: '/account/settings', label: 'Settings', icon: '⚙️', body: 'Password, devices and preferences.' },
         { href: '/faq', label: 'Help & support', icon: '❓', body: 'Questions, contact and WhatsApp support.' },
       ],
     },
@@ -106,6 +110,7 @@ export default function AccountHome() {
                     <Link href={item.href} className="flex min-h-14 items-center gap-3 px-5 text-[0.9375rem] font-medium text-ink hover:bg-sand">
                       <span className="w-6 text-center text-lg" aria-hidden>{item.icon}</span>
                       <span className="flex-1">{item.label}</span>
+                      {item.badge ? <span className="rounded-full bg-clay-400 px-2 text-[0.6875rem] font-bold leading-5 text-acacia-700">{item.badge}</span> : null}
                       {item.count ? <span className="min-w-6 rounded-full bg-clay-400 px-2 text-center text-xs font-bold leading-6 text-acacia-700">{item.count}</span> : null}
                       <span className="text-ink-faint" aria-hidden>›</span>
                     </Link>
@@ -160,7 +165,7 @@ export default function AccountHome() {
                   <Link key={tile.label} href={tile.href} className="card-lift flex gap-3 rounded-xl border border-line bg-white p-5">
                     <span className="text-xl" aria-hidden>{tile.icon}</span>
                     <span>
-                      <span className="flex items-center gap-2 text-lg font-bold text-acacia-700">{tile.label}{tile.count ? <span className="rounded-full bg-clay-400 px-2 text-xs leading-5 text-acacia-700">{tile.count}</span> : null}</span>
+                      <span className="flex items-center gap-2 text-lg font-bold text-acacia-700">{tile.label}{tile.badge ? <span className="rounded-full bg-clay-400 px-2 text-xs leading-5 text-acacia-700">{tile.badge}</span> : null}{tile.count ? <span className="rounded-full bg-clay-400 px-2 text-xs leading-5 text-acacia-700">{tile.count}</span> : null}</span>
                       <span className="mt-1 block text-sm text-ink-muted">{tile.body}</span>
                     </span>
                   </Link>

@@ -586,3 +586,12 @@ export async function sendSessionReminders() {
     }
   }
 }
+
+/** Categories a member can file a community under. */
+groupsPublic.get(
+  '/groups/categories',
+  route(async (_req, res) => {
+    const rows = await prisma.category.findMany({ where: { kind: 'ACTIVITY', status: 'PUBLISHED' }, select: { id: true, name: true, section: true }, orderBy: [{ section: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }], take: 300 });
+    res.json(rows);
+  }),
+);

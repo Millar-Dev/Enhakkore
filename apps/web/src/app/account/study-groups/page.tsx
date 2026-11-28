@@ -1,40 +1,104 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { DashboardShell, MEMBER_ROLES, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
-import { useApi } from '@/lib/useApi';
+import { ApiError, api } from '@/lib/api';
 
-interface Row { id: string; slug: string; name: string; subject: string | null; topic: string | null; role: string; status: string; private: boolean; memberCount: number }
+interface Group {
+  id: string;
+  slug: string;
+  name: string;
+  subject: string | null;
+  coverImage: string | null;
+  private: boolean;
+  role: string;
+  memberCount: number;
+  conversationId: string | null;
+  lastMessage: { preview: string; author: string; createdAt: string } | null;
+  unread: number;
+}
 
-/** The study groups the member runs, belongs to, or asked to join. */
-export default function MyStudyGroups() {
-  const { data, error } = useApi<{ items: Row[] }>('/community/study-groups/mine');
+function when(iso: string) {
+  const date = new Date(iso);
+  return date.toDateString() === new Date().toDateString() ? date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+/**
+ * Account Centre → My Study Groups: the member's study-group conversations
+ * (not the directory). Search at the top, Discover at the top right, and a
+ * gold + to start a group.
+ */
+export default function MyStudyGroupsPage() {
+  const [q, setQ] = useState('');
+  const [items, setItems] = useState<Group[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      api
+        .get<{ items: Group[] }>(`/community/groups/inbox?kind=STUDY_GROUP&q=${encodeURIComponent(q)}`)
+        .then((data) => setItems(data.items))
+        .catch((caught) => setError(caught instanceof ApiError ? caught.message : 'Could not load your groups.'));
+    }, q ? 250 : 0);
+    return () => window.clearTimeout(timer);
+  }, [q]);
+
   return (
-    <DashboardShell nav={TRAVELLER_NAV} allow={MEMBER_ROLES} title="My study groups">
-      <div className="flex flex-wrap gap-2">
-        <Link href="/experiences/study-groups/new" className="inline-flex h-11 items-center rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">＋ Create a study group</Link>
-        <Link href="/experiences/study-groups" className="inline-flex h-11 items-center rounded-full border border-line-strong bg-white px-5 text-sm font-semibold text-acacia-700">Find a group</Link>
+    <DashboardShell
+      nav={TRAVELLER_NAV}
+      allow={MEMBER_ROLES}
+      title="My Study Groups"
+      action={<Link href="/experiences/study-groups" className="inline-flex h-10 items-center gap-1 rounded-full border border-acacia-600/30 bg-white px-4 text-sm font-semibold text-acacia-700">⌕ Discover</Link>}
+    >
+      <div className="relative mx-auto max-w-2xl pb-24">
+        {/* Phones: Discover sits at the top right of the page as well. */}
+        <div className="mb-3 flex items-center justify-between md:hidden">
+          <h2 className="text-xl font-bold">My Study Groups</h2>
+          <Link href="/experiences/study-groups" className="inline-flex h-10 items-center gap-1 rounded-full border border-acacia-600/30 bg-white px-4 text-sm font-semibold text-acacia-700">⌕ Discover</Link>
+        </div>
+        <label className="block">
+          <span className="sr-only">Search your groups and conversations</span>
+          <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Search your groups and conversations…" className="h-11 w-full rounded-full border border-line bg-white px-4 text-[0.9375rem] outline-none focus:border-acacia-600" />
+        </label>
+        {error && <p className="mt-4 text-sm text-danger">{error}</p>}
+        <ul className="mt-4 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white">
+          {items === null ? <li className="p-4 text-sm text-ink-muted">Loading…</li> : items.length === 0 ? (
+            <li className="p-6 text-center text-sm text-ink-soft">
+              {q ? 'No groups match.' : 'You have not joined a study group yet.'}{' '}
+              <Link href="/experiences/study-groups" className="font-semibold text-acacia-700 underline">Discover study groups</Link> or start one with the + button.
+            </li>
+          ) : items.map((group) => (
+            <li key={group.id}>
+              <Link href={group.conversationId ? `/account/chats/${group.conversationId}` : `/experiences/communities/${group.slug}`} className="flex min-h-[4.5rem] items-center gap-3 px-4 py-3 hover:bg-sand">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#06152a] text-xl text-clay-400" aria-hidden>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {group.coverImage ? <img src={group.coverImage} alt="" className="h-full w-full object-cover" /> : '📚'}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="truncate font-semibold">{group.name}{group.private && <span className="ml-1 text-xs" aria-label="Private">🔒</span>}</span>
+                    {group.lastMessage && <span className="shrink-0 text-xs text-ink-muted">{when(group.lastMessage.createdAt)}</span>}
+                  </span>
+                  <span className="flex items-center justify-between gap-2">
+                    <span className={`truncate text-sm ${group.unread ? 'font-semibold text-ink' : 'text-ink-muted'}`}>
+                      {group.lastMessage ? `${group.lastMessage.author}: ${group.lastMessage.preview}` : `${group.memberCount} member${group.memberCount === 1 ? '' : 's'}${group.subject ? ` · ${group.subject}` : ''}`}
+                    </span>
+                    {group.unread > 0 && <span className="min-w-6 shrink-0 rounded-full bg-clay-400 px-2 text-center text-xs font-bold leading-6 text-acacia-700">{group.unread}</span>}
+                  </span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <Link
+          href="/experiences/study-groups/new"
+          aria-label="Create a study group"
+          className="fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] right-5 z-30 inline-flex h-14 w-14 items-center justify-center rounded-full bg-clay-400 text-3xl font-light text-acacia-700 shadow-[0_8px_24px_rgba(6,21,42,0.35)] md:bottom-8 md:right-8"
+        >
+          +
+        </Link>
       </div>
-      {error && <p className="mt-4 text-sm text-danger">{error}</p>}
-      {!data && !error && <p className="mt-4 text-sm text-ink-muted">Loading…</p>}
-      {data?.items.length === 0 && <p className="mt-6 text-sm text-ink-soft">You are not in any study group yet.</p>}
-      <ul className="mt-5 grid max-w-2xl gap-2">
-        {data?.items.map((row) => (
-          <li key={row.id} className="rounded-xl border border-line bg-white p-4 text-sm">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <Link href={`/experiences/communities/${row.slug}`} className="font-semibold text-ink hover:underline">{row.name}</Link>
-              <span className="rounded-full bg-sand px-2.5 py-0.5 text-xs font-bold text-acacia-700">{row.status === 'PENDING' ? 'Request sent' : row.role === 'ADMIN' ? 'Admin' : row.role === 'MODERATOR' ? 'Moderator' : 'Member'}</span>
-            </div>
-            <p className="text-xs text-ink-muted">{[row.subject, row.topic].filter(Boolean).join(' — ')} · {row.memberCount} member{row.memberCount === 1 ? '' : 's'}{row.private ? ' · private' : ''}</p>
-            {row.status === 'ACTIVE' && (
-              <div className="mt-2 flex gap-3 text-xs font-semibold">
-                <Link href={`/account/chats/open?type=COMMUNITY&id=${row.id}`} className="text-acacia-700">Open chat</Link>
-                {(row.role === 'ADMIN' || row.role === 'MODERATOR') && <Link href={`/experiences/communities/${row.slug}#manage`} className="text-acacia-700">Manage</Link>}
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
     </DashboardShell>
   );
 }

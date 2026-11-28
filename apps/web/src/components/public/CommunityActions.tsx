@@ -19,7 +19,12 @@ export function CommunityMembership({ slug, memberCount }: { slug: string; membe
   const [detail, setDetail] = useState<Detail | null>(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
+  const [password, setPassword] = useState('');
+  const [invite, setInvite] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  useEffect(() => {
+    setInvite(new URLSearchParams(window.location.search).get('invite'));
+  }, []);
   const load = useCallback(() => api.get<Detail>(`/public/communities/${slug}`).then(setDetail).catch(() => undefined), [slug]);
   useEffect(() => {
     if (status === 'authenticated') void load();
@@ -46,7 +51,7 @@ export function CommunityMembership({ slug, memberCount }: { slug: string; membe
           <p className="font-bold text-acacia-700">{access === 'PAID' ? 'Paid membership' : 'Private community'}</p>
           {access === 'PAID' && c?.membershipPrice != null && <p className="mt-1">{c.membershipCurrency ?? 'TZS'} {c.membershipPrice.toLocaleString()} {PERIOD[c.membershipPeriod ?? ''] ?? ''} — separate from the cost of any event.</p>}
           {access === 'PAID' && <p className="mt-1">Online payment is not switched on yet. Send a request; the community team will contact you about payment and approve your membership.</p>}
-          {access === 'PRIVATE' && <p className="mt-1">Members apply and the community team approves each one.</p>}
+          {access === 'PRIVATE' && <p className="mt-1">Join with an invitation link or the group password from its admin. Chat, members, files and sessions are visible to members only.</p>}
           {c?.membershipBenefits && <p className="mt-2 whitespace-pre-line"><strong>Members get:</strong> {c.membershipBenefits}</p>}
           {c?.membershipTerms && <details className="mt-2"><summary className="cursor-pointer font-semibold">Membership terms</summary><p className="mt-1 whitespace-pre-line">{c.membershipTerms}</p></details>}
         </div>
@@ -58,7 +63,11 @@ export function CommunityMembership({ slug, memberCount }: { slug: string; membe
         <p className="rounded-xl border border-line bg-white p-4 text-sm text-ink-soft">Your last request was not approved.</p>
       ) : (
         <>
-          {!isMember && access === 'PRIVATE' && (
+          {!isMember && access === 'PRIVATE' && !invite && (
+            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} maxLength={100} placeholder="Group password" aria-label="Group password" className="field w-full" autoComplete="off" />
+          )}
+          {!isMember && access === 'PRIVATE' && invite && <p className="rounded-xl bg-sand p-3 text-sm text-ink-soft">You have an invitation link for this group.</p>}
+          {!isMember && access === 'PAID' && (
             <textarea value={note} onChange={(event) => setNote(event.target.value)} maxLength={1000} rows={3} placeholder="Tell the community team a little about yourself" aria-label="Message to the community team" className="field w-full" />
           )}
           <button
@@ -67,7 +76,12 @@ export function CommunityMembership({ slug, memberCount }: { slug: string; membe
               setBusy(true);
               setNotice(null);
               try {
-                const result = await api.post<{ message?: string }>(`/community/communities/${slug}/${isMember ? 'leave' : 'join'}`, isMember ? {} : { message: note || undefined });
+                const result = isMember
+                  ? await api.post<{ message?: string }>(`/community/communities/${slug}/leave`, {})
+                  : access === 'PAID'
+                    ? await api.post<{ message?: string }>(`/community/communities/${slug}/join`, { message: note || undefined })
+                    : await api.post<{ message?: string; joined?: boolean }>(`/community/groups/${slug}/join`, access === 'PRIVATE' ? (invite ? { invite } : { password }) : {});
+                if (!isMember && access === 'PRIVATE') window.location.replace(`/experiences/communities/${slug}`);
                 if (!isMember && result.message && access !== 'FREE') setNotice(result.message);
               } catch (caught) {
                 setNotice(caught instanceof ApiError ? caught.message : 'That did not work.');
@@ -77,7 +91,7 @@ export function CommunityMembership({ slug, memberCount }: { slug: string; membe
             }}
             className={isMember ? 'h-12 w-full rounded-full border border-line-strong bg-white font-semibold text-ink' : 'h-12 w-full rounded-full bg-acacia-600 font-bold text-white'}
           >
-            {isMember ? 'Leave community' : access === 'FREE' ? 'Join community' : 'Request to join'}
+            {isMember ? 'Leave' : access === 'FREE' ? 'Join' : access === 'PRIVATE' ? (invite ? 'Join with invitation' : 'Join with password') : 'Request to join'}
           </button>
         </>
       )}

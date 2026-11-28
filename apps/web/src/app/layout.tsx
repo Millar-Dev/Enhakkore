@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { Cormorant_Garamond, Plus_Jakarta_Sans } from 'next/font/google';
 import { getSite } from '@/lib/site';
 import { SessionProvider } from '@/lib/session';
+import { ApiWarmup } from '@/components/site/ApiWarmup';
+import { API_URL } from '@/lib/api';
 import './globals.css';
 
 const jakarta = Plus_Jakarta_Sans({
@@ -55,6 +57,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to content
         </a>
+        {/* Open the connection to the API early: most pages talk to it straight away. */}
+        <link rel="preconnect" href={new URL(API_URL).origin} crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href={new URL(API_URL).origin} />
+        <ApiWarmup />
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>

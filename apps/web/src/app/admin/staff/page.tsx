@@ -44,9 +44,11 @@ export default function StaffPage() {
               event.preventDefault();
               const form = new FormData(event.currentTarget);
               try {
-                const result = await api.post<any>('/cc/people/staff', { email: String(form.get('email')), name: String(form.get('name') ?? '') || undefined, roleId: String(form.get('roleId')) });
+                const roleIds = form.getAll('roleIds').map(String);
+                if (roleIds.length === 0) { setNotice('Choose at least one role.'); return; }
+                const result = await api.post<any>('/cc/people/staff', { email: String(form.get('email')), name: String(form.get('name') ?? '') || undefined, roleIds });
                 setInvite(false);
-                setNotice(result.temporaryPassword ? `Account created for ${result.email}. One-time password: ${result.temporaryPassword} — give it to them privately; they should change it after signing in. It will not be shown again.` : `${result.email} now has access.`);
+                setNotice(result.invitationLink ? `Account created for ${result.email}. ${result.emailed ? 'An invitation email was sent. ' : ''}Invitation link (works once, for 72 hours — send it to them privately so they can choose their own password): ${result.invitationLink}` : `${result.email} now has access.`);
                 await staff.reload();
               } catch (caught) {
                 setNotice(caught instanceof ApiError ? Object.values(caught.fields)[0] ?? caught.message : 'Could not give access.');
@@ -55,7 +57,10 @@ export default function StaffPage() {
           >
             <input name="email" type="email" required placeholder="Their email" className="field" />
             <input name="name" placeholder="Their name (for a new account)" className="field" />
-            <select name="roleId" required className="field">{(roles.data?.roles ?? []).map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select>
+            <fieldset className="sm:col-span-3"><legend className="text-sm font-semibold">Roles (one or more — permissions combine)</legend>
+              <div className="mt-2 flex flex-wrap gap-2">{(roles.data?.roles ?? []).map((role) => <label key={role.id} className="flex min-h-10 items-center gap-2 rounded-full border border-line px-3 text-sm"><input type="checkbox" name="roleIds" value={role.id} /> {role.name}</label>)}</div>
+            </fieldset>
+            <p className="text-xs text-ink-muted sm:col-span-3">Team accounts are invitation-only. A new person gets a one-time link to choose their own password — no password is ever shown to you.</p>
             <div className="flex gap-2 sm:col-span-3"><button className={btn.primary}>Give access</button><button type="button" className={btn.secondary} onClick={() => setInvite(false)}>Cancel</button></div>
           </form>
         </Panel>
@@ -64,14 +69,27 @@ export default function StaffPage() {
         <ul className="divide-y divide-line text-sm">
           {(staff.data ?? []).map((person) => (
             <li key={person.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
-              <div><p className="font-semibold">{person.name} <span className="text-xs font-normal text-ink-muted">{person.email}</span></p><p className="text-xs text-ink-muted">{person.role === 'ADMIN' ? 'Owner — every permission' : person.adminRole?.name ?? 'No role'} · {person.activeSessions} active session{person.activeSessions === 1 ? '' : 's'} · last sign-in {person.lastLoginAt ? new Date(person.lastLoginAt).toLocaleDateString('en-GB') : 'never'}</p></div>
+              <div><p className="font-semibold">{person.name} <span className="text-xs font-normal text-ink-muted">{person.email}</span></p><p className="text-xs text-ink-muted">{person.role === 'ADMIN' ? 'Owner — every permission' : [person.adminRole?.name, ...(person.extraRoles ?? []).map((item: { role: { name: string } }) => item.role.name)].filter(Boolean).join(', ') || 'No role'} · {person.activeSessions} active session{person.activeSessions === 1 ? '' : 's'} · last sign-in {person.lastLoginAt ? new Date(person.lastLoginAt).toLocaleDateString('en-GB') : 'never'}</p></div>
               <div className="flex flex-wrap items-center gap-2">
                 {person.status !== 'ACTIVE' && <StatusPill status={person.status} />}
                 {owner && person.role === 'STAFF' && (
                   <>
-                    <select className="field h-10 w-48" defaultValue={person.adminRole?.id} onChange={async (event) => { await api.patch(`/cc/people/staff/${person.id}`, { roleId: event.target.value }); await staff.reload(); }}>
-                      {(roles.data?.roles ?? []).map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
-                    </select>
+                    <details className="relative">
+                      <summary className="flex h-10 cursor-pointer items-center rounded-full border border-line px-3 text-xs font-semibold">Roles ▾</summary>
+                      <div className="absolute right-0 z-10 mt-1 grid w-64 gap-1 rounded-xl border border-line bg-white p-3 shadow-lg">
+                        {(roles.data?.roles ?? []).map((role) => {
+                          const current = [person.adminRole?.id, ...(person.extraRoles ?? []).map((item: { role: { id: string } }) => item.role.id)].filter(Boolean) as string[];
+                          const has = current.includes(role.id);
+                          return (
+                            <label key={role.id} className="flex items-center gap-2 text-xs">
+                              <input type="checkbox" checked={has} onChange={async () => { const next = has ? current.filter((id) => id !== role.id) : [...current, role.id]; if (next.length === 0) { setNotice('Keep at least one role, or use Revoke access.'); return; } await api.patch(`/cc/people/staff/${person.id}`, { roleIds: next }); await staff.reload(); }} />
+                              {role.name}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </details>
+                    <button className={btn.secondary} onClick={async () => { try { const result = await api.post<{ link: string }>(`/cc/people/people/${person.id}/password-link`); setNotice(`One-time password link for ${person.name} (24 hours): ${result.link}`); } catch (caught) { setNotice(caught instanceof ApiError ? caught.message : 'Could not create a link.'); } }}>Password link</button>
                     <button className={btn.danger} onClick={async () => { if (window.confirm(`Revoke ${person.name}'s access to the control centre? They keep an ordinary member account.`)) { await api.patch(`/cc/people/staff/${person.id}`, { roleId: null }); await staff.reload(); } }}>Revoke access</button>
                   </>
                 )}

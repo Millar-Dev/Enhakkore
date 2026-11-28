@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Footer } from '@/components/site/Footer';
 import { Header } from '@/components/site/Header';
 import { FloatingWhatsApp } from '@/components/site/FloatingWhatsApp';
+import { NiaLauncher } from '@/components/nia/NiaLauncher';
 import { getSite, waHref, waNumbers } from '@/lib/site';
 import { MobileTabBar, MobileTabBarSpacer } from './MobileTabBar';
 
@@ -22,7 +23,7 @@ export async function PublicShell({
   transparentHeader?: boolean;
   footer?: boolean;
 }) {
-  const { settings, banners } = await getSite();
+  const { settings, banners, nia } = await getSite();
   const numbers = waNumbers(settings);
   const top = banners.filter((banner) => banner.placement === 'SITE_TOP').slice(0, 1);
   const overrides = [
@@ -67,6 +68,7 @@ export async function PublicShell({
       </main>
       {footer && <Footer settings={settings} />}
 
+      {nia?.enabled !== false && <NiaLauncher />}
       {numbers.length > 0 && (
         <FloatingWhatsApp href={waHref(settings, 'general')} label={`Chat with Enhakkore on WhatsApp (${numbers[0]!.display})`} />
       )}

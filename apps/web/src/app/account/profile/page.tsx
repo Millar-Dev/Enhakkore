@@ -93,6 +93,7 @@ export default function ProfilePage() {
               activityPrefs: [],
               profileVisibility: form.get('hidden') ? 'HIDDEN' : 'MEMBERS',
               profileFields: visibility,
+              ...(form.get('dateOfBirth') ? { dateOfBirth: String(form.get('dateOfBirth')) } : {}),
               ...(username.trim() && username.trim().toLowerCase() !== user.username ? { username: username.trim().toLowerCase() } : {}),
             });
             updateUser({ ...user, ...updated });
@@ -120,6 +121,11 @@ export default function ProfilePage() {
           </span>
         </label>
         <label className="grid gap-1 text-sm font-semibold text-ink-soft">Full name<input name="name" defaultValue={user.name} required className="field" /><span className="text-xs font-normal text-ink-muted">Seen by signed-in members and the organisers of things you join. Public visitors see your username.</span></label>
+        {user.dateOfBirth ? (
+          <p className="text-sm text-ink-muted">Date of birth saved — used only for age protections and never shown to others. Contact support to correct it.</p>
+        ) : (
+          <label className="grid gap-1 text-sm font-semibold text-ink-soft">Date of birth<input name="dateOfBirth" type="date" max={new Date(Date.now() - 13 * 365.25 * 86_400_000).toISOString().slice(0, 10)} className="field" /><span className="text-xs font-normal text-ink-muted">Needed for adult-only features such as nearby gaming. Never shown to other members, and can be set once.</span></label>
+        )}
         <label className="grid gap-1 text-sm font-semibold text-ink-soft">One-line introduction<input name="headline" defaultValue={user.headline ?? ''} maxLength={120} placeholder="Weekend hooper, always up for a hike" className="field" /></label>
         <label className="grid gap-1 text-sm font-semibold text-ink-soft">About you<textarea name="bio" defaultValue={user.bio ?? ''} maxLength={600} className="field" /></label>
         <CountryCity country={place.country} city={place.city} onChange={setPlace} />

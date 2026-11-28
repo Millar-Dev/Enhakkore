@@ -9,7 +9,8 @@ import { ApiError, REALTIME_URL, api, getToken } from '@/lib/api';
 import { uploadFile } from '@/lib/upload';
 import { useSession } from '@/lib/session';
 
-interface Message { id: string; body: string; kind: string; attachments?: string[]; pinned: boolean; createdAt: string; author: { id: string; name: string; avatarUrl: string | null; isOrganizer: boolean } }
+interface Message { id: string; body: string; kind: string; attachments?: string[]; pinned: boolean; createdAt: string; author: { id: string; name: string; avatarUrl: string | null; isOrganizer: boolean }; replyTo?: { id: string; body: string; author: string } | null; reactions?: { emoji: string; count: number; mine: boolean }[] }
+const REACTIONS = ['👍', '❤️', '😂', '🔥', '🙏'];
 interface Chat { id: string; subjectType: string; subjectId: string; title: string; href: string; enabled: boolean; archivedAt: string | null; canPost: boolean; canModerate: boolean; muted?: boolean; viewerIsOrganiser: boolean; members: { id: string; name: string }[]; pinned: Message[] }
 
 /**
@@ -24,6 +25,8 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const [chat, setChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
+  const [reply, setReply] = useState<Message | null>(null);
+  const [reacting, setReacting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [live, setLive] = useState(false);
   const end = useRef<HTMLDivElement>(null);
@@ -137,9 +140,11 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   async function send(kind: 'TEXT' | 'ANNOUNCEMENT' = 'TEXT') {
     if (!id || !text.trim()) return;
     try {
-      const message = await api.post<Message>(`/experience-chats/${id}/messages`, { body: text.trim(), kind });
+      const message = await api.post<Message>(`/experience-chats/${id}/messages`, { body: text.trim(), kind, replyToId: reply?.id });
       setMessages((list) => (list.some((item) => item.id === message.id) ? list : [...list, message]));
       setText('');
+      setReply(null);
+      if (reply) void load();
       setError(null);
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Not sent.');
@@ -164,6 +169,12 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'That did not work.');
     }
+  }
+
+  async function react(messageId: string, emoji: string) {
+    await api.post(`/experience-chats/${id}/messages/${messageId}/react`, { emoji }).catch(() => undefined);
+    setReacting(null);
+    void load();
   }
 
   async function toggleChat() {
@@ -234,10 +245,22 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                   <strong className="text-ink-soft">{message.author.name}</strong>
                   {message.author.isOrganizer && <span className="ml-1 rounded bg-clay-400/30 px-1 text-[0.625rem] font-bold uppercase">Organiser</span>} · {new Date(message.createdAt).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
                 </p>
+                {message.replyTo && <p className="mt-1 inline-block max-w-full truncate rounded-lg border-l-4 border-clay-400 bg-sand px-2 py-1 text-left text-xs text-ink-muted">↩ {message.replyTo.author}: {message.replyTo.body}</p>}
+                <br className={message.replyTo ? '' : 'hidden'} />
                 {message.attachments?.length ? <Attachment message={message} /> : (
                   <p className={`mt-1 inline-block whitespace-pre-line rounded-2xl px-3 py-2 text-left text-[0.9375rem] [overflow-wrap:anywhere] ${message.kind === 'ANNOUNCEMENT' ? 'bg-[#fff1c9] text-ink' : mine ? 'bg-acacia-700 text-white' : 'bg-sand text-ink'}`}>{message.kind === 'ANNOUNCEMENT' ? '📣 ' : ''}{message.body}</p>
                 )}
+                {!!message.reactions?.length && (
+                  <p className="mt-1 flex flex-wrap justify-end gap-1">
+                    {message.reactions.map((reaction) => <button key={reaction.emoji} type="button" onClick={() => react(message.id, reaction.emoji)} className={`rounded-full border px-2 text-xs ${reaction.mine ? 'border-clay-400 bg-[#fff8e6]' : 'border-line bg-white'}`}>{reaction.emoji} {reaction.count}</button>)}
+                  </p>
+                )}
+                {reacting === message.id && (
+                  <p className="mt-1 flex justify-end gap-1">{REACTIONS.map((emoji) => <button key={emoji} type="button" onClick={() => react(message.id, emoji)} className="h-9 w-9 rounded-full border border-line bg-white text-lg" aria-label={`React ${emoji}`}>{emoji}</button>)}</p>
+                )}
                 <p className="mt-1 flex justify-end gap-3 text-xs text-ink-faint">
+                  {chat?.canPost && <button type="button" onClick={() => setReply(message)}>Reply</button>}
+                  <button type="button" onClick={() => setReacting(reacting === message.id ? null : message.id)}>React</button>
                   {!mine && <button type="button" onClick={() => act(message, 'report')}>Report</button>}
                   {!mine && <button type="button" onClick={() => block(message.author.id)}>Block</button>}
                   {chat?.canModerate && <button type="button" onClick={() => act(message, 'pin')}>{message.pinned ? 'Unpin' : 'Pin'}</button>}
@@ -252,6 +275,13 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         {recording && <p className="text-xs font-semibold text-danger">Recording… tap ⏹ to send.</p>}
         {chat?.muted && <p className="rounded-xl bg-sand p-3 text-sm text-ink-soft">A moderator has muted you in this group for now. You can still read it.</p>}
         {chat?.canPost && (
+          <>
+          {reply && (
+            <p className="flex items-center justify-between gap-2 rounded-lg bg-sand px-3 py-1 text-xs text-ink-muted">
+              <span className="truncate">Replying to {reply.author.name}: {reply.body}</span>
+              <button type="button" onClick={() => setReply(null)} aria-label="Cancel reply">✕</button>
+            </p>
+          )}
           <form onSubmit={(event) => { event.preventDefault(); void send(); }} className="sticky bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] flex gap-2 rounded-2xl border border-line bg-white p-2">
             <textarea value={text} onChange={(event) => setText(event.target.value)} rows={1} maxLength={2000} placeholder="Write a message…" aria-label="Message" className="min-h-11 w-full resize-none rounded-xl px-3 py-2 outline-none" onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send(); } }} />
             <label className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line text-lg" title="Send a photo, video or file" aria-label="Send a photo, video or file">
@@ -274,6 +304,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             {chat.viewerIsOrganiser && <button type="button" onClick={() => send('ANNOUNCEMENT')} className="h-11 shrink-0 rounded-full border border-line px-3 text-sm font-semibold" title="Send as an announcement">📣</button>}
             <button className="h-11 shrink-0 rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">Send</button>
           </form>
+          </>
         )}
       </div>
     </DashboardShell>

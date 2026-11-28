@@ -36,6 +36,7 @@ export const MENU: MenuGroup[] = [
       { href: '/admin/applications', label: 'Trip applications', permission: 'bookings.view', keywords: 'bookings payments confirm participants' },
       { href: '/admin/registrations', label: 'Event registrations', permission: 'events.view', keywords: 'tickets check-in door' },
       { href: '/admin/moderation', label: 'Reviews & reports', permission: 'reviews.view', keywords: 'safety block report moderation' },
+      { href: '/admin/messages', label: 'Reported messages (restricted)', permission: 'messages.view', keywords: 'private messages dm reports safety audited' },
     ],
   },
   {
@@ -54,6 +55,8 @@ export const MENU: MenuGroup[] = [
       resource('events', 'Ticketed events', 'parties tickets'),
       resource('communities', 'Communities', 'groups meetups members announcements'),
       { href: '/admin/r/communities?kind=STUDY_GROUP', label: 'Study groups', permission: 'communities.view', keywords: 'study learning students school university moderation' },
+      { href: '/admin/groups', label: 'Community & study-group moderation', permission: 'communities.view', keywords: 'restrict suspend restore private password creator contact moderation' },
+      { href: '/admin/gaming', label: 'Gaming (tournaments, esports, sessions, squads)', permission: 'gaming.view', keywords: 'tournament esports organiser verification sessions squads guilds teams disputes invitations games' },
       resource('tournaments', 'Gaming & tournaments', 'free fire pubg efootball console esports'),
       resource('experiences', 'Guided experiences', 'tours cooking'),
       resource('catering', 'Catering & lunchboxes', 'food menu chef'),
@@ -75,6 +78,7 @@ export const MENU: MenuGroup[] = [
     title: 'Content',
     items: [
       { href: '/admin/assistant', label: 'AI Assistant (Bethany & Ariel)', permission: '*', keywords: 'ai assistant bethany ariel report help automate' },
+      { href: '/admin/nia', label: 'Nia AI (member assistant)', permission: 'nia.view', keywords: 'nia ai assistant members voice limits categories analytics' },
       { href: '/admin/settings?group=homepage', label: 'Homepage editor', permission: 'homepage.view', keywords: 'hero sections order headline' },
       resource('banners', 'Banners & announcements'),
       resource('stories', 'Community stories'),

@@ -124,6 +124,24 @@ export default async function GamingPage({ searchParams }: { searchParams: Promi
         </div>
       </section>
 
+      {/* The Gaming Hub's areas — discovery here, personal dashboard in the Account Centre. */}
+      <nav aria-label="Gaming Hub" className="border-b border-line bg-white">
+        <div className="shell grid grid-cols-2 gap-2 py-4 sm:grid-cols-3 lg:grid-cols-6">
+          {[
+            { href: '/experiences/gaming/tournaments', label: 'Tournaments', icon: '🏆' },
+            { href: '/experiences/gaming/tournaments/new', label: 'Create a tournament', icon: '➕' },
+            { href: '/experiences/gaming/sessions', label: 'Gaming sessions', icon: '🎮' },
+            { href: '/experiences/gaming/groups', label: 'Squads & guilds', icon: '🛡️' },
+            { href: '/account/gaming?tab=friends&view=find', label: 'Find players', icon: '📍' },
+            { href: '/experiences/gaming/organisers/apply', label: 'Esports organisers', icon: '✓' },
+          ].map((item) => (
+            <Link key={item.href} href={item.href} className="flex min-h-12 items-center gap-2 rounded-xl border border-line px-3 text-sm font-semibold text-ink hover:border-acacia-600">
+              <span aria-hidden>{item.icon}</span>{item.label}
+            </Link>
+          ))}
+        </div>
+      </nav>
+
       {/* Featured: the next tournaments as large cards. */}
       {items.length > 0 && (
         <section id="tournaments" className="band band-dark-a scroll-mt-20 text-white">

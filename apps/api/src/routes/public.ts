@@ -18,6 +18,7 @@ import {
 import { ApiError, pageParams, paginated, route } from '../lib/http';
 import { parseList, parseObjects } from '../lib/json';
 import { prisma } from '../lib/prisma';
+import { niaSettings } from '../services/nia';
 import { textContains } from '../lib/search';
 import { toPublic, type Row } from '../services/resources/engine';
 import { ENHAKKORE_ORGANIZER_SLUG } from '../services/resources/hooks';
@@ -66,7 +67,7 @@ publicRouter.get(
   '/site',
   route(async (_req, res) => {
     const now = new Date();
-    const [settings, banners, methods] = await Promise.all([
+    const [settings, banners, methods, nia] = await Promise.all([
       getSettings(),
       prisma.banner.findMany({
         where: {
@@ -76,10 +77,12 @@ publicRouter.get(
         orderBy: { createdAt: 'desc' },
       }),
       prisma.paymentMethod.findMany({ where: { status: 'ENABLED' }, orderBy: [{ isDefault: 'desc' }, { sortOrder: 'asc' }] }),
+      niaSettings(),
     ]);
     res.json({
       settings,
       banners,
+      nia: { enabled: nia.enabled && nia.text, voice: nia.voice },
       paymentMethods: methods.map((method) => ({
         id: method.id,
         name: method.name,

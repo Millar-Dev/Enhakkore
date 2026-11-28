@@ -676,3 +676,12 @@ section + .band::before {
 .enh-choice:has(input:checked) { background: var(--color-clay-400); border-color: var(--color-clay-400); color: #06172b; }
 .enh-choice input { width: 1rem; height: 1rem; accent-color: #06172b; }
 .enh-globe .maplibregl-ctrl-top-left { margin-top: 0.25rem; }
+
+/* Nia's orb */
+@keyframes nia-orbit { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+@keyframes nia-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.nia-orb .nia-electron { animation: nia-orbit linear infinite; filter: drop-shadow(0 0 2px #f4d78f); }
+.nia-orb .nia-pulse { animation: nia-pulse 1.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .nia-orb .nia-electron, .nia-orb .nia-pulse { animation: none; }
+}

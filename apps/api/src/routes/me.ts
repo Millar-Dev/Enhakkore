@@ -370,3 +370,26 @@ meRouter.get(
     res.json({ items: reviews.map(toReview) });
   }),
 );
+
+/* --------------------------------- Sessions --------------------------------- */
+
+/** The member's signed-in devices. */
+meRouter.get(
+  '/sessions',
+  route(async (req, res) => {
+    const rows = await prisma.session.findMany({ where: { userId: req.auth!.id, revokedAt: null, expiresAt: { gt: new Date() } }, orderBy: { lastSeenAt: 'desc' }, take: 30 });
+    res.json({ items: rows.map((row) => ({ id: row.id, userAgent: row.userAgent, createdAt: row.createdAt, lastSeenAt: row.lastSeenAt, current: row.id === req.auth!.sessionId })) });
+  }),
+);
+
+meRouter.post(
+  '/sessions/:id/revoke',
+  route(async (req, res) => {
+    const others = req.params.id === 'others';
+    await prisma.session.updateMany({
+      where: { userId: req.auth!.id, revokedAt: null, ...(others ? { id: { not: req.auth!.sessionId } } : { id: req.params.id }) },
+      data: { revokedAt: new Date(), revokedBy: req.auth!.id },
+    });
+    res.json({ ok: true });
+  }),
+);

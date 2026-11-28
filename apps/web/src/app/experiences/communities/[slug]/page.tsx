@@ -9,6 +9,7 @@ import { CommunityMembership } from '@/components/public/CommunityActions';
 import { ActivityCard } from '@/components/public/listings';
 import { ReportButton } from '@/components/public/Actions';
 import { StudyGroupManage } from '@/components/public/StudyGroupManage';
+import { GroupInside } from '@/components/public/GroupInside';
 import { SmartImage } from '@/components/public/SmartImage';
 import { GroupChatLink, ShareButton, TrackView } from '@/components/public/Track';
 import { apiGet } from '@/lib/api';
@@ -114,6 +115,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
             <SectionTitle kicker="Meetups" title="Upcoming activities" />
             {data.activities.length ? <CardGrid>{data.activities.map((item) => <ActivityCard key={item.id} item={item} />)}</CardGrid> : <p className="text-sm text-ink-muted">No upcoming meetups yet.</p>}
           </div>
+          <GroupInside slug={c.slug} isStudy={c.kind === 'STUDY_GROUP'} />
           {c.rules && (
             <div>
               <p className="font-display text-xl text-acacia-700">Community rules</p>
@@ -123,7 +125,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
         </div>
         <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
           <CommunityMembership slug={c.slug} memberCount={c.memberCount} />
-          {c.kind === 'STUDY_GROUP' && <StudyGroupManage slug={c.slug} />}
+          <StudyGroupManage slug={c.slug} />
           {data.organisers?.length ? (
             <div className="rounded-[1.1rem] border border-line bg-white p-5 text-sm">
               <p className="font-bold text-acacia-700">Organisers & moderators</p>

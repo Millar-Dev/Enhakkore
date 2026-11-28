@@ -1,9 +1,9 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import type { CommunityCard } from '@/components/home/types';
 import { PublicShell } from '@/components/layout/PublicShell';
 import { AppHero } from '@/components/public/AppHero';
 import { CardGrid, Empty, SectionTitle } from '@/components/public/Cards';
-import { CommunityApplyForm } from '@/components/public/CommunityActions';
 import { CommunityTile } from '@/components/public/experience';
 import { RecommendedCommunities } from '@/components/public/RecommendedCommunities';
 import { apiGet, query } from '@/lib/api';
@@ -38,15 +38,17 @@ export default async function CommunitiesPage({ searchParams }: { searchParams: 
           {data?.items.length ? (
             <CardGrid>{data.items.map((community) => <CommunityTile key={community.id} community={community} />)}</CardGrid>
           ) : (
-            <Empty title="No communities yet" body="Communities are being set up. Start one below — the team reviews it before it goes live." />
+            <Empty title="No communities yet" body="Start one below — it goes live straight away." />
           )}
         </div>
         <div id="start" className="mt-14 grid gap-8 rounded-[1.4rem] border border-line bg-[color:var(--color-cream)] p-6 md:grid-cols-[1fr_1.3fr] md:p-10">
           <div>
             <SectionTitle kicker="Start one" title="Start a community" />
-            <p className="text-ink-soft">Tell us what your community is about. Once approved it gets its own page, members, announcements and activities.</p>
+            <p className="text-ink-soft">Your community is published straight away with its own page, members, group chat, sessions and files. Public or private (joined by invitation link or password). The Enhakkore team is told and looks into anything reported.</p>
           </div>
-          <CommunityApplyForm categories={categories} countries={countries ?? []} />
+          <div className="flex items-center">
+            <Link href="/experiences/communities/new" className="inline-flex h-12 items-center rounded-full bg-clay-400 px-6 text-sm font-bold text-acacia-700">＋ Create a community</Link>
+          </div>
         </div>
       </section>
     </PublicShell>

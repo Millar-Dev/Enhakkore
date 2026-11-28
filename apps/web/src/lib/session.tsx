@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { AuthResponse, OrganizerSummary, PublicUser, Role } from '@enhakkore/shared';
-import { api, getToken, setToken } from './api';
+import { ApiError, api, getToken, setToken } from './api';
 
 /**
  * Client-side session.
@@ -39,6 +39,8 @@ export interface RegisterInput {
   phone?: string;
   /** The member accepted the current terms (required). */
   acceptedTerms?: boolean;
+  /** YYYY-MM-DD — required; used only for age protections and never shown to others. */
+  dateOfBirth?: string;
 }
 
 const SessionContext = createContext<SessionState | null>(null);
@@ -55,18 +57,31 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setStatus('anonymous');
       return;
     }
-    try {
-      const result = await api.get<{ user: PublicUser; organizer: OrganizerSummary | null }>('/auth/session');
-      setUser(result.user);
-      setOrganizer(result.organizer);
-      setStatus('authenticated');
-    } catch {
-      // A token that no longer resolves is discarded rather than retried.
-      setToken(null);
-      setUser(null);
-      setOrganizer(null);
-      setStatus('anonymous');
+    // The API may be waking up (a sleeping server can take up to a minute) or
+    // briefly unreachable. Only a definite "not signed in" (401) discards the
+    // token; anything else is retried, so a slow start never signs people out.
+    for (let attempt = 0; attempt < 8; attempt++) {
+      try {
+        const result = await api.get<{ user: PublicUser; organizer: OrganizerSummary | null }>('/auth/session');
+        setUser(result.user);
+        setOrganizer(result.organizer);
+        setStatus('authenticated');
+        return;
+      } catch (error) {
+        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+          setToken(null);
+          setUser(null);
+          setOrganizer(null);
+          setStatus('anonymous');
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, Math.min(8000, 1500 * (attempt + 1))));
+      }
     }
+    // Still unreachable after about a minute: keep the token, show signed-out views for now.
+    setUser(null);
+    setOrganizer(null);
+    setStatus('anonymous');
   }, []);
 
   useEffect(() => {

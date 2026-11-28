@@ -154,20 +154,21 @@ export function DashboardShell({
 }
 
 export const TRAVELLER_NAV: NavItem[] = [
-  { href: '/account', label: 'Overview', exact: true },
-  { href: '/account/experiences', label: 'My experiences' },
-  { href: '/account/passes', label: 'Enhakkore Pass' },
-  { href: '/account/enquiries', label: 'My reservations' },
+  { href: '/account', label: 'Account Centre', exact: true },
   { href: '/account/applications', label: 'My trips & payments' },
-  { href: '/account/chats', label: 'Group chats' },
+  { href: '/account/enquiries', label: 'My reservations' },
+  { href: '/account/passes', label: 'Passes' },
+  { href: '/account/experiences', label: 'My experiences' },
   { href: '/account/study-groups', label: 'Study groups' },
+  { href: '/account/gaming', label: 'Gaming Hub' },
+  { href: '/account/messages', label: 'Messages' },
+  { href: '/account/chats', label: 'Group chats' },
   { href: '/account/groups', label: 'Trip groups' },
-  { href: '/account/hosting', label: 'Hosting' },
-  { href: '/account/scanner', label: 'Check-in scanner' },
-  { href: '/account/saved', label: 'Saved' },
   { href: '/account/notifications', label: 'Notifications' },
+  { href: '/account/hosting', label: 'Hosting' },
+  { href: '/account/saved', label: 'Wishlist' },
   { href: '/account/profile', label: 'Profile & privacy' },
-  { href: '/account/settings', label: 'Notifications & Nearby' },
+  { href: '/account/settings', label: 'Settings' },
 ];
 
 /** Every account type that has a personal area. */

@@ -30,6 +30,7 @@ function JoinForm() {
     country: '',
     city: '',
     username: '',
+    dateOfBirth: '',
   });
   const [nameCheck, setNameCheck] = useState<{ username: string; ok: boolean; reason?: string } | null>(null);
 
@@ -63,6 +64,7 @@ function JoinForm() {
     const missing: Record<string, string> = {};
     if (!form.username.trim()) missing.username = 'Choose a username.';
     else if (nameCheck && !nameCheck.ok) missing.username = nameCheck.reason ?? 'Choose another username.';
+    if (!form.dateOfBirth) missing.dateOfBirth = 'Enter your date of birth.';
     if (!form.country) missing.country = 'Choose your country.';
     if (!form.city) missing.city = 'Choose your city.';
     if (Object.keys(missing).length) {
@@ -83,6 +85,7 @@ function JoinForm() {
         city: form.city || undefined,
         username: form.username.trim().toLowerCase(),
         acceptedTerms: true,
+        dateOfBirth: form.dateOfBirth,
       });
       // New operators go straight to verification — it is the only thing that
       // unblocks everything else for them.
@@ -162,6 +165,18 @@ function JoinForm() {
           error={fields.password}
           placeholder="At least 8 characters"
           hint="Use at least 8 characters."
+        />
+
+        <Input
+          label="Date of birth"
+          type="date"
+          required
+          autoComplete="bday"
+          value={form.dateOfBirth}
+          max={new Date(Date.now() - 13 * 365.25 * 86_400_000).toISOString().slice(0, 10)}
+          onChange={(event) => set('dateOfBirth', event.target.value)}
+          error={fields.dateOfBirth}
+          hint="Never shown to other members. You need to be 13 or older; some features (like nearby gaming) are for adults."
         />
 
         <CountryCity

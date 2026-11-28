@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { Logo } from '@/components/brand/Logo';
 import { Alert, Button, Card, Divider } from '@/components/ui';
@@ -128,6 +128,7 @@ function SignInForm() {
             Forgot password?
           </Link>
         </div>
+        <AdminRecoverLink />
 
         <Button type="submit" size="lg" full disabled={busy}>
           {busy ? 'Signing in…' : 'Sign in'}
@@ -209,4 +210,11 @@ export default function SignInPage() {
       </div>
     </div>
   );
+}
+
+/** On the control-centre sign-in only: the owner's recovery route when email is not connected. */
+function AdminRecoverLink() {
+  const pathname = usePathname();
+  if (!pathname.startsWith('/admin')) return null;
+  return <p className="-mt-2 text-right text-xs text-ink-muted">Owner without email access? <Link href="/admin/recover" className="font-semibold underline">Recover Super Admin access</Link></p>;
 }

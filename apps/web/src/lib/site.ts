@@ -37,6 +37,8 @@ export interface Site {
   settings: SiteSettings;
   banners: Banner[];
   paymentMethods: PublicPaymentMethod[];
+  /** Nia, the member assistant: switched on or off by the team. */
+  nia?: { enabled: boolean; voice: boolean };
   /** False when the API could not be reached and defaults are being shown. */
   live: boolean;
 }

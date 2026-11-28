@@ -117,7 +117,7 @@ studyGroupsRouter.get(
 
 /** Loads a group the viewer manages (group admin or moderator), or Enhakkore staff with communities.edit. */
 async function managed(slug: string, auth: NonNullable<Express.Request['auth']>, needAdmin = false) {
-  const group = await prisma.community.findFirst({ where: { slug, kind: 'STUDY_GROUP' } });
+  const group = await prisma.community.findUnique({ where: { slug } });
   if (!group) throw ApiError.notFound('Study group not found.');
   const me = await prisma.communityMember.findUnique({ where: { communityId_userId: { communityId: group.id, userId: auth.id } } });
   const staff = auth.permissions.includes('*') || auth.permissions.includes('communities.edit') || auth.permissions.includes('communities.*');

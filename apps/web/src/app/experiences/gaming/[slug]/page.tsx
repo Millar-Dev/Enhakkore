@@ -8,10 +8,13 @@ import { Facts, Prose } from '@/components/public/Cards';
 import { SmartImage } from '@/components/public/SmartImage';
 import { ShareButton, TrackView } from '@/components/public/Track';
 import { TournamentJoin } from '@/components/public/TournamentJoin';
+import { InviteFriendsToTournament, TournamentFixtures } from '@/components/gaming/Tournaments';
+import { BRACKET_FORMATS, ORGANISER_TYPES, TOURNAMENT_CATEGORIES } from '@enhakkore/shared';
 import { apiGet } from '@/lib/api';
 import type { TournamentCard } from '../page';
 
 export const revalidate = 30;
+
 
 interface Data {
   tournament: TournamentCard & {
@@ -24,6 +27,12 @@ interface Data {
     disputeProcedure: string | null;
     minAge: number | null;
     organiserName: string;
+    category?: string;
+    organiserType?: string;
+    platform?: string | null;
+    bracketFormat?: string;
+    prizeDetails?: string | null;
+    memberCreated?: boolean;
     bracket: { round: string; match: string; result: string }[];
   };
   lineup: { name: string; players: number; status: string }[];
@@ -77,9 +86,21 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
               { label: 'Venue', value: t.venue },
               { label: 'Slots', value: t.slots ? `${t.slotsLeft} of ${t.slots} left` : null },
               { label: 'Age', value: t.minAge ? `${t.minAge}+` : null },
-              { label: 'Organiser', value: t.organiserName },
+              { label: 'Organiser', value: `${t.organiserName}${t.organiserType ? ` (${ORGANISER_TYPES.find((o) => o.key === t.organiserType)?.label ?? t.organiserType})` : ''}` },
+              { label: 'Category', value: TOURNAMENT_CATEGORIES.find((c) => c.key === t.category)?.label ?? null },
+              { label: 'Competition', value: BRACKET_FORMATS.find((f) => f.key === t.bracketFormat)?.label ?? null },
+              { label: 'Platform', value: t.platform ?? null },
             ]}
           />
+          {t.memberCreated && <p className="rounded-xl bg-sand p-3 text-sm text-ink-soft">Organised by a member and published straight away. The Enhakkore team monitors listings and can be contacted about any concern.</p>}
+          {t.prizeDetails && (
+            <div>
+              <p className="font-display text-xl text-acacia-700">Prize (as stated by the organiser)</p>
+              <Prose text={t.prizeDetails} className="mt-2" />
+              <p className="mt-1 text-xs text-ink-muted">Not verified by Enhakkore.</p>
+            </div>
+          )}
+          <TournamentFixtures slug={t.slug} title={t.title} />
           {t.entryRequirements && (
             <div>
               <p className="font-display text-xl text-acacia-700">Entry requirements</p>
@@ -119,6 +140,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
           <div className="rounded-[1.2rem] border border-line bg-white p-5 shadow-[var(--shadow-card)]">
             <TournamentJoin slug={t.slug} format={t.format} teamSize={t.teamSize} open={t.registrationOpen && !t.isDemo} minAge={t.minAge} />
           </div>
+          <InviteFriendsToTournament slug={t.slug} />
           <div className="rounded-[1.2rem] border border-line bg-white p-5">
             <p className="font-bold text-acacia-700">Line-up ({data.lineup.length}{t.slots ? ` / ${t.slots}` : ''})</p>
             {data.lineup.length ? (

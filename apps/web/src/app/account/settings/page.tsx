@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { OPTIONAL_NOTIFICATIONS } from '@enhakkore/shared';
 import { DashboardShell, MEMBER_ROLES, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
 import { ApiError, api, setToken } from '@/lib/api';
 import { useSession } from '@/lib/session';
@@ -13,34 +12,95 @@ const NEARBY = [
   { value: 'M10', label: 'Close (about 10 m)', body: 'People in the same room or a small venue.' },
 ];
 
-/** Notifications, quiet hours and Enhakkore Nearby. */
+function PrivacySwitches() {
+  const [state, setState] = useState<{ readReceipts: boolean; friendLocation: boolean } | null>(null);
+  useEffect(() => {
+    api.get<{ readReceipts: boolean; friendLocation: boolean }>('/social/me').then((data) => setState({ readReceipts: data.readReceipts, friendLocation: data.friendLocation })).catch(() => undefined);
+  }, []);
+  async function toggle(key: 'readReceipts' | 'friendLocation') {
+    if (!state) return;
+    const next = { ...state, [key]: !state[key] };
+    setState(next);
+    await api.put('/social/me', { [key]: next[key] }).catch(() => setState(state));
+  }
+  const rows = [
+    { key: 'readReceipts' as const, label: 'Read receipts in private messages', body: 'Others see “Seen” when you have read their message. If you switch this off, you will not see theirs either.' },
+    { key: 'friendLocation' as const, label: 'Show friends my approximate distance', body: 'Accepted friends see a distance band (for example “1–2 km”) when you have shared your location recently. Never your exact location. Off by default.' },
+  ];
+  return (
+    <section className="rounded-2xl border border-line bg-white p-5">
+      <h2 className="text-lg font-bold text-ink">Privacy</h2>
+      <ul className="mt-2 divide-y divide-line">
+        {rows.map((row) => (
+          <li key={row.key} className="flex min-h-16 items-center justify-between gap-3 py-2">
+            <span><span className="block text-sm font-semibold text-ink">{row.label}</span><span className="text-xs text-ink-muted">{row.body}</span></span>
+            <button type="button" role="switch" aria-checked={!!state?.[row.key]} aria-label={row.label} disabled={!state} onClick={() => toggle(row.key)} className="relative inline-flex h-11 w-14 shrink-0 items-center justify-center">
+              <span className={`relative h-7 w-12 rounded-full transition-colors ${state?.[row.key] ? 'bg-acacia-600' : 'bg-line'}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${state?.[row.key] ? 'left-6' : 'left-1'}`} /></span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-sm text-ink-muted">Who sees your profile details is set on <Link href="/account/profile#privacy" className="font-semibold text-acacia-700 underline">your profile</Link>. Blocked members can be managed below.</p>
+      <BlockedList />
+    </section>
+  );
+}
+
+function BlockedList() {
+  const [rows, setRows] = useState<{ userId: string; name: string }[] | null>(null);
+  useEffect(() => {
+    api.get<{ userId: string; name: string }[]>('/community/blocks').then(setRows).catch(() => setRows([]));
+  }, []);
+  if (!rows || rows.length === 0) return null;
+  return (
+    <ul className="mt-3 grid gap-1 text-sm">
+      {rows.map((row) => (
+        <li key={row.userId} className="flex items-center justify-between rounded-lg bg-sand px-3 py-2">
+          <span>{row.name}</span>
+          <button type="button" className="font-semibold text-acacia-700 underline" onClick={async () => { await api.delete(`/community/blocks/${row.userId}`); setRows((list) => list?.filter((item) => item.userId !== row.userId) ?? null); }}>Unblock</button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function DevicesSection() {
+  const [rows, setRows] = useState<{ id: string; userAgent: string | null; lastSeenAt: string; current: boolean }[] | null>(null);
+  const load = () => api.get<{ items: NonNullable<typeof rows> }>('/me/sessions').then((data) => setRows(data.items)).catch(() => setRows([]));
+  useEffect(() => {
+    void load();
+  }, []);
+  const device = (agent: string | null) => (!agent ? 'Unknown device' : /iphone|ipad/i.test(agent) ? 'iPhone / iPad' : /android/i.test(agent) ? 'Android' : /windows/i.test(agent) ? 'Windows' : /mac/i.test(agent) ? 'Mac' : 'Browser');
+  return (
+    <section className="rounded-2xl border border-line bg-white p-5">
+      <h2 className="text-lg font-bold text-ink">Signed-in devices</h2>
+      <ul className="mt-2 grid gap-2 text-sm">
+        {rows === null ? <li className="text-ink-muted">Loading…</li> : rows.map((row) => (
+          <li key={row.id} className="flex items-center justify-between gap-2 rounded-lg bg-sand px-3 py-2">
+            <span>{device(row.userAgent)}{row.current ? ' · this device' : ''}<span className="block text-xs text-ink-muted">Last active {new Date(row.lastSeenAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span></span>
+            {!row.current && <button type="button" className="font-semibold text-danger underline" onClick={async () => { await api.post(`/me/sessions/${row.id}/revoke`); void load(); }}>Sign out</button>}
+          </li>
+        ))}
+      </ul>
+      {rows && rows.length > 1 && <button type="button" onClick={async () => { await api.post('/me/sessions/others/revoke'); void load(); }} className="mt-3 h-10 rounded-full border border-line px-4 text-sm font-semibold">Sign out all other devices</button>}
+    </section>
+  );
+}
+
+/** Notifications, privacy, devices, Enhakkore Nearby and password. */
 export default function SettingsPage() {
   const { user, refresh } = useSession();
   const [password, setPassword] = useState({ current: '', next: '' });
   const [pwMessage, setPwMessage] = useState<string | null>(null);
-  const [off, setOff] = useState<string[]>([]);
-  const [quiet, setQuiet] = useState({ start: '', end: '' });
   const [nearby, setNearby] = useState('OFF');
   const [message, setMessage] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (!user || ready) return;
-    setOff(user.notificationPrefs?.off ?? []);
-    setQuiet({ start: user.notificationPrefs?.quietStart ?? '', end: user.notificationPrefs?.quietEnd ?? '' });
     setNearby(user.nearbyMode ?? 'OFF');
     setReady(true);
   }, [user, ready]);
-
-  async function saveNotifications(nextOff = off, nextQuiet = quiet) {
-    try {
-      await api.put('/me/notification-prefs', { off: nextOff, quietStart: nextQuiet.start || null, quietEnd: nextQuiet.end || null });
-      setMessage('Notification settings saved.');
-      void refresh();
-    } catch (caught) {
-      setMessage(caught instanceof ApiError ? caught.message : 'Could not save.');
-    }
-  }
 
   async function saveNearby(mode: string) {
     setNearby(mode);
@@ -60,40 +120,13 @@ export default function SettingsPage() {
 
         <section className="rounded-2xl border border-line bg-white p-5">
           <h2 className="text-lg font-bold text-ink">Notifications</h2>
-          <p className="mt-1 text-sm text-ink-muted">Booking, payment, cancellation, safety and pass notices are always sent. You can switch off the others.</p>
-          <ul className="mt-4 divide-y divide-line">
-            {OPTIONAL_NOTIFICATIONS.map((item) => {
-              const enabled = !off.includes(item.key);
-              return (
-                <li key={item.key} className="flex min-h-14 items-center justify-between gap-3">
-                  <span className="text-sm text-ink-soft">{item.label}</span>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={enabled}
-                    aria-label={item.label}
-                    onClick={() => {
-                      const next = enabled ? [...off, item.key] : off.filter((key) => key !== item.key);
-                      setOff(next);
-                      void saveNotifications(next);
-                    }}
-                    className="relative inline-flex h-11 w-14 shrink-0 items-center justify-center"
-                  >
-                    <span className={`relative h-7 w-12 rounded-full transition-colors ${enabled ? 'bg-acacia-600' : 'bg-line'}`}>
-                      <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${enabled ? 'left-6' : 'left-1'}`} />
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-            <label className="grid gap-1 text-sm font-semibold text-ink-soft">Quiet hours from<input type="time" value={quiet.start} onChange={(event) => setQuiet((q) => ({ ...q, start: event.target.value }))} className="field" /></label>
-            <label className="grid gap-1 text-sm font-semibold text-ink-soft">until<input type="time" value={quiet.end} onChange={(event) => setQuiet((q) => ({ ...q, end: event.target.value }))} className="field" /></label>
-            <button type="button" onClick={() => saveNotifications()} className="h-12 rounded-full border border-line px-5 text-sm font-semibold">Save</button>
-          </div>
-          <p className="mt-2 text-xs text-ink-muted">Quiet hours will apply to phone and email alerts when those are connected. Today Enhakkore sends in-app notices only, which never make a sound.</p>
+          <p className="mt-1 text-sm text-ink-muted">Push notifications, what you are told about, and quiet hours.</p>
+          <Link href="/account/notifications?section=settings" className="mt-3 inline-flex h-11 items-center rounded-full border border-line px-5 text-sm font-semibold">Notification settings ›</Link>
         </section>
+
+        <PrivacySwitches />
+
+        <DevicesSection />
 
         <section className="rounded-2xl border border-line bg-white p-5">
           <h2 className="text-lg font-bold text-ink">Enhakkore Nearby</h2>

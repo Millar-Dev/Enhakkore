@@ -1037,7 +1037,8 @@ profilePublic.get(
     });
     if (!user) throw ApiError.notFound('That profile is not available.');
     const card = memberCard(user, 'PUBLIC');
-    res.json({ ...card, id: undefined });
+    // Signed-in members get the id so they can follow, add or message; visitors do not.
+    res.json({ ...card, id: req.auth ? user.id : undefined });
   }),
 );
 
