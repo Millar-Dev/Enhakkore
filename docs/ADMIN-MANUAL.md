@@ -403,6 +403,83 @@ between phones, which browsers do not allow. It needs the future mobile app.
 sheet or by @username. An invitation is only a notification with a link — it never
 registers anyone or holds a place.
 
+## 34. Hotel, restaurant and venue requests (R7)
+
+Customers must **sign in** to send a hotel, restaurant or venue request, so each request
+belongs to an account and its status shows in their **Account Centre → My reservations**.
+Every request is saved with a reference (ENQ-…), the responsible team members get a
+notification in the control centre, and the WhatsApp notice goes to the team numbers
+when WhatsApp is connected. WhatsApp is only for follow-up — the customer is never sent
+there to make the booking.
+
+Statuses (Menu → **Today → Hotel enquiries / Restaurant reservations**, or **All
+enquiries** for venues): **Request submitted → Under review → Supplier contacted →
+Awaiting supplier confirmation → Confirmed**, or **Unavailable / rejected** or
+**Cancelled**. Press **Confirmed** only after the hotel, restaurant or venue has
+confirmed it to you — the website asks you to check, then tells the customer and issues
+their Enhakkore Pass. Customers can cancel their own request; you are notified.
+
+Venues use the **venue enquiry** form (event type, date, guests, location, budget,
+requirements): set a place's *Enquiry type* to **Venue / event enquiry**.
+
+## 35. Trip deposits and payment receipts (Arusha Escape)
+
+A trip can have a **Booking deposit per person** (Travel → trips → *Booking & payment*).
+For the Arusha Escape it is **TZS 5,000**, part of the TZS 270,000 price — the balance
+after the deposit is TZS 265,000. It is never charged on top.
+
+How a traveller books: **Join Trip** on the trip page → details (participants, phone,
+terms) → their booking page shows the price, deposit and balance and the payment
+methods (from **Payment settings**, scope *Trips*). Automatic mobile-money prompts are
+**not connected** (a merchant gateway is needed), so travellers pay by an authorised
+method and **upload the receipt** and/or the transaction ID.
+
+Menu → **Travel & Impact → Payments & receipts**:
+1. **Open receipt** (private — only the team can open it; opening is logged).
+2. Check the money is in the receiving account (M-Pesa statement, bank).
+3. **Approve payment** and enter the amount that actually arrived — it is recorded in
+   Finance, and once the deposit is covered the place is **confirmed**, the traveller is
+   told and the trip group chat opens to them. Or **Reject** with a reason they will see.
+
+A receipt alone never confirms anything. Only the trip currency can be paid today —
+no exchange-rate source is connected, so no converted amount is shown.
+
+## 36. Official communities and study groups
+
+**Official communities** (marked *Official*) are run by Enhakkore: Jogging & Running,
+Football, Basketball, Tennis, Roller Skating, Gaming, Photography, Art & Creativity,
+Travel Lovers and Study Groups. Members join once and then see sessions, announcements
+and the group chat. Edit the timetable and meeting point under **Experiences →
+Communities**; untick **Meeting point verified** to show it as *to be confirmed*. The
+jogging community's Saturday 06:30 sessions (Sayansi Bus Stop, proposed route to Mbezi
+Beach) are prepared on the draft activity *Saturday Community Jog*: confirm the route,
+then publish the activity and its sessions appear on the community page.
+
+**Study groups** (Menu → **Experiences → Study groups**) are created by members without
+approval. The creator is the group admin: they approve members of a private group,
+appoint moderators, mute or remove members and remove messages. You can open, edit,
+unpublish or archive any group, and reported groups and messages arrive in **Reviews &
+reports**. Group chats support text, photos, short videos, voice notes and files.
+
+## 37. AI Assistant — Bethany and Ariel
+
+Menu → **Content → AI Assistant** (Super Administrator only).
+
+- **Bethany — working mode** (start with *“Hey Bethany”*): adds draft listings and
+  activities, edits titles and descriptions, publishes or hides listings, posts community
+  announcements, switches off group chats, removes reported messages and changes
+  homepage sections. New listings are always **drafts**. Hiding, archiving,
+  announcements, closing chats, removing messages and homepage changes wait for you to
+  press **Confirm**.
+- **Ariel — reporting mode** (start with *“Hello Ariel”*): reports activity, what is
+  waiting, popular listings, recent changes and delivery problems. Ariel cannot change
+  anything.
+
+Every request and action is kept in the assistant's history and in the audit log. The
+assistant never verifies payments, refunds, deletes records or changes staff
+permissions. It needs an Anthropic API key (`ANTHROPIC_API_KEY`) on the API; until then
+it says it is not connected and does nothing.
+
 ## 33. Troubleshooting
 
 | Problem | What to do |
@@ -414,5 +491,8 @@ registers anyone or holds a place.
 | Uploaded photos disappeared after a deploy | Connect Cloudinary (handover). |
 | A page shows old content | Changes appear within about a minute. |
 | A member says their pass QR "does not work" | Ask them to reopen the pass: if the date or place changed, a new code was issued. Otherwise check in by reference. |
+| A customer cannot send a hotel request | They must be signed in — the form shows Sign in / Create account. |
+| A traveller uploaded a receipt but is not confirmed | Correct: approve it under Payments & receipts after checking the money arrived. |
+| The assistant says “not connected” | Add ANTHROPIC_API_KEY to the API service on Render and redeploy. |
 | Camera scanning does not start | That phone's browser cannot read QR codes. Type the reference instead, or use Chrome on Android. |
 | Someone needs to be removed quickly | Security & audit → sign them out everywhere; Team & permissions → revoke. |

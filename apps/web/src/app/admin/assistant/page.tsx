@@ -130,7 +130,7 @@ export default function AssistantPage() {
             <div ref={end} />
           </Panel>
           <div className="flex flex-wrap gap-2">
-            {SUGGESTIONS[mode].map((text) => <button key={text} type="button" onClick={() => setPrompt(text)} className="chip text-xs">{text}</button>)}
+            {SUGGESTIONS[mode].map((text) => <button key={text} type="button" onClick={() => setPrompt(text)} className="chip h-auto min-h-9 max-w-full whitespace-normal py-1.5 text-left text-xs">{text}</button>)}
           </div>
           {error && <p role="alert" className="text-sm text-danger">{error}</p>}
           <form onSubmit={(event) => { event.preventDefault(); void send(prompt); }} className="flex flex-col gap-2 sm:flex-row">

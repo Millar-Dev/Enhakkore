@@ -46,6 +46,21 @@ Do not promise refunds, deposits, prices or availability the business has not gi
 you in writing. Customers who press *send* twice get the same reference back — there
 is no duplicate to clean up.
 
+Hotel, restaurant and venue requests come only from signed-in members, and you get a
+bell notification for each. The customer sees the statuses as *Request submitted →
+Under review → Supplier contacted → Awaiting supplier confirmation → Confirmed*, or
+*Unavailable / rejected* / *Cancelled*. Never send the customer to WhatsApp to finish
+a booking — WhatsApp is for follow-up only.
+
+### Trip payment receipts (finance)
+
+Menu → **Payments & receipts**. A receipt is a claim, not proof:
+1. Open the receipt (only the team can see it; opening it is recorded).
+2. Check the money arrived in the account named in Payment settings.
+3. **Approve** with the amount that actually arrived, or **Reject** with a reason the
+   traveller will read. The deposit (TZS 5,000 for the Arusha Escape) is part of the
+   price, not an extra charge. A place is confirmed only once the deposit is covered.
+
 ## 4. Checking people in (events, activities, trips)
 
 Use **Check-in scanner & passes** (in the menu, or **My account → Check-in scanner**).
@@ -94,6 +109,11 @@ messages, remove a participant (with a recorded reason) and close the chat.
 - Do not use chats for private conversations with members.
 
 ## 7. Communities
+
+**Study groups** are made by members without approval. Their admins and moderators
+run them; you step in when something is reported (Reviews & reports) — remove the
+message, mute or remove the person, or unpublish the group. Never share a member's
+phone number with another member.
 
 Private and paid communities send join **requests**. Open the community → **Members
 & announcements** → **Approve** or **Decline**. For paid memberships, online payment

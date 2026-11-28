@@ -245,8 +245,8 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
             )}
           </div>
           {!trip.isPast && (
-            <details className="rounded-[1.2rem] border border-line bg-white p-5" open={false}>
-              <summary className="cursor-pointer font-display text-xl text-acacia-700">Ready to go? Apply for a place</summary>
+            <details id="join" className="scroll-mt-24 rounded-[1.2rem] border-2 border-clay-400 bg-white p-5" open>
+              <summary className="cursor-pointer font-display text-xl text-acacia-700">Join Trip</summary>
               <p className="mt-2 text-sm text-ink-soft">Members apply for a place on a departure. Once the team confirms your place and payment, you join the trip’s private group.</p>
               <div className="mt-4"><ApplyForm slug={trip.slug} title={trip.title} departures={trip.departures} currency={trip.currency} tiers={trip.priceTiers} deposit={trip.depositAmount ?? null} /></div>
             </details>
@@ -286,7 +286,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
       {/* Phones: the two actions always within reach. */}
       <div className="h-24 md:hidden" aria-hidden />
       <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-line bg-white/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur md:hidden">
-        {!trip.isPast && <a href="#request" className="inline-flex h-12 flex-1 items-center justify-center rounded-full bg-acacia-700 text-sm font-bold text-white">Request this trip</a>}
+        {!trip.isPast && <a href="#join" className="inline-flex h-12 flex-1 items-center justify-center rounded-full bg-clay-400 text-sm font-bold text-acacia-700">Join Trip</a>}
         <a href={wa} target="_blank" rel="noreferrer noopener" className={`inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#1f9d55] px-5 text-sm font-bold text-white ${trip.isPast ? 'flex-1' : ''}`}>
           <SocialIcon platform="whatsapp" size={18} /> WhatsApp
         </a>

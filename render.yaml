@@ -60,3 +60,9 @@ services:
         sync: false
       - key: WHATSAPP_TEMPLATE_NAME
         sync: false
+      # The control centre's AI assistant (Bethany / Ariel). Without a key the
+      # assistant records requests and says it is not connected.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ASSISTANT_MODEL
+        value: claude-opus-5-5

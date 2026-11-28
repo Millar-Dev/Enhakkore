@@ -133,6 +133,37 @@ Travel, Gaming, Communities and Search), and a navy-and-gold control centre.
   **Member rating** sort (published member reviews only).
 - New manuals: [TEAM-MANUAL.md](TEAM-MANUAL.md) and [INTEGRATIONS.md](INTEGRATIONS.md).
 
+## R7 — reservations, deposits, communities, study groups and the assistant
+
+- **Explore** has exactly four categories (Stays & Accommodation, Food & Dining,
+  Venues & Event Spaces, Places & Attractions), each with its own page, filters and
+  *Featured in [city]* rows.
+- **Reservations** need an account. Hotel, restaurant and new **venue** requests get a
+  reference, appear in *My reservations*, notify the responsible team members, and use
+  the statuses Request submitted → Under review → Supplier contacted → Awaiting
+  supplier confirmation → Confirmed / Unavailable / Cancelled. Only staff confirm.
+- **Arusha Escape deposit**: TZS 5,000 per person, part of the TZS 270,000 price
+  (balance TZS 265,000). Travellers upload a receipt or transaction ID; finance
+  verifies and approves it under **Payments & receipts**; the booking is confirmed
+  only then, and the traveller joins the trip group chat. Receipts are private and
+  every view and decision is audited. Mobile-money prompts are not connected.
+- **Official starter communities** (10), personalised recommendations by interests and
+  city, and the **Saturday jogging community** (06:30, Sayansi Bus Stop, proposed route
+  to Mbezi Beach — marked *to be confirmed*; its weekly sessions stay draft until you
+  verify the route and publish the activity).
+- **Study groups** under Workshops & Learning: any member can create one; group chat
+  with text, photos, video, voice notes and files, shared files, announcements,
+  moderators, mute/remove, private-group approval, reporting and posting limits.
+  Phone numbers are never shown to other members.
+- **Account Centre** lists every section requested, with Sign out.
+- **AI Assistant** for the Super Administrator: *Hey Bethany* (working — drafts and
+  edits; sensitive changes wait for your Confirm) and *Hello Ariel* (read-only
+  reports). It acts only through checked backend operations and keeps a history.
+  It needs `ANTHROPIC_API_KEY`; until then it says it is not connected.
+- **WhatsApp test** button under Notifications.
+- Tested: 144 API tests (SQLite and PostgreSQL), 20 browser checks for R7 and 25 for
+  R6, and a responsive audit of the new pages.
+
 ## 3. What still needs you (approval, accounts or decisions)
 
 1. **Create your founder (Super Admin) account — once.** No default admin
@@ -288,7 +319,14 @@ name ("WhatsApp", "prices", "expenses").
   was checked is stored.
 - Member notifications are in-app. The team gets WhatsApp notices once the
   WhatsApp Business Platform is connected; emails are only password resets.
-- Currency conversion is not done — every total is shown per currency.
+- Currency conversion is not done — every total is shown per currency, and trip
+  payments are accepted only in the trip's own currency.
+- Trip deposits are verified by hand from uploaded receipts; a receipt never confirms
+  a booking by itself.
+- No new Tanzanian businesses were researched in R7; existing listings are unchanged
+  and unverified ones stay marked as such.
+- Study groups have no age verification (no date of birth is collected); safety
+  relies on accounts, moderators, reporting, muting and the team's review.
 - The older "Ask Enhakkore" question box was removed from public pages because
   it answered from fixed files and could quote out-of-date prices now that
   prices are edited in the control centre.

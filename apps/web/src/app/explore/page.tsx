@@ -205,10 +205,10 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
               const on = params.section === tile.key;
               const image = tileImages[index];
               return (
-                <Link key={tile.key} href={href({ section: on ? undefined : tile.key, category: undefined })} aria-current={on ? 'page' : undefined} className={cx('card-lift group relative block aspect-[4/3.4] overflow-hidden rounded-2xl border bg-gradient-to-br from-[#16456b] to-[#06172b] text-white sm:aspect-[4/3]', on ? 'border-clay-400 ring-2 ring-clay-400' : 'border-white/10')}>
+                <Link key={tile.key} href={href({ section: on ? undefined : tile.key, category: undefined })} aria-current={on ? 'page' : undefined} className={cx('card-lift group relative flex min-h-[10rem] flex-col justify-end overflow-hidden rounded-2xl border bg-gradient-to-br from-[#16456b] to-[#06172b] text-white sm:min-h-0 sm:aspect-[4/3]', on ? 'border-clay-400 ring-2 ring-clay-400' : 'border-white/10')}>
                   {image && <SmartImage src={image} alt="" fill sizes="(max-width:1024px) 50vw, 25vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.06]" />}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#06172b]/95 via-[#06172b]/25 to-transparent" />
-                  <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3 sm:p-4">
+                  <div className="relative flex items-end justify-between gap-2 p-3 sm:absolute sm:inset-x-0 sm:bottom-0 sm:p-4">
                     <span>
                       <span className="block text-clay-400"><Svg d={ICON[tile.key]!} size={24} /></span>
                       <span className="mt-1 block text-[0.9375rem] font-bold leading-tight [overflow-wrap:anywhere] sm:text-lg">{tile.label}</span>
