@@ -20,7 +20,7 @@ import { parseObjects } from '../lib/json';
 import { prisma } from '../lib/prisma';
 import { textContains } from '../lib/search';
 import { requireAuth } from '../middleware/auth';
-import { notify } from '../services/notifications';
+import { notify, notifyMany } from '../services/notifications';
 import { ENGAGEMENT_KINDS, freshness, popularityScores, rankByPopularity, recordEngagement } from '../services/popularity';
 import { toPublic, type Row } from '../services/resources/engine';
 import { LIVE, TRIP_PUBLIC_INCLUDE, toActivity, toEvent, toTrip } from './public';
@@ -417,11 +417,17 @@ experiencesMember.post(
       update: { status, message: input.message || null, joinedAt: new Date() },
     });
     if (status === 'ACTIVE') await recordEngagement(req, 'COMMUNITY', community.id, 'REGISTER');
+    if (status === 'PENDING' && community.kind === 'STUDY_GROUP') {
+      const admins = await prisma.communityMember.findMany({ where: { communityId: community.id, status: 'ACTIVE', role: { in: ['ADMIN', 'MODERATOR'] } }, select: { userId: true } });
+      await notifyMany(admins.map((row) => row.userId), { type: 'INVITATION', title: `Request to join ${community.name}`, body: input.message?.slice(0, 140) ?? 'A member asked to join your study group.', link: `/experiences/communities/${community.slug}#manage` });
+    }
     res.json({
       joined: status === 'ACTIVE',
       status,
       message:
-        community.accessType === 'PAID'
+        community.kind === 'STUDY_GROUP' && status === 'PENDING'
+          ? 'Request sent. The group admin will review it and let you know.'
+          : community.accessType === 'PAID'
           ? 'Request sent. Online payment is not switched on yet — the community team will contact you about the membership fee. You become a member once they approve.'
           : community.accessType === 'PRIVATE'
             ? 'Request sent. The community team will review it and let you know.'

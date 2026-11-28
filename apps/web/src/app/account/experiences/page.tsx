@@ -59,11 +59,11 @@ export default function MyExperiences() {
         <p className="mt-4 text-ink-muted">Loading…</p>
       ) : (
         <div className="mt-6 space-y-9">
-          <section>
+          <section id="registrations" className="scroll-mt-24">
             <h2 className={heading}>Upcoming</h2>
             <List items={data.upcoming} empty={<>Nothing booked yet. <Link href="/experiences" className="font-semibold text-acacia-600 underline">Find something to do</Link>.</>} />
           </section>
-          <section>
+          <section id="teams" className="scroll-mt-24">
             <h2 className={heading}>Teams & squads</h2>
             {data.teams.length ? (
               <ul className="mt-3 grid gap-2">
@@ -79,7 +79,7 @@ export default function MyExperiences() {
               <p className="mt-3 text-sm text-ink-soft">No teams. <Link href="/experiences/gaming" className="font-semibold text-acacia-600 underline">See gaming tournaments</Link>.</p>
             )}
           </section>
-          <section>
+          <section id="communities" className="scroll-mt-24">
             <h2 className={heading}>My communities</h2>
             {data.communities.length ? (
               <div className="mt-3 flex flex-wrap gap-2">{data.communities.map((community) => <Link key={community.href} href={community.href} className="chip">{community.name}</Link>)}</div>
@@ -87,7 +87,7 @@ export default function MyExperiences() {
               <p className="mt-3 text-sm text-ink-soft">None yet. <Link href="/experiences/communities" className="font-semibold text-acacia-600 underline">Find a community</Link>.</p>
             )}
           </section>
-          <section>
+          <section id="plans" className="scroll-mt-24">
             <h2 className={heading}>My event plans</h2>
             {data.eventPlans.length ? (
               <ul className="mt-3 grid gap-2">
@@ -102,7 +102,7 @@ export default function MyExperiences() {
               <p className="mt-3 text-sm text-ink-soft">None. <Link href="/experiences/plan" className="font-semibold text-acacia-600 underline">Plan an event</Link>.</p>
             )}
           </section>
-          <section>
+          <section id="published" className="scroll-mt-24">
             <h2 className={heading}>My published activities</h2>
             {data.published.length ? (
               <ul className="mt-3 grid gap-2">
@@ -117,7 +117,7 @@ export default function MyExperiences() {
               <p className="mt-3 text-sm text-ink-soft">None. <Link href="/experiences/publish" className="font-semibold text-acacia-600 underline">Publish an activity</Link>.</p>
             )}
           </section>
-          <section>
+          <section id="past" className="scroll-mt-24">
             <h2 className={heading}>Past experiences</h2>
             <List items={data.past} empty="Nothing yet." />
           </section>

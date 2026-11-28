@@ -139,23 +139,32 @@ export function Header({ logoUrl, logoOnDarkUrl, brandName, nav, whatsapp }: Hea
         )}
       >
         {/* Phones and tablets */}
-        <div className="shell grid h-14 grid-cols-[5.5rem_1fr_5.5rem] items-center md:h-16 lg:hidden">
-          <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open} className="-ml-2 inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-              <path d="M4 7h16M4 12h16M4 17h16" />
-            </svg>
-          </button>
+        <div className="shell grid h-14 grid-cols-[1fr_auto_1fr] items-center md:h-16 lg:hidden">
+          <div className="-ml-2 flex items-center">
+            <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open} className="inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              </svg>
+            </button>
+            <button type="button" onClick={() => setSearching(true)} aria-label="Search" className="inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10">
+              <Icon.search size={21} />
+            </button>
+          </div>
           <Link href="/" aria-label={`${brandName} — home`} className="flex justify-self-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={emblem} alt="" width={64} height={45} className="h-11 w-auto max-w-full object-contain md:h-12" />
           </Link>
           <div className="-mr-2 flex items-center justify-end">
-            <button type="button" onClick={() => setSearching(true)} aria-label="Search" className="inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10">
-              <Icon.search size={21} />
-            </button>
             <Link href={status === 'authenticated' ? '/account/notifications' : '/signin?next=/account/notifications'} aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} className="relative inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10">
               {BELL}
               {unread > 0 && <span className="absolute right-1.5 top-1.5 min-w-[1.1rem] rounded-full bg-[#e5484d] px-1 text-center text-[0.625rem] font-bold leading-[1.1rem]">{unread > 9 ? '9+' : unread}</span>}
+            </Link>
+            <Link href={status === 'authenticated' ? accountHref : '/signin?next=/account'} aria-label={status === 'authenticated' ? 'Account Centre' : 'Sign in'} className="inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10">
+              {status === 'authenticated' && user ? (
+                <span className="rounded-full ring-2 ring-clay-400"><Avatar name={user.name} src={user.avatarUrl} size="xs" /></span>
+              ) : (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
+              )}
             </Link>
           </div>
         </div>

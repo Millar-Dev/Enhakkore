@@ -109,7 +109,7 @@ export default function ProfilePage() {
           <CropUpload label="Profile picture" kind="AVATAR" aspect={1} outputWidth={512} round value={avatar} onChange={setAvatar} />
         </section>
 
-        <label className="grid gap-1 text-sm font-semibold text-ink-soft">
+        <label id="username" className="grid scroll-mt-24 gap-1 text-sm font-semibold text-ink-soft">
           Username
           <span className="flex items-center rounded-xl border border-line bg-white focus-within:ring-2 focus-within:ring-acacia-500">
             <span className="pl-3 text-ink-faint">@</span>
@@ -138,7 +138,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <fieldset className="rounded-2xl border border-line bg-white p-4">
+        <fieldset id="privacy" className="scroll-mt-24 rounded-2xl border border-line bg-white p-4">
           <legend className="px-1 text-sm font-bold text-ink">Who can see each part</legend>
           <p className="text-xs text-ink-muted">“Everyone” includes people who are not signed in, on your public card at /u/{user.username || 'username'}.</p>
           <div className="mt-3 grid gap-3">

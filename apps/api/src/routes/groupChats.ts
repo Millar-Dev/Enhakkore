@@ -33,6 +33,8 @@ interface Access {
   isOrganiser: boolean;
   isStaff: boolean;
   organiserUserId: string | null;
+  /** Muted by a group moderator: can read, cannot post for now. */
+  muted?: boolean;
 }
 
 async function access(subjectType: Subject, subjectId: string, viewer: AuthUser): Promise<Access | null> {
@@ -56,7 +58,8 @@ async function access(subjectType: Subject, subjectId: string, viewer: AuthUser)
   if (!community) return null;
   const member = await prisma.communityMember.findUnique({ where: { communityId_userId: { communityId: subjectId, userId: viewer.id } } });
   const active = member?.status === 'ACTIVE';
-  return { title: community.name, href: `/experiences/communities/${community.slug}`, enabled: community.chatEnabled, isMember: active, isOrganiser: active && member?.role === 'MODERATOR', isStaff, organiserUserId: community.createdById };
+  const muted = !!member?.mutedUntil && member.mutedUntil.getTime() > Date.now();
+  return { title: community.name, href: `/experiences/communities/${community.slug}`, enabled: community.chatEnabled, isMember: active, isOrganiser: active && (member?.role === 'MODERATOR' || member?.role === 'ADMIN'), isStaff, organiserUserId: community.createdById, muted };
 }
 
 async function loadConversation(id: string, viewer: AuthUser) {
@@ -70,7 +73,7 @@ async function loadConversation(id: string, viewer: AuthUser) {
     await prisma.conversationMember.deleteMany({ where: { conversationId: id, userId: viewer.id } });
     throw ApiError.notFound('That group chat does not exist.');
   }
-  const canPost = (info.isMember || info.isOrganiser) && info.enabled && !conversation.archivedAt;
+  const canPost = (info.isMember || info.isOrganiser) && info.enabled && !conversation.archivedAt && !info.muted;
   const canModerate = info.isOrganiser || info.isStaff;
   return { conversation, subjectType, info, canPost, canModerate };
 }
@@ -176,6 +179,7 @@ groupChatsRouter.get(
       archivedAt: conversation.archivedAt,
       canPost,
       canModerate,
+      muted: !!info.muted,
       viewerIsOrganiser: info.isOrganiser,
       members: members.map((member) => ({ ...author(member.user), groupRole: member.role })),
       pinned: pinned.map((message) => ({ ...toMessage(message, info.organiserUserId), author: { ...author(message.author), isOrganizer: message.author.id === info.organiserUserId } })),
@@ -206,18 +210,30 @@ groupChatsRouter.get(
 
 const postSchema = z.object({
   body: z.string().trim().min(1, 'Write a message.').max(2000),
-  kind: z.enum(['TEXT', 'ANNOUNCEMENT', 'IMAGE']).default('TEXT'),
+  kind: z.enum(['TEXT', 'ANNOUNCEMENT', 'IMAGE', 'VIDEO', 'VOICE', 'DOCUMENT']).default('TEXT'),
   attachments: z.array(z.string().url()).max(6).default([]),
 });
+
+/** Slows down anyone posting faster than people can read. */
+const recentPosts = new Map<string, number[]>();
+function tooFast(userId: string) {
+  const now = Date.now();
+  const list = (recentPosts.get(userId) ?? []).filter((at) => now - at < 60_000);
+  list.push(now);
+  recentPosts.set(userId, list);
+  return list.length > 20;
+}
 
 groupChatsRouter.post(
   '/:id/messages',
   route(async (req, res) => {
     const input = postSchema.parse(req.body);
     const { conversation, info, canPost } = await loadConversation(req.params.id, req.auth!);
+    if (info.muted) throw ApiError.forbidden('A moderator has muted you in this group for now. You can still read it.');
     if (!canPost) throw ApiError.forbidden(info.enabled ? 'You cannot post in this group.' : 'The organiser has switched off this group chat. You can still read it.');
+    if (tooFast(req.auth!.id)) throw new ApiError(429, 'You are sending messages very quickly. Wait a moment.', 'rate_limited');
     if (input.kind === 'ANNOUNCEMENT' && !info.isOrganiser) throw ApiError.forbidden('Only the organiser can post announcements.');
-    if (input.kind === 'IMAGE' && input.attachments.length === 0) throw ApiError.badRequest('Attach the image first.');
+    if (['IMAGE', 'VIDEO', 'VOICE', 'DOCUMENT'].includes(input.kind) && input.attachments.length === 0) throw ApiError.badRequest('Attach the file first.');
     const message = await prisma.message.create({
       data: { conversationId: conversation.id, userId: req.auth!.id, body: input.body, kind: input.kind, attachments: JSON.stringify(input.attachments) },
       include: { author: true },
@@ -294,5 +310,15 @@ groupChatsRouter.post(
     await prisma.conversation.update({ where: { id: conversation.id }, data: { archivedAt: archive ? new Date() : null } });
     await audit(req, { action: 'update', entityType: 'conversations', entityId: conversation.id, summary: `${archive ? 'Closed' : 'Reopened'} the group chat for ${info.title}` });
     res.json({ archived: archive });
+  }),
+);
+
+/** Shared study resources: every file, photo, video and voice note posted in the group. */
+groupChatsRouter.get(
+  '/:id/resources',
+  route(async (req, res) => {
+    const { conversation, info } = await loadConversation(req.params.id, req.auth!);
+    const rows = await prisma.message.findMany({ where: { conversationId: conversation.id, kind: { in: ['DOCUMENT', 'IMAGE', 'VIDEO', 'VOICE'] } }, include: { author: true }, orderBy: { createdAt: 'desc' }, take: 200 });
+    res.json({ items: rows.map((message) => ({ ...toMessage(message, info.organiserUserId), author: { ...author(message.author), isOrganizer: message.author.id === info.organiserUserId } })) });
   }),
 );

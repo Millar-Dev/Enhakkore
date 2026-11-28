@@ -83,7 +83,7 @@ export default function MyEnquiries() {
             {reservations.length ? list(reservations) : <p className="mt-2 text-sm text-ink-soft">No hotel, restaurant or venue requests.</p>}
           </section>
           {others.length > 0 && (
-            <section className="mt-8">
+            <section id="other" className="mt-8 scroll-mt-24">
               <h2 className="text-sm font-bold uppercase tracking-wider text-ink-muted">Other requests</h2>
               {list(others)}
             </section>

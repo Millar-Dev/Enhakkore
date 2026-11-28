@@ -323,7 +323,7 @@ communityRouter.get(
       include: { trip: { select: { title: true, slug: true, heroImage: true } }, departure: { select: { startDate: true, endDate: true } } },
       orderBy: { createdAt: 'desc' },
     });
-    res.json(rows.map((row) => ({ reference: row.reference, status: row.status, travellers: row.travellers, totalAmount: row.totalAmount, amountPaid: row.amountPaid, currency: row.currency, trip: row.trip, departure: row.departure, createdAt: row.createdAt })));
+    res.json(rows.map((row) => ({ reference: row.reference, status: row.status, paymentStatus: row.paymentStatus, travellers: row.travellers, totalAmount: row.totalAmount, amountPaid: row.amountPaid, currency: row.currency, trip: row.trip, departure: row.departure, createdAt: row.createdAt })));
   }),
 );
 

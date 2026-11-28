@@ -7,9 +7,12 @@ import { DashboardShell, MEMBER_ROLES, TRAVELLER_NAV } from '@/components/layout
 import { tripDates } from '@/components/public/listings';
 import { api } from '@/lib/api';
 
+const PAYMENT_LABELS: Record<string, string> = { AWAITING_PAYMENT: 'Awaiting payment', RECEIPT_SUBMITTED: 'Receipt submitted', UNDER_VERIFICATION: 'Under verification', APPROVED: 'Payment approved', REJECTED: 'Payment rejected', REFUNDED: 'Refunded', CANCELLED: 'Cancelled' };
+
 interface Row {
   reference: string;
   status: string;
+  paymentStatus?: string;
   travellers: number;
   totalAmount: number;
   amountPaid: number;
@@ -43,6 +46,7 @@ export default function ApplicationsPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold text-acacia-700">{APPLICATION_STATUS_LABELS[row.status] ?? row.status}</p>
+                  {row.paymentStatus && <p className="text-xs text-ink-muted">Payment: {PAYMENT_LABELS[row.paymentStatus] ?? row.paymentStatus}</p>}
                   <p className="text-xs text-ink-muted">Paid {formatMoney({ amount: row.amountPaid, currency: row.currency })} of {formatMoney({ amount: row.totalAmount, currency: row.currency })}</p>
                 </div>
               </Link>

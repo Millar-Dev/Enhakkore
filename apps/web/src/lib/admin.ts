@@ -53,6 +53,7 @@ export const MENU: MenuGroup[] = [
       resource('activities', 'Events & activities', 'basketball running jogging sessions submissions approve'),
       resource('events', 'Ticketed events', 'parties tickets'),
       resource('communities', 'Communities', 'groups meetups members announcements'),
+      { href: '/admin/r/communities?kind=STUDY_GROUP', label: 'Study groups', permission: 'communities.view', keywords: 'study learning students school university moderation' },
       resource('tournaments', 'Gaming & tournaments', 'free fire pubg efootball console esports'),
       resource('experiences', 'Guided experiences', 'tours cooking'),
       resource('catering', 'Catering & lunchboxes', 'food menu chef'),

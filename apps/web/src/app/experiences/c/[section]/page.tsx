@@ -40,6 +40,12 @@ export default async function SectionPage({ params, searchParams }: { params: Pr
     <PublicShell>
       <PageHero kicker="Experiences" title={`${data.section.icon} ${EXPERIENCE_SECTION_NAMES[key as keyof typeof EXPERIENCE_SECTION_NAMES] ?? data.section.label}`} intro={data.section.blurb} />
       <section className="shell py-8 md:py-12">
+        {key === 'LEARNING' && (
+          <Link href="/experiences/study-groups" className="mb-5 flex flex-col gap-1 rounded-2xl border border-clay-400/60 bg-[#fff8e6] p-5 sm:flex-row sm:items-center sm:justify-between">
+            <span><span className="block text-lg font-bold text-ink">📚 Study groups</span><span className="text-sm text-ink-soft">Find a group for your subject or start your own — no approval needed.</span></span>
+            <span className="text-sm font-bold text-acacia-700">Open study groups →</span>
+          </Link>
+        )}
         <div className="mb-5 flex flex-wrap gap-2">
           <Link href={`/experiences/discover?section=${key}`} className="inline-flex h-11 items-center rounded-full bg-acacia-700 px-5 text-sm font-bold text-white">Discover all</Link>
           <Link href={`/experiences/host?section=${key}`} className="inline-flex h-11 items-center rounded-full border border-line-strong bg-white px-5 text-sm font-semibold text-acacia-700">Host one</Link>

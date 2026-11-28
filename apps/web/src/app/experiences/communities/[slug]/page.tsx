@@ -8,6 +8,7 @@ import { CardGrid, Prose, SectionTitle } from '@/components/public/Cards';
 import { CommunityMembership } from '@/components/public/CommunityActions';
 import { ActivityCard } from '@/components/public/listings';
 import { ReportButton } from '@/components/public/Actions';
+import { StudyGroupManage } from '@/components/public/StudyGroupManage';
 import { SmartImage } from '@/components/public/SmartImage';
 import { GroupChatLink, ShareButton, TrackView } from '@/components/public/Track';
 import { apiGet } from '@/lib/api';
@@ -42,7 +43,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
       <section className="relative bg-acacia-700 text-white">
         {c.coverImage && <SmartImage src={c.coverImage} alt="" fill sizes="100vw" className="object-cover opacity-35" />}
         <div className="shell relative py-12 md:py-16">
-          <Link href="/experiences/communities" className="kicker !text-clay-400 inline-flex min-h-10 items-center">← Communities</Link>
+          <Link href={c.kind === 'STUDY_GROUP' ? '/experiences/study-groups' : '/experiences/communities'} className="kicker !text-clay-400 inline-flex min-h-10 items-center">← {c.kind === 'STUDY_GROUP' ? 'Study groups' : 'Communities'}</Link>
           <div className="mt-3 flex flex-wrap gap-2">
             {c.official && <span className="rounded-full bg-clay-400 px-2.5 py-0.5 text-xs font-bold text-acacia-700">Official Enhakkore community</span>}
             {c.kind === 'STUDY_GROUP' && <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-bold">Study group</span>}
@@ -122,6 +123,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
         </div>
         <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
           <CommunityMembership slug={c.slug} memberCount={c.memberCount} />
+          {c.kind === 'STUDY_GROUP' && <StudyGroupManage slug={c.slug} />}
           {data.organisers?.length ? (
             <div className="rounded-[1.1rem] border border-line bg-white p-5 text-sm">
               <p className="font-bold text-acacia-700">Organisers & moderators</p>

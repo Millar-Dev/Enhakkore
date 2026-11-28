@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { ENQUIRY_STATUSES, ENQUIRY_STATUS_LABELS,
   enquiryStatusLabel, PAYMENT_RECORD_METHODS, departureStatus, toMinor } from '@enhakkore/shared';
-import { notifyEnquiry } from '../../services/whatsapp';
+import { notifyEnquiry, notifyTeam } from '../../services/whatsapp';
 import { ApiError, pageParams, paginated, route } from '../../lib/http';
 import { paymentReference } from '../../lib/ids';
 import { parseRecord } from '../../lib/json';
@@ -704,5 +704,16 @@ operationsRouter.post(
     const report = await prisma.report.update({ where: { id: req.params.id }, data: { ...input, handledById: req.auth!.id } });
     await audit(req, { action: 'status', entityType: 'reports', entityId: report.id, summary: `Report on ${report.targetType.toLowerCase()} → ${input.status}` });
     res.json(report);
+  }),
+);
+
+/** Sends a test WhatsApp notice to the team numbers, to check the integration end to end. */
+operationsRouter.post(
+  '/whatsapp/test',
+  route(async (req, res) => {
+    assertPermission(req, 'settings.edit');
+    const outcome = await notifyTeam('Test notice', `Enhakkore: this is a test notice sent from the control centre by ${req.auth!.name}. If you can read it, automatic WhatsApp notices are working.`, { type: 'TEST', id: req.auth!.id });
+    await audit(req, { action: 'update', entityType: 'settings', summary: `Sent a WhatsApp test notice (${outcome})` });
+    res.json({ outcome });
   }),
 );

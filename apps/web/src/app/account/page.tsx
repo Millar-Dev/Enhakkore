@@ -17,7 +17,7 @@ interface Application {
 
 /** A member's home: profile at a glance, open applications, and shortcuts. */
 export default function AccountHome() {
-  const { user } = useSession();
+  const { user, signOut } = useSession();
   const [applications, setApplications] = useState<Application[] | null>(null);
   const [unread, setUnread] = useState(0);
   useEffect(() => {
@@ -32,22 +32,33 @@ export default function AccountHome() {
   /** The Account Centre, in groups — counts only where they are real. */
   const groups: { title: string; items: { href: string; label: string; icon: string; body: string; count?: number }[] }[] = [
     {
-      title: 'My Enhakkore',
+      title: 'Bookings & trips',
       items: [
-        { href: '/account/experiences', label: 'My experiences', icon: '📋', body: 'Registrations, upcoming and past, teams and event plans.' },
-        { href: '/account/passes', label: 'Enhakkore Pass', icon: '🎟️', body: 'Entry passes for confirmed events, trips and reservations.' },
-        { href: '/account/applications', label: 'My trips', icon: '🧭', body: 'Trip applications, payment steps and status.', count: openApplications },
-        { href: '/account/enquiries', label: 'Enquiries & reservations', icon: '✉️', body: 'Hotel enquiries, table requests and replies.' },
+        { href: '/account/enquiries', label: 'My reservations', icon: '🛎️', body: 'Hotel, restaurant and venue requests, with status and reference.' },
+        { href: '/account/enquiries#other', label: 'My booking requests', icon: '✉️', body: 'Trip requests, event plans and other enquiries.' },
+        { href: '/account/applications', label: 'My trips', icon: '🧭', body: 'Trip bookings, confirmation and remaining balance.', count: openApplications },
+        { href: '/account/applications', label: 'My trip payments', icon: '💳', body: 'Deposits, receipts and payment status.' },
+        { href: '/account/passes', label: 'My passes', icon: '🎟️', body: 'Enhakkore Pass for confirmed events, trips and reservations.' },
+        { href: '/account/saved', label: 'Wishlist', icon: '🔖', body: 'Saved trips, places, events and activities.' },
+      ],
+    },
+    {
+      title: 'Experiences & groups',
+      items: [
+        { href: '/account/experiences', label: 'My experiences', icon: '📋', body: 'Upcoming and past experiences.' },
+        { href: '/account/experiences#registrations', label: 'My registrations', icon: '📝', body: 'Activities, sessions, events and tournaments you registered for.' },
         { href: '/account/experiences#communities', label: 'My communities', icon: '👥', body: 'Communities you belong to or asked to join.' },
-        { href: '/account/saved', label: 'Saved', icon: '🔖', body: 'Trips, places, events and activities you saved.' },
+        { href: '/account/study-groups', label: 'My study groups', icon: '📚', body: 'Groups you run or belong to.' },
+        { href: '/account/experiences#teams', label: 'My teams', icon: '🎮', body: 'Gaming teams and squads.' },
+        { href: '/account/experiences#plans', label: 'My event plans', icon: '🎉', body: 'Events you asked Enhakkore to plan.' },
       ],
     },
     {
       title: 'Messages',
       items: [
-        { href: '/account/chats', label: 'Group chats', icon: '💬', body: 'Chats for your events, activities and communities.' },
-        { href: '/account/groups', label: 'Trip groups', icon: '🚌', body: 'Chat with the people on your confirmed departures.' },
-        { href: '/account/notifications', label: 'Notifications', icon: '🔔', body: 'Updates, invitations and announcements.', count: unread },
+        { href: '/account/chats', label: 'My messages', icon: '💬', body: 'Group chats for events, communities and study groups.' },
+        { href: '/account/groups', label: 'Trip group chats', icon: '🚌', body: 'Chat with the people on your confirmed trips.' },
+        { href: '/account/notifications', label: 'My notifications', icon: '🔔', body: 'Updates, invitations and announcements.', count: unread },
       ],
     },
     {
@@ -56,15 +67,17 @@ export default function AccountHome() {
         { href: '/experiences/host', label: 'Host & Organise', icon: '🏁', body: 'Apply as an organiser and submit experiences.' },
         { href: '/account/hosting', label: 'Activities you host', icon: '🗂️', body: 'Approve people who asked to join.' },
         { href: '/account/scanner', label: 'Check-in scanner', icon: '📷', body: 'Check people in at the entrance.' },
-        { href: '/experiences/plan', label: 'Plan an event with us', icon: '🎉', body: 'Ask the team to organise an event for you.' },
       ],
     },
     {
       title: 'Profile & settings',
       items: [
-        { href: '/account/profile', label: 'Profile & privacy', icon: '👤', body: 'Photo, cover, username and who sees what.' },
-        { href: '/account/settings', label: 'Notifications & Nearby', icon: '⚙️', body: 'Choose alerts, quiet hours and Nearby.' },
-        { href: '/account/settings#security', label: 'Password & security', icon: '🔒', body: 'Change your password.' },
+        { href: user?.username ? `/u/${user.username}` : '/account/profile', label: 'Profile', icon: '🪪', body: 'Your public profile card.' },
+        { href: '/account/profile', label: 'Edit profile', icon: '👤', body: 'Photo, cover, introduction and interests.' },
+        { href: '/account/profile#username', label: 'Username', icon: '@', body: 'Your public handle.' },
+        { href: '/account/profile#privacy', label: 'Privacy settings', icon: '🛡️', body: 'Who sees each part of your profile.' },
+        { href: '/account/settings', label: 'Settings', icon: '⚙️', body: 'Notifications, Nearby and password.' },
+        { href: '/faq', label: 'Help & support', icon: '❓', body: 'Questions, contact and WhatsApp support.' },
       ],
     },
   ];
@@ -89,7 +102,7 @@ export default function AccountHome() {
               <h2 className="bg-sand px-5 pb-2 pt-5 text-xs font-bold uppercase tracking-wider text-ink-muted">{group.title}</h2>
               <ul className="divide-y divide-line bg-white">
                 {group.items.map((item) => (
-                  <li key={item.href}>
+                  <li key={item.label}>
                     <Link href={item.href} className="flex min-h-14 items-center gap-3 px-5 text-[0.9375rem] font-medium text-ink hover:bg-sand">
                       <span className="w-6 text-center text-lg" aria-hidden>{item.icon}</span>
                       <span className="flex-1">{item.label}</span>
@@ -101,6 +114,9 @@ export default function AccountHome() {
               </ul>
             </section>
           ))}
+          <button type="button" onClick={signOut} className="flex min-h-14 w-full items-center gap-3 bg-white px-5 text-left text-[0.9375rem] font-semibold text-danger">
+            <span className="w-6 text-center text-lg" aria-hidden>↪</span> Sign out
+          </button>
         </div>
 
         <div className="hidden space-y-8 md:block">
@@ -141,7 +157,7 @@ export default function AccountHome() {
               <h2 className="text-sm font-bold uppercase tracking-wider text-ink-muted">{group.title}</h2>
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {group.items.map((tile) => (
-                  <Link key={tile.href} href={tile.href} className="card-lift flex gap-3 rounded-xl border border-line bg-white p-5">
+                  <Link key={tile.label} href={tile.href} className="card-lift flex gap-3 rounded-xl border border-line bg-white p-5">
                     <span className="text-xl" aria-hidden>{tile.icon}</span>
                     <span>
                       <span className="flex items-center gap-2 text-lg font-bold text-acacia-700">{tile.label}{tile.count ? <span className="rounded-full bg-clay-400 px-2 text-xs leading-5 text-acacia-700">{tile.count}</span> : null}</span>
@@ -153,6 +169,7 @@ export default function AccountHome() {
             </section>
           ))}
 
+          <button type="button" onClick={signOut} className="inline-flex h-11 items-center rounded-full border border-line-strong bg-white px-5 text-sm font-semibold text-danger">Sign out</button>
           <section className="rounded-xl bg-[color:var(--color-cream)] p-5 text-sm text-ink-soft">
             Looking for something to do? <Link href="/activities" className="font-semibold text-acacia-600 underline">Browse activities</Link>, <Link href="/events" className="font-semibold text-acacia-600 underline">see events</Link> or <Link href="/experiences/host" className="font-semibold text-acacia-600 underline">host your own</Link>.
           </section>

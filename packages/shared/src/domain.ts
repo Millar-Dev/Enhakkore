@@ -85,7 +85,7 @@ export type ImpactCategory = (typeof IMPACT_CATEGORIES)[number];
 export const PROJECT_STATUSES = ['DRAFT', 'ACTIVE', 'FUNDED', 'COMPLETED', 'PAUSED'] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
-export const MESSAGE_KINDS = ['TEXT', 'ANNOUNCEMENT', 'SYSTEM', 'IMAGE', 'DOCUMENT'] as const;
+export const MESSAGE_KINDS = ['TEXT', 'ANNOUNCEMENT', 'SYSTEM', 'IMAGE', 'DOCUMENT', 'VIDEO', 'VOICE'] as const;
 export type MessageKind = (typeof MESSAGE_KINDS)[number];
 
 export const NOTIFICATION_TYPES = [

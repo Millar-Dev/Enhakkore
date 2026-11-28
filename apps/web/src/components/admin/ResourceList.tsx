@@ -50,17 +50,26 @@ export function ResourceList({ resource }: { resource: ResourceDef }) {
   const [notice, setNotice] = useState<string | null>(null);
   const hasDemo = resource.fields.some((field) => field.name === 'isDemo');
 
-  // Links like “Activity submissions to review” open the list on a status.
+  // Links like “Activity submissions to review” open the list on a status,
+  // and “Study groups” opens Communities filtered to that kind.
+  const [preset, setPreset] = useState<Record<string, string>>({});
   useEffect(() => {
-    const wanted = new URLSearchParams(window.location.search).get('status');
+    const search = new URLSearchParams(window.location.search);
+    const wanted = search.get('status');
     if (wanted && resource.statuses?.includes(wanted)) setStatus(wanted);
+    const extra: Record<string, string> = {};
+    for (const name of resource.filters ?? []) {
+      const value = search.get(name);
+      if (value && name !== 'status' && name !== resource.statusField) extra[name] = value;
+    }
+    setPreset(extra);
   }, [resource]);
 
   const load = useCallback(() => {
     const [field, dir] = sort.split(':');
-    const params = new URLSearchParams({ page: String(page), pageSize: '25', sort: field!, dir: dir!, ...(q ? { q } : {}), ...(status !== 'all' && resource.statusField ? { [resource.statusField]: status } : {}), ...(demoOnly !== 'all' ? { isDemo: demoOnly === 'demo' ? 'true' : 'false' } : {}) });
+    const params = new URLSearchParams({ page: String(page), pageSize: '25', sort: field!, dir: dir!, ...(q ? { q } : {}), ...(status !== 'all' && resource.statusField ? { [resource.statusField]: status } : {}), ...(demoOnly !== 'all' ? { isDemo: demoOnly === 'demo' ? 'true' : 'false' } : {}), ...preset });
     api.get<ListResult>(`/cc/r/${resource.key}?${params}`).then(setData).catch((caught) => setError(caught instanceof ApiError ? caught.message : 'Could not load.'));
-  }, [resource, q, status, sort, page, demoOnly]);
+  }, [resource, q, status, sort, page, demoOnly, preset]);
 
   const bulk = async (action: 'publish' | 'unpublish' | 'archive' | 'delete', allDemo = false) => {
     const count = allDemo ? 'every DEMO record' : `${selected.size} selected`;

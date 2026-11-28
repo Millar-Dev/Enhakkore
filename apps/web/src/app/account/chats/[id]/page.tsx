@@ -6,10 +6,11 @@ import { use, useCallback, useEffect, useRef, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { DashboardShell, MEMBER_ROLES, TRAVELLER_NAV } from '@/components/layout/DashboardShell';
 import { ApiError, REALTIME_URL, api, getToken } from '@/lib/api';
+import { uploadFile } from '@/lib/upload';
 import { useSession } from '@/lib/session';
 
-interface Message { id: string; body: string; kind: string; pinned: boolean; createdAt: string; author: { id: string; name: string; avatarUrl: string | null; isOrganizer: boolean } }
-interface Chat { id: string; subjectType: string; subjectId: string; title: string; href: string; enabled: boolean; archivedAt: string | null; canPost: boolean; canModerate: boolean; viewerIsOrganiser: boolean; members: { id: string; name: string }[]; pinned: Message[] }
+interface Message { id: string; body: string; kind: string; attachments?: string[]; pinned: boolean; createdAt: string; author: { id: string; name: string; avatarUrl: string | null; isOrganizer: boolean } }
+interface Chat { id: string; subjectType: string; subjectId: string; title: string; href: string; enabled: boolean; archivedAt: string | null; canPost: boolean; canModerate: boolean; muted?: boolean; viewerIsOrganiser: boolean; members: { id: string; name: string }[]; pinned: Message[] }
 
 /**
  * A group chat for an event, activity or community. `open` resolves a listing
@@ -81,6 +82,58 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     end.current?.scrollIntoView({ block: 'end' });
   }, [messages.length]);
 
+  const [sendingFile, setSendingFile] = useState(false);
+  const [recording, setRecording] = useState<MediaRecorder | null>(null);
+  const [tab, setTab] = useState<'chat' | 'resources'>('chat');
+  const [resources, setResources] = useState<Message[] | null>(null);
+
+  /** Uploads a photo, video, document or voice note and posts it. */
+  async function sendFile(file: File, kind: 'IMAGE' | 'VIDEO' | 'VOICE' | 'DOCUMENT', caption?: string) {
+    if (!id) return;
+    setSendingFile(true);
+    setError(null);
+    try {
+      const stored = await uploadFile('CHAT_MEDIA', file);
+      if (!stored.url) throw new Error('upload');
+      const message = await api.post<Message>(`/experience-chats/${id}/messages`, { body: caption || file.name || (kind === 'VOICE' ? 'Voice message' : 'File'), kind, attachments: [stored.url] });
+      setMessages((list) => (list.some((item) => item.id === message.id) ? list : [...list, message]));
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'The file could not be sent.');
+    } finally {
+      setSendingFile(false);
+    }
+  }
+
+  async function toggleVoice() {
+    if (recording) {
+      recording.stop();
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setError('Voice messages are not supported in this browser.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = (event) => chunks.push(event.data);
+      recorder.onstop = () => {
+        stream.getTracks().forEach((track) => track.stop());
+        setRecording(null);
+        const type = recorder.mimeType.split(';')[0] || 'audio/webm';
+        const blob = new Blob(chunks, { type });
+        if (blob.size > 0) void sendFile(new File([blob], `voice.${type.includes('mp4') ? 'm4a' : type.split('/')[1]}`, { type }), 'VOICE', 'Voice message');
+      };
+      recorder.start();
+      setRecording(recorder);
+      // Voice notes stop after two minutes.
+      window.setTimeout(() => recorder.state === 'recording' && recorder.stop(), 120000);
+    } catch {
+      setError('Microphone permission was refused.');
+    }
+  }
+
   async function send(kind: 'TEXT' | 'ANNOUNCEMENT' = 'TEXT') {
     if (!id || !text.trim()) return;
     try {
@@ -146,7 +199,32 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           </div>
         )}
         {error && <p role="status" className="rounded-xl bg-sand p-3 text-sm text-ink-soft">{error}</p>}
-        <ol className="grid gap-3 rounded-2xl border border-line bg-white p-4" aria-live="polite">
+        <div className="flex gap-2" role="tablist">
+          <button type="button" role="tab" aria-selected={tab === 'chat'} onClick={() => setTab('chat')} className={`chip ${tab === 'chat' ? 'chip-active' : ''}`}>Chat</button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'resources'}
+            onClick={() => {
+              setTab('resources');
+              api.get<{ items: Message[] }>(`/experience-chats/${id}/resources`).then((data) => setResources(data.items)).catch(() => setResources([]));
+            }}
+            className={`chip ${tab === 'resources' ? 'chip-active' : ''}`}
+          >
+            Shared files
+          </button>
+        </div>
+        {tab === 'resources' && (
+          <ul className="grid gap-2 rounded-2xl border border-line bg-white p-4 text-sm">
+            {resources === null ? <li className="text-ink-muted">Loading…</li> : resources.length === 0 ? <li className="text-ink-muted">Nothing shared yet.</li> : resources.map((item) => (
+              <li key={item.id} className="border-b border-line pb-2 last:border-0">
+                <p className="text-xs text-ink-muted">{item.author.name} · {new Date(item.createdAt).toLocaleDateString('en-GB')}</p>
+                <Attachment message={item} />
+              </li>
+            ))}
+          </ul>
+        )}
+        <ol className={`grid gap-3 rounded-2xl border border-line bg-white p-4 ${tab === 'chat' ? '' : 'hidden'}`} aria-live="polite">
           {messages.length === 0 && <li className="text-sm text-ink-muted">No messages yet. Say hello.</li>}
           {messages.map((message) => {
             const mine = message.author.id === user?.id;
@@ -156,7 +234,9 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                   <strong className="text-ink-soft">{message.author.name}</strong>
                   {message.author.isOrganizer && <span className="ml-1 rounded bg-clay-400/30 px-1 text-[0.625rem] font-bold uppercase">Organiser</span>} · {new Date(message.createdAt).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
                 </p>
-                <p className={`mt-1 inline-block whitespace-pre-line rounded-2xl px-3 py-2 text-left text-[0.9375rem] [overflow-wrap:anywhere] ${message.kind === 'ANNOUNCEMENT' ? 'bg-[#fff1c9] text-ink' : mine ? 'bg-acacia-700 text-white' : 'bg-sand text-ink'}`}>{message.kind === 'ANNOUNCEMENT' ? '📣 ' : ''}{message.body}</p>
+                {message.attachments?.length ? <Attachment message={message} /> : (
+                  <p className={`mt-1 inline-block whitespace-pre-line rounded-2xl px-3 py-2 text-left text-[0.9375rem] [overflow-wrap:anywhere] ${message.kind === 'ANNOUNCEMENT' ? 'bg-[#fff1c9] text-ink' : mine ? 'bg-acacia-700 text-white' : 'bg-sand text-ink'}`}>{message.kind === 'ANNOUNCEMENT' ? '📣 ' : ''}{message.body}</p>
+                )}
                 <p className="mt-1 flex justify-end gap-3 text-xs text-ink-faint">
                   {!mine && <button type="button" onClick={() => act(message, 'report')}>Report</button>}
                   {!mine && <button type="button" onClick={() => block(message.author.id)}>Block</button>}
@@ -168,9 +248,29 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           })}
           <div ref={end} />
         </ol>
+        {sendingFile && <p className="text-xs text-ink-muted">Sending file…</p>}
+        {recording && <p className="text-xs font-semibold text-danger">Recording… tap ⏹ to send.</p>}
+        {chat?.muted && <p className="rounded-xl bg-sand p-3 text-sm text-ink-soft">A moderator has muted you in this group for now. You can still read it.</p>}
         {chat?.canPost && (
           <form onSubmit={(event) => { event.preventDefault(); void send(); }} className="sticky bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] flex gap-2 rounded-2xl border border-line bg-white p-2">
             <textarea value={text} onChange={(event) => setText(event.target.value)} rows={1} maxLength={2000} placeholder="Write a message…" aria-label="Message" className="min-h-11 w-full resize-none rounded-xl px-3 py-2 outline-none" onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send(); } }} />
+            <label className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line text-lg" title="Send a photo, video or file" aria-label="Send a photo, video or file">
+              📎
+              <input
+                type="file"
+                className="hidden"
+                accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,application/pdf"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = '';
+                  if (!file) return;
+                  const kind = file.type.startsWith('image/') ? 'IMAGE' : file.type.startsWith('video/') ? 'VIDEO' : 'DOCUMENT';
+                  void sendFile(file, kind, text.trim() || undefined);
+                  setText('');
+                }}
+              />
+            </label>
+            <button type="button" onClick={toggleVoice} className={`h-11 w-11 shrink-0 rounded-full border text-lg ${recording ? 'border-danger bg-danger-soft' : 'border-line'}`} aria-label={recording ? 'Stop and send voice message' : 'Record a voice message'} title={recording ? 'Stop and send' : 'Voice message'}>{recording ? '⏹' : '🎙️'}</button>
             {chat.viewerIsOrganiser && <button type="button" onClick={() => send('ANNOUNCEMENT')} className="h-11 shrink-0 rounded-full border border-line px-3 text-sm font-semibold" title="Send as an announcement">📣</button>}
             <button className="h-11 shrink-0 rounded-full bg-acacia-600 px-5 text-sm font-bold text-white">Send</button>
           </form>
@@ -178,4 +278,17 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       </div>
     </DashboardShell>
   );
+}
+
+/** A photo, video, voice note or document in the chat. */
+function Attachment({ message }: { message: Message }) {
+  const url = message.attachments?.[0];
+  if (!url) return null;
+  if (message.kind === 'IMAGE') {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <a href={url} target="_blank" rel="noreferrer noopener" className="mt-1 inline-block"><img src={url} alt={message.body} className="max-h-72 max-w-full rounded-xl" loading="lazy" /></a>;
+  }
+  if (message.kind === 'VIDEO') return <video src={url} controls preload="metadata" className="mt-1 max-h-72 max-w-full rounded-xl" />;
+  if (message.kind === 'VOICE') return <audio src={url} controls preload="metadata" className="mt-1 max-w-full" aria-label="Voice message" />;
+  return <a href={url} target="_blank" rel="noreferrer noopener" className="mt-1 inline-flex min-h-10 items-center gap-2 rounded-xl border border-line px-3 text-sm font-semibold text-acacia-700">📄 {message.body}</a>;
 }
