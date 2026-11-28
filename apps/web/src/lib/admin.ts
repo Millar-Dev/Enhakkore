@@ -74,6 +74,7 @@ export const MENU: MenuGroup[] = [
   {
     title: 'Content',
     items: [
+      { href: '/admin/assistant', label: 'AI Assistant (Bethany & Ariel)', permission: '*', keywords: 'ai assistant bethany ariel report help automate' },
       { href: '/admin/settings?group=homepage', label: 'Homepage editor', permission: 'homepage.view', keywords: 'hero sections order headline' },
       resource('banners', 'Banners & announcements'),
       resource('stories', 'Community stories'),

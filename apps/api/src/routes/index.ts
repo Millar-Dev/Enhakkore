@@ -24,6 +24,7 @@ import { passesRouter } from './passes';
 import { groupChatsRouter } from './groupChats';
 import { tripPaymentsAdmin, tripPaymentsMember } from './tripPayments';
 import { studyGroupsRouter } from './studyGroups';
+import { assistantRouter } from './assistant';
 import { hostingAdmin, hostingMember } from './hosting';
 
 export const apiRouter = Router();
@@ -87,6 +88,7 @@ apiRouter.use('/passes', passesRouter);
 apiRouter.use('/experience-chats', groupChatsRouter);
 apiRouter.use('/community', tripPaymentsMember);
 apiRouter.use('/community/study-groups', studyGroupsRouter);
+apiRouter.use('/cc/assistant', assistantRouter);
 apiRouter.use('/cc', tripPaymentsAdmin);
 apiRouter.use('/community', hostingMember);
 apiRouter.use('/cc', hostingAdmin);
