@@ -133,12 +133,15 @@ describe('official communities and study groups', () => {
     assert.equal(group.kind, 'STUDY_GROUP');
     assert.equal(group.status, 'PUBLISHED');
 
+    // Private groups are joined by invitation link or password (R8), not by open requests.
     const ask = await api.request('POST', `/community/communities/${group.slug}/join`, { token: learner.token, body: { message: 'Second-year student.' } });
-    assert.equal(ask.body.status, 'PENDING');
-    const notAdmin = await api.request('POST', `/community/study-groups/${group.slug}/members/${learner.id}`, { token: outsider.token, body: { action: 'approve' } });
+    assert.equal(ask.status, 403);
+    const notAdmin = await api.request('POST', `/community/groups/${group.slug}/invites`, { token: outsider.token, body: {} });
     assert.equal(notAdmin.status, 403);
-    const ok = await api.request('POST', `/community/study-groups/${group.slug}/members/${learner.id}`, { token: creator.token, body: { action: 'approve' } });
-    assert.equal(ok.status, 200);
+    const invite = await api.request('POST', `/community/groups/${group.slug}/invites`, { token: creator.token, body: {} });
+    assert.equal(invite.status, 201);
+    const ok = await api.request('POST', `/community/groups/${group.slug}/join`, { token: learner.token, body: { invite: invite.body.token } });
+    assert.equal(ok.body.joined, true);
 
     const chat = await api.request('POST', '/experience-chats/open', { token: learner.token, body: { subjectType: 'COMMUNITY', subjectId: group.id } });
     assert.equal(chat.status, 200, JSON.stringify(chat.body));

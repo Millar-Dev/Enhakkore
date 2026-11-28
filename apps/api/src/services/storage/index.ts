@@ -21,9 +21,9 @@ import { localStorage } from './local';
  * provider's own signature before the id is written to the database.
  */
 
-export type UploadKind = 'TRIP_IMAGE' | 'AVATAR' | 'VERIFICATION_DOCUMENT' | 'MEDIA_IMAGE' | 'MEDIA_VIDEO' | 'RECEIPT' | 'CHAT_FILE' | 'PAYMENT_RECEIPT' | 'CHAT_MEDIA';
+export type UploadKind = 'TRIP_IMAGE' | 'AVATAR' | 'VERIFICATION_DOCUMENT' | 'MEDIA_IMAGE' | 'MEDIA_VIDEO' | 'RECEIPT' | 'CHAT_FILE' | 'PAYMENT_RECEIPT' | 'CHAT_MEDIA' | 'ESPORTS_DOCUMENT';
 
-export const UPLOAD_KINDS = ['TRIP_IMAGE', 'AVATAR', 'VERIFICATION_DOCUMENT', 'MEDIA_IMAGE', 'MEDIA_VIDEO', 'RECEIPT', 'CHAT_FILE', 'PAYMENT_RECEIPT', 'CHAT_MEDIA'] as const;
+export const UPLOAD_KINDS = ['TRIP_IMAGE', 'AVATAR', 'VERIFICATION_DOCUMENT', 'MEDIA_IMAGE', 'MEDIA_VIDEO', 'RECEIPT', 'CHAT_FILE', 'PAYMENT_RECEIPT', 'CHAT_MEDIA', 'ESPORTS_DOCUMENT'] as const;
 
 export interface UploadRule {
   /** Largest file accepted, in bytes. */
@@ -93,6 +93,13 @@ export const UPLOAD_RULES: Record<UploadKind, UploadRule> = {
     accept: ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime', 'audio/webm', 'audio/ogg', 'audio/mp4', 'audio/mpeg', 'audio/aac', 'application/pdf'],
     folder: 'enhakkore/chat-media',
     visibility: 'public',
+  },
+  /** Evidence for an esports organiser application. Private: only the gaming team can open it. */
+  ESPORTS_DOCUMENT: {
+    maxBytes: 10 * 1024 * 1024,
+    accept: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+    folder: 'enhakkore/esports-verification',
+    visibility: 'private',
   },
   /** Receipts and payment confirmations. Private: only finance staff can open one. */
   RECEIPT: {

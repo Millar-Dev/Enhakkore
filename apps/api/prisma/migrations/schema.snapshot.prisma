@@ -73,6 +73,25 @@ model User {
   termsVersion      String?
   termsAcceptedAt   DateTime?
 
+  /// Date of birth: age-appropriate protections (under 18: no nearby discovery,
+  /// no message requests from non-friends). Never shown to other members.
+  dateOfBirth     DateTime?
+  /// Show others when you have read their private messages.
+  readReceipts    Boolean   @default(true)
+  /// Games, platforms and gamer tags (JSON). Shown on the gaming profile per privacy settings.
+  gamingProfile   String    @default("{}")
+  /// Opt-in: receive nearby gaming invitations (adults only, needs a recent approximate location).
+  nearbyGaming    Boolean   @default(false)
+  /// Approximate position (rounded to about 500 m) used only for 2 km server-side matching.
+  /// Never returned to any other member, never exact GPS.
+  approxLat       Float?
+  approxLng       Float?
+  approxLocatedAt DateTime?
+  /// Lets accepted friends see an approximate distance band. Off by default.
+  friendLocation  Boolean   @default(false)
+  /// Nia: keep conversation history.
+  niaHistory      Boolean   @default(true)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -102,6 +121,9 @@ model User {
   tournamentEntries    TournamentEntry[]
   teamMemberships      TournamentTeamMember[]
   sessionRegistrations SessionRegistration[]
+  extraRoles           UserAdminRole[]
+  following            Follow[]                @relation("FollowFollower")
+  followers            Follow[]                @relation("FollowFollowing")
 
   @@index([role])
   @@index([status])
@@ -555,15 +577,25 @@ model Review {
 /// Every departure gets exactly one private group. Membership is derived from
 /// confirmed bookings — there is no way to join a conversation without one.
 model Conversation {
-  id          String    @id @default(cuid())
+  id            String    @id @default(cuid())
   /// Trip groups belong to a departure; other groups (events, activities, communities) use subjectType/subjectId.
-  tripDateId  String?   @unique
+  tripDateId    String?   @unique
   /// ACTIVITY | EVENT | COMMUNITY | TOURNAMENT (null for trip groups)
-  subjectType String?
-  subjectId   String?
-  title       String
+  subjectType   String?
+  subjectId     String?
+  title         String
   /// After this the group is read-only. History is kept.
-  archivedAt  DateTime?
+  archivedAt    DateTime?
+  /// TRIP | GROUP | DIRECT | GAMING (temporary chat for a gaming invitation)
+  kind          String    @default("GROUP")
+  /// DIRECT only: the two member ids, sorted and joined — one conversation per pair.
+  directKey     String?   @unique
+  /// DIRECT only: PENDING until the recipient accepts | ACCEPTED | DECLINED
+  requestStatus String?
+  requestedById String?
+  /// GAMING chats close at this time.
+  expiresAt     DateTime?
+  lastMessageAt DateTime?
 
   createdAt DateTime @default(now())
 
@@ -583,6 +615,10 @@ model ConversationMember {
   joinedAt       DateTime  @default(now())
   lastReadAt     DateTime?
   muted          Boolean   @default(false)
+  /// Private messages: archived from the inbox by this member.
+  archivedAt     DateTime?
+  /// "Delete chat for me": messages before this are hidden for this member.
+  clearedAt      DateTime?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -592,20 +628,27 @@ model ConversationMember {
 }
 
 model Message {
-  id             String  @id @default(cuid())
+  id             String    @id @default(cuid())
   conversationId String
   userId         String
   body           String
   /// TEXT | ANNOUNCEMENT | SYSTEM | IMAGE
-  kind           String  @default("TEXT")
+  kind           String    @default("TEXT")
   /// JSON array of attachment URLs.
-  attachments    String  @default("[]")
-  pinned         Boolean @default(false)
+  attachments    String    @default("[]")
+  pinned         Boolean   @default(false)
+  replyToId      String?
+  /// Unsent by its author: the body is wiped and the message shows as removed.
+  deletedAt      DateTime?
+  /// Body is encrypted at rest (AES-256-GCM, server key). Private messages only.
+  encrypted      Boolean   @default(false)
 
   createdAt DateTime @default(now())
 
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  author       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reactions    MessageReaction[]
+  hiddenFor    MessageHidden[]
 
   @@index([conversationId, createdAt])
 }
@@ -762,19 +805,26 @@ model CustomTripRequest {
 }
 
 model Notification {
-  id     String  @id @default(cuid())
-  userId String
-  type   String
-  title  String
-  body   String
-  link   String?
-  read   Boolean @default(false)
+  id         String    @id @default(cuid())
+  userId     String
+  type       String
+  title      String
+  body       String
+  link       String?
+  read       Boolean   @default(false)
+  /// MESSAGES | REQUESTS | UPDATES
+  category   String    @default("UPDATES")
+  archivedAt DateTime?
+  /// Same event twice never makes a second notification for the same person.
+  dedupeKey  String?
 
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, dedupeKey])
   @@index([userId, read])
+  @@index([userId, createdAt])
 }
 
 /// Key/value store for platform-wide settings an admin can change without a
@@ -1544,7 +1594,8 @@ model AdminRole {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users User[]
+  users   User[]
+  members UserAdminRole[]
 }
 
 /// A signed-in session. Every token names its session, so a session can be
@@ -1755,6 +1806,17 @@ model Community {
   featured           Boolean @default(false)
   /// Example content for testing and layout. Shown with a DEMO label, never as real.
   isDemo             Boolean @default(false)
+  /// Private communities and study groups: bcrypt hash of the joining password. Never shown.
+  passwordHash       String?
+  /// Creator contact, visible only to the team.
+  contactName        String?
+  contactPhone       String?
+  /// Study groups: course, learning objectives and search tags (JSON array).
+  course             String?
+  objectives         String?
+  tags               String  @default("[]")
+  /// Why the team suspended or restricted it.
+  moderationReason   String?
 
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -1766,6 +1828,9 @@ model Community {
   members       CommunityMember[]
   announcements CommunityAnnouncement[]
   activities    Activity[]
+  invites       CommunityInvite[]
+  sessions      GroupSession[]
+  resources     GroupResource[]
 
   @@index([status])
 }
@@ -1806,41 +1871,60 @@ model CommunityAnnouncement {
 
 /// A gaming tournament or a console gaming session. Free at launch.
 model Tournament {
-  id                   String    @id @default(cuid())
-  slug                 String    @unique
-  title                String
+  id                     String    @id @default(cuid())
+  slug                   String    @unique
+  title                  String
   /// A category of kind GAME.
-  gameId               String?
+  gameId                 String?
   /// ONLINE | CONSOLE
-  kind                 String    @default("ONLINE")
+  kind                   String    @default("ONLINE")
   /// SOLO | DUO | SQUAD | TEAM
-  format               String    @default("SOLO")
-  teamSize             Int       @default(1)
-  summary              String?
-  description          String?
-  startsAt             DateTime?
-  timezone             String    @default("Africa/Dar_es_Salaam")
-  registrationDeadline DateTime?
-  server               String?
-  region               String?
-  venue                String?
-  countryId            String?
-  cityId               String?
-  slots                Int?
-  entryRequirements    String?
-  rules                String?
-  disputeProcedure     String?
-  minAge               Int?
-  organiserName        String    @default("Enhakkore")
+  format                 String    @default("SOLO")
+  teamSize               Int       @default(1)
+  summary                String?
+  description            String?
+  startsAt               DateTime?
+  timezone               String    @default("Africa/Dar_es_Salaam")
+  registrationDeadline   DateTime?
+  server                 String?
+  region                 String?
+  venue                  String?
+  countryId              String?
+  cityId                 String?
+  slots                  Int?
+  entryRequirements      String?
+  rules                  String?
+  disputeProcedure       String?
+  minAge                 Int?
+  organiserName          String    @default("Enhakkore")
   /// JSON array of { round, match, result } rows.
-  bracket              String    @default("[]")
-  results              String?
-  coverImage           String?
+  bracket                String    @default("[]")
+  results                String?
+  coverImage             String?
   /// DRAFT | REGISTRATION_OPEN | REGISTRATION_CLOSED | IN_PROGRESS | COMPLETED | CANCELLED | ARCHIVED
-  status               String    @default("DRAFT")
-  featured             Boolean   @default(false)
+  status                 String    @default("DRAFT")
+  featured               Boolean   @default(false)
   /// Example content for testing and layout. Shown with a DEMO label, never as real.
-  isDemo               Boolean   @default(false)
+  isDemo                 Boolean   @default(false)
+  /// FRIENDLY | GUILD | ESPORTS | CREATOR | OTHER
+  category               String    @default("FRIENDLY")
+  /// INDIVIDUAL | GUILD | SQUAD | COMMUNITY_ADMIN | CREATOR | ESPORTS_ORG | COMPANY | INSTITUTION | SPONSOR | OTHER
+  organiserType          String    @default("INDIVIDUAL")
+  createdById            String?
+  /// Organiser contact — visible only to the organiser and the team.
+  contactName            String?
+  contactPhone           String?
+  contactEmail           String?
+  platform               String?
+  /// SINGLE_ELIMINATION | DOUBLE_ELIMINATION | LEAGUE | ROUND_ROBIN
+  bracketFormat          String    @default("SINGLE_ELIMINATION")
+  prizeDetails           String?
+  /// Team checks (not approval: member tournaments publish immediately).
+  checkedAt              DateTime?
+  checkedById            String?
+  registrationRestricted Boolean   @default(false)
+  moderationReason       String?
+  esportsOrganiserId     String?
 
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -1850,6 +1934,8 @@ model Tournament {
   country Country?          @relation(fields: [countryId], references: [id], onDelete: SetNull)
   city    City?             @relation(fields: [cityId], references: [id], onDelete: SetNull)
   entries TournamentEntry[]
+  matches TournamentMatch[]
+  notes   TournamentNote[]
 
   @@index([status, startsAt])
 }
@@ -1870,6 +1956,8 @@ model TournamentEntry {
   /// REGISTERED | CONFIRMED | WAITLIST | DISQUALIFIED | WITHDRAWN
   status       String   @default("REGISTERED")
   adminNotes   String?
+  /// Bracket position (1 = top seed).
+  seed         Int?
   createdAt    DateTime @default(now())
 
   tournament Tournament             @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
@@ -2087,4 +2175,412 @@ model AssistantEntry {
   updatedAt DateTime @updatedAt
 
   @@index([userId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// R8 — Account Centre phases 1A–1H
+// ---------------------------------------------------------------------------
+
+/// A staff member may hold several roles; permissions are the union.
+model UserAdminRole {
+  id     String @id @default(cuid())
+  userId String
+  roleId String
+
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role AdminRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+}
+
+/// One-way follow. Follows in both directions allow a message request.
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("FollowFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("FollowFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+}
+
+/// "Delete for me": the message stays for everyone else.
+model MessageHidden {
+  id        String @id @default(cuid())
+  messageId String
+  userId    String
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+}
+
+/// Invitation links to private communities and study groups. Only a hash of the token is stored.
+model CommunityInvite {
+  id          String    @id @default(cuid())
+  communityId String
+  tokenHash   String    @unique
+  createdById String
+  expiresAt   DateTime?
+  maxUses     Int?
+  uses        Int       @default(0)
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId])
+}
+
+/// Study sessions and community meet-ups with RSVP and reminders.
+model GroupSession {
+  id             String    @id @default(cuid())
+  communityId    String
+  title          String
+  description    String?
+  /// ONLINE | PHYSICAL | HYBRID
+  mode           String    @default("ONLINE")
+  startsAt       DateTime
+  endsAt         DateTime?
+  location       String?
+  link           String?
+  createdById    String
+  reminderSentAt DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  community Community          @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  rsvps     GroupSessionRsvp[]
+
+  @@index([communityId, startsAt])
+  @@index([startsAt, reminderSentAt])
+}
+
+model GroupSessionRsvp {
+  id        String   @id @default(cuid())
+  sessionId String
+  userId    String
+  /// GOING | MAYBE | NOT_GOING
+  status    String   @default("GOING")
+  createdAt DateTime @default(now())
+
+  session GroupSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+}
+
+/// Shared notes, files and links of a study group or community.
+model GroupResource {
+  id          String    @id @default(cuid())
+  communityId String
+  /// NOTE | FILE | LINK
+  kind        String    @default("NOTE")
+  title       String
+  body        String?
+  url         String?
+  createdById String
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId])
+}
+
+model TournamentMatch {
+  id               String    @id @default(cuid())
+  tournamentId     String
+  /// WINNERS | LOSERS | GRAND_FINAL | LEAGUE
+  stage            String    @default("WINNERS")
+  round            Int
+  position         Int
+  homeEntryId      String?
+  awayEntryId      String?
+  homeScore        Int?
+  awayScore        Int?
+  winnerEntryId    String?
+  /// PENDING | READY | COMPLETED | BYE
+  status           String    @default("PENDING")
+  nextMatchId      String?
+  /// HOME | AWAY
+  nextSlot         String?
+  loserNextMatchId String?
+  loserNextSlot    String?
+  scheduledAt      DateTime?
+  disputed         Boolean   @default(false)
+  reportedById     String?
+  updatedAt        DateTime  @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@index([tournamentId, stage, round])
+}
+
+/// Team follow-up notes on a tournament (contact made, information requested, checks).
+model TournamentNote {
+  id           String   @id @default(cuid())
+  tournamentId String
+  authorId     String
+  /// NOTE | CONTACT | INFO_REQUEST | CHECK
+  kind         String   @default("NOTE")
+  body         String
+  createdAt    DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@index([tournamentId])
+}
+
+/// "Register as an Esports Organiser" applications and their verification.
+model EsportsOrganiser {
+  id                 String    @id @default(cuid())
+  userId             String
+  organisationName   String
+  representativeName String
+  representativeRole String
+  phone              String
+  email              String
+  country            String
+  location           String?
+  website            String?
+  /// JSON array of official social accounts.
+  socials            String    @default("[]")
+  history            String
+  /// JSON array of games.
+  games              String    @default("[]")
+  authorityEvidence  String
+  /// JSON array of private file asset ids.
+  documents          String    @default("[]")
+  /// PENDING | MORE_INFO | VERIFIED | REJECTED | SUSPENDED | EXPIRED
+  status             String    @default("PENDING")
+  reviewNote         String?
+  reviewedById       String?
+  reviewedAt         DateTime?
+  verifiedUntil      DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([status])
+  @@index([userId])
+}
+
+/// Casual matches, practice, training and meet-ups — separate from tournaments.
+model GamingSession {
+  id             String    @id @default(cuid())
+  slug           String    @unique
+  organiserId    String
+  title          String
+  game           String
+  platform       String
+  /// ONLINE | PHYSICAL
+  mode           String    @default("ONLINE")
+  /// CASUAL | PRACTICE | TRAINING | MEETUP | MULTIPLAYER
+  sessionType    String    @default("CASUAL")
+  startsAt       DateTime
+  endsAt         DateTime?
+  capacity       Int
+  location       String?
+  onlinePlatform String?
+  description    String?
+  /// OPEN | FULL | CANCELLED | COMPLETED | HIDDEN
+  status         String    @default("OPEN")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  players GamingSessionPlayer[]
+
+  @@index([status, startsAt])
+}
+
+model GamingSessionPlayer {
+  id        String   @id @default(cuid())
+  sessionId String
+  userId    String
+  joinedAt  DateTime @default(now())
+
+  session GamingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+}
+
+/// Guilds contain squads; teams stand alone.
+model GamingGroup {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  /// GUILD | SQUAD | TEAM
+  kind        String
+  parentId    String?
+  name        String
+  game        String?
+  description String?
+  ownerId     String
+  /// PUBLIC (anyone may ask to join) | INVITE (invitation only)
+  privacy     String   @default("PUBLIC")
+  /// ACTIVE | SUSPENDED
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent   GamingGroup?        @relation("GuildSquads", fields: [parentId], references: [id], onDelete: SetNull)
+  children GamingGroup[]       @relation("GuildSquads")
+  members  GamingGroupMember[]
+
+  @@index([kind, status])
+}
+
+model GamingGroupMember {
+  id       String   @id @default(cuid())
+  groupId  String
+  userId   String
+  /// OWNER | CAPTAIN | MEMBER
+  role     String   @default("MEMBER")
+  /// ACTIVE | PENDING (asked to join) | INVITED
+  status   String   @default("ACTIVE")
+  joinedAt DateTime @default(now())
+
+  group GamingGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+/// A call for players: nearby (2 km), to game friends, or by an outside link.
+model GameInvite {
+  id             String   @id @default(cuid())
+  /// NEARBY | FRIENDS | EXTERNAL
+  kind           String
+  requesterId    String
+  game           String
+  platform       String
+  slotsNeeded    Int
+  /// Decremented atomically; the invitation fills when it reaches 0.
+  slotsRemaining Int
+  playStyle      String?
+  message        String?
+  /// An approximate area in words ("near Mlimani City"). Never coordinates.
+  meetingArea    String?
+  expiresAt      DateTime
+  /// OPEN | FULL | EXPIRED | CANCELLED
+  status         String   @default("OPEN")
+  /// EXTERNAL: sha256 of the link token. The link never carries location or contact details.
+  tokenHash      String?  @unique
+  /// NEARBY: the requester's approximate grid point, used only for matching.
+  gridLat        Float?
+  gridLng        Float?
+  conversationId String?  @unique
+  createdAt      DateTime @default(now())
+
+  responses  GameInviteResponse[]
+  recipients GameInviteRecipient[]
+
+  @@index([status, expiresAt])
+  @@index([requesterId])
+}
+
+/// Who was told about an invitation (nearby members or friends). Never shown to the requester.
+model GameInviteRecipient {
+  id         String   @id @default(cuid())
+  inviteId   String
+  userId     String
+  notifiedAt DateTime @default(now())
+
+  invite GameInvite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+
+  @@unique([inviteId, userId])
+  @@index([userId])
+}
+
+/// Accepts and declines. Declines are never shown to the requester.
+model GameInviteResponse {
+  id        String   @id @default(cuid())
+  inviteId  String
+  userId    String
+  /// ACCEPTED | DECLINED
+  status    String
+  createdAt DateTime @default(now())
+
+  invite GameInvite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+
+  @@unique([inviteId, userId])
+}
+
+/// Browser push subscriptions (Web Push). Removed when the browser rejects them.
+model PushSubscription {
+  id            String    @id @default(cuid())
+  userId        String
+  endpoint      String    @unique
+  p256dh        String
+  auth          String
+  userAgent     String?
+  lastSuccessAt DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// The member's own activity history (Activity Centre). Not an official record.
+model MemberActivity {
+  id          String   @id @default(cuid())
+  userId      String
+  /// e.g. JOINED_COMMUNITY, JOINED_STUDY_GROUP, TOURNAMENT_REGISTERED, FRIEND_ADDED
+  action      String
+  subjectType String?
+  subjectId   String?
+  title       String
+  link        String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model NiaConversation {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @default("New conversation")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages NiaMessage[]
+
+  @@index([userId, updatedAt])
+}
+
+model NiaMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  /// USER | NIA
+  role           String
+  content        String
+  /// JSON array of the real records Nia found ({ type, title, link }).
+  results        String   @default("[]")
+  createdAt      DateTime @default(now())
+
+  conversation NiaConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+/// Daily use per member, for the admin's usage limit (counted even with history off).
+model NiaUsage {
+  id     String @id @default(cuid())
+  userId String
+  day    String
+  count  Int    @default(0)
+
+  @@unique([userId, day])
 }

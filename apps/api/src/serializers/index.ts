@@ -52,6 +52,7 @@ export function toPublicUser(user: any): PublicUser {
     profileFields: parseObject(user.profileFields),
     nearbyMode: user.nearbyMode ?? 'OFF',
     notificationPrefs: parseObject(user.notificationPrefs),
+    dateOfBirth: user.dateOfBirth ? iso(user.dateOfBirth).slice(0, 10) : null,
   };
 }
 

@@ -28,17 +28,19 @@ export async function recordLogin(
 }
 
 /** Effective control-centre permissions for an account. */
-export function permissionsFor(user: { role: string; adminRole?: { permissions: string } | null }): string[] {
+export function permissionsFor(user: { role: string; adminRole?: { permissions: string } | null; extraRoles?: { role: { permissions: string } }[] }): string[] {
   if (user.role === 'ADMIN') return ['*'];
-  if (user.role === 'STAFF' && user.adminRole) return parseList(user.adminRole.permissions);
-  return [];
+  if (user.role !== 'STAFF') return [];
+  // Several roles: the union of their permissions.
+  const lists = [user.adminRole?.permissions, ...(user.extraRoles ?? []).map((item) => item.role.permissions)].filter((value): value is string => !!value);
+  return [...new Set(lists.flatMap((value) => parseList(value)))];
 }
 
 /** What the website needs about the signed-in account, permissions included. */
 export async function sessionPayload(userId: string) {
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
-    include: { organizer: true, adminRole: true },
+    include: { organizer: true, adminRole: true, extraRoles: { include: { role: true } } },
   });
   const permissions = permissionsFor(user);
   const organiser = await prisma.organiserApplication.findFirst({ where: { userId, status: 'APPROVED' }, orderBy: { updatedAt: 'desc' }, select: { approvedCategories: true } });
@@ -53,8 +55,8 @@ export async function sessionPayload(userId: string) {
       ...toPublicUser(user),
       permissions,
       organiserSections,
-      adminRoleName: user.role === 'ADMIN' ? 'Owner' : (user.adminRole?.name ?? null),
-      adminScope: user.role === 'STAFF' && user.adminRole?.scope === 'OWN' ? 'OWN' : 'ALL',
+      adminRoleName: user.role === 'ADMIN' ? 'Owner' : [user.adminRole?.name, ...user.extraRoles.map((item) => item.role.name)].filter(Boolean).join(', ') || null,
+      adminScope: user.role === 'STAFF' && [user.adminRole, ...user.extraRoles.map((item) => item.role)].filter(Boolean).every((role) => role!.scope === 'OWN') && !!user.adminRole ? 'OWN' : 'ALL',
     },
     organizer: user.organizer ? toOrganizerSummary(user.organizer) : null,
   };

@@ -39,8 +39,9 @@ describe('who may use the control centre', () => {
       body: { email: `finance-${Date.now()}@test.local`, name: 'Finance Person', roleId: role.id },
     });
     assert.equal(created.status, 201);
-    assert.ok(created.body.temporaryPassword, 'a new account gets a one-time password');
-    const token = await api.login(created.body.email, created.body.temporaryPassword);
+    assert.ok(created.body.invitationLink, 'a new team account gets a one-time invitation link — no password is shown');
+    assert.equal(created.body.temporaryPassword, undefined);
+    const token = await api.login(created.body.email, await api.acceptInvite(created.body.invitationLink));
 
     assert.equal((await api.request('GET', '/cc/finance/transactions', { token })).status, 200);
     assert.equal((await api.request('GET', '/cc/r/activities', { token })).status, 403, 'finance cannot manage activities');
@@ -363,7 +364,7 @@ describe('settings, history and sessions', () => {
   test('a partner role sees only the listings assigned to it', async () => {
     const role = await prisma.adminRole.findUniqueOrThrow({ where: { name: 'Property Manager' } });
     const staff = await api.request('POST', '/cc/people/staff', { token: owner, body: { email: `hotel-${Date.now()}@test.local`, name: 'Hotel Manager', roleId: role.id } });
-    const token = await api.login(staff.body.email, staff.body.temporaryPassword);
+    const token = await api.login(staff.body.email, await api.acceptInvite(staff.body.invitationLink));
     const tz = await prisma.country.findUniqueOrThrow({ where: { code: 'TZ' } });
     const hotels = await category('PLACE', 'hotels');
     const mine = await prisma.place.create({ data: { slug: `mine-${Date.now()}`, name: 'Their hotel', categoryId: hotels.id, countryId: tz.id, managerId: staff.body.id } });
@@ -411,7 +412,7 @@ describe('Connect', () => {
 describe('launch scope', () => {
   test('operator sign-ups are closed until the marketplace phase', async () => {
     const result = await api.request('POST', '/auth/register', {
-      body: { name: 'Op', email: `op-${Date.now()}@test.local`, password: 'TestPass-123', accountType: 'ORGANIZER', companyName: 'Op Co', acceptedTerms: true },
+      body: { name: 'Op', email: `op-${Date.now()}@test.local`, password: 'TestPass-123', accountType: 'ORGANIZER', companyName: 'Op Co', acceptedTerms: true, dateOfBirth: '1990-01-01' },
     });
     assert.equal(result.status, 403);
   });

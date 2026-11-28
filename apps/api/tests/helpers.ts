@@ -26,6 +26,8 @@ export interface Api {
   ): Promise<{ status: number; body: T }>;
   login(email: string, password?: string): Promise<string>;
   register(prefix: string): Promise<{ token: string; email: string; id: string }>;
+  /** Accepts a staff invitation link: sets the password and returns it. */
+  acceptInvite(link: string): Promise<string>;
   close(): Promise<void>;
 }
 
@@ -71,11 +73,18 @@ export async function startApi(): Promise<Api> {
       tokens.set(key, result.body.token);
       return result.body.token;
     },
+    async acceptInvite(link) {
+      const token = decodeURIComponent(new URL(link).searchParams.get('token') ?? '');
+      const password = `Staff-${Math.random().toString(36).slice(2, 10)}-9`;
+      const result = await request('POST', '/auth/reset-password', { body: { token, password } });
+      if (result.status !== 200) throw new Error(`invite failed: ${result.status} ${JSON.stringify(result.body)}`);
+      return password;
+    },
     async register(prefix) {
       counter += 1;
       const email = `${prefix}-${Date.now()}-${counter}@test.local`;
       const result = await request<{ token: string; user: { id: string } }>('POST', '/auth/register', {
-        body: { name: `Test ${prefix}`, email, password: 'TestPass-123', accountType: 'TRAVELER', acceptedTerms: true },
+        body: { name: `Test ${prefix}`, email, password: 'TestPass-123', accountType: 'TRAVELER', acceptedTerms: true, dateOfBirth: '1995-05-10' },
       });
       if (result.status !== 201) throw new Error(`register failed: ${result.status} ${JSON.stringify(result.body)}`);
       return { token: result.body.token, email, id: result.body.user.id };

@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { OPTIONAL_NOTIFICATIONS, PROFILE_FIELDS, VISIBILITY_LEVELS } from '@enhakkore/shared';
+import { textContains } from '../lib/search';
+import { publicVapidKey, sendPush } from '../services/push';
+import { ADULT_AGE, MEMBER_ACTIVITY_LABELS, OPTIONAL_NOTIFICATIONS, PROFILE_FIELDS, VISIBILITY_LEVELS, ageFrom } from '@enhakkore/shared';
 import { ApiError, route } from '../lib/http';
 import { stringify } from '../lib/json';
 import { prisma } from '../lib/prisma';
@@ -29,6 +31,8 @@ const profileSchema = z.object({
   username: z.string().trim().toLowerCase().max(20).optional(),
   coverImage: z.string().max(600).optional().or(z.literal('')),
   profileFields: z.record(z.enum(PROFILE_FIELDS), z.enum(VISIBILITY_LEVELS)).optional(),
+  /** Can be added once; to correct it afterwards the member contacts support (age protections depend on it). */
+  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
 /** Is this username free? */
@@ -61,6 +65,7 @@ meRouter.put(
         off: z.array(z.enum(keys)).max(20).default([]),
         quietStart: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
         quietEnd: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
+        channels: z.object({ push: z.boolean().default(true), email: z.boolean().default(false), whatsapp: z.boolean().default(false) }).optional(),
       })
       .parse(req.body);
     await prisma.user.update({ where: { id: req.auth!.id }, data: { notificationPrefs: JSON.stringify(input) } });
@@ -75,6 +80,14 @@ meRouter.patch(
     if (input.username) {
       const problem = await usernameProblem(input.username, req.auth!.id);
       if (problem) throw ApiError.conflict(problem, 'username_unavailable');
+    }
+    let dateOfBirth: Date | undefined;
+    if (input.dateOfBirth) {
+      const current = await prisma.user.findUniqueOrThrow({ where: { id: req.auth!.id }, select: { dateOfBirth: true } });
+      if (current.dateOfBirth) throw ApiError.badRequest('Your date of birth is already saved. Contact support to correct it.');
+      const age = ageFrom(input.dateOfBirth);
+      if (age === null || age > 120) throw ApiError.badRequest('Enter a real date of birth.');
+      dateOfBirth = new Date(`${input.dateOfBirth}T00:00:00Z`);
     }
     const user = await prisma.user.update({
       where: { id: req.auth!.id },
@@ -92,6 +105,7 @@ meRouter.patch(
         ...(input.username ? { username: input.username } : {}),
         ...(input.coverImage !== undefined ? { coverImage: input.coverImage || null } : {}),
         ...(input.profileFields ? { profileFields: JSON.stringify(input.profileFields) } : {}),
+        ...(dateOfBirth ? { dateOfBirth, ...((ageFrom(input.dateOfBirth!) ?? 0) < ADULT_AGE ? { profileVisibility: 'HIDDEN', nearbyGaming: false } : {}) } : {}),
       },
       include: { organizer: { select: { id: true } } },
     });
@@ -157,30 +171,129 @@ meRouter.post(
 
 /* ----------------------------- Notifications ------------------------------ */
 
+const TABS = ['all', 'unread', 'messages', 'requests', 'updates', 'archived'] as const;
+
+/** My Notifications: tabs, search and paging. Counts are unread per tab (archived excluded). */
 meRouter.get(
   '/notifications',
   route(async (req, res) => {
-    const [items, unread] = await Promise.all([
-      prisma.notification.findMany({
-        where: { userId: req.auth!.id },
-        orderBy: { createdAt: 'desc' },
-        take: 40,
-      }),
-      prisma.notification.count({ where: { userId: req.auth!.id, read: false } }),
+    const tab = z.enum(TABS).catch('all').parse(req.query.tab ?? 'all');
+    const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 80) : '';
+    const take = Math.min(60, Number(req.query.limit ?? 40) || 40);
+    const before = typeof req.query.before === 'string' ? new Date(req.query.before) : undefined;
+    const base = { userId: req.auth!.id };
+    const where = {
+      ...base,
+      ...(tab === 'archived' ? { archivedAt: { not: null } } : { archivedAt: null }),
+      ...(tab === 'unread' ? { read: false } : {}),
+      ...(tab === 'messages' ? { category: 'MESSAGES' } : tab === 'requests' ? { category: 'REQUESTS' } : tab === 'updates' ? { category: 'UPDATES' } : {}),
+      ...(q ? { OR: [{ title: textContains(q) }, { body: textContains(q) }] } : {}),
+      ...(before && !Number.isNaN(before.getTime()) ? { createdAt: { lt: before } } : {}),
+    };
+    const [items, unread, messages, requests, updates] = await Promise.all([
+      prisma.notification.findMany({ where, orderBy: { createdAt: 'desc' }, take }),
+      prisma.notification.count({ where: { ...base, read: false, archivedAt: null } }),
+      prisma.notification.count({ where: { ...base, read: false, archivedAt: null, category: 'MESSAGES' } }),
+      prisma.notification.count({ where: { ...base, read: false, archivedAt: null, category: 'REQUESTS' } }),
+      prisma.notification.count({ where: { ...base, read: false, archivedAt: null, category: 'UPDATES' } }),
     ]);
-    res.json({ items: items.map(toNotification), unread });
+    res.json({
+      items: items.map((item) => ({ ...toNotification(item), category: item.category, archived: !!item.archivedAt })),
+      unread,
+      counts: { unread, messages, requests, updates },
+      hasMore: items.length === take,
+    });
   }),
 );
 
 meRouter.post(
   '/notifications/read',
   route(async (req, res) => {
-    const ids = Array.isArray(req.body?.ids) ? (req.body.ids as string[]) : null;
+    const input = z.object({ ids: z.array(z.string()).max(200).optional(), read: z.boolean().default(true) }).parse(req.body ?? {});
     await prisma.notification.updateMany({
-      where: { userId: req.auth!.id, ...(ids ? { id: { in: ids } } : {}) },
-      data: { read: true },
+      where: { userId: req.auth!.id, ...(input.ids ? { id: { in: input.ids } } : {}) },
+      data: { read: input.read },
     });
     res.json({ ok: true });
+  }),
+);
+
+/** Archive (clear from the inbox) or bring back. Archiving also marks as read. */
+meRouter.post(
+  '/notifications/archive',
+  route(async (req, res) => {
+    const input = z.object({ ids: z.array(z.string()).max(200).optional(), archive: z.boolean().default(true), allRead: z.boolean().optional() }).parse(req.body ?? {});
+    await prisma.notification.updateMany({
+      where: { userId: req.auth!.id, ...(input.ids ? { id: { in: input.ids } } : {}), ...(input.allRead ? { read: true } : {}) },
+      data: input.archive ? { archivedAt: new Date(), read: true } : { archivedAt: null },
+    });
+    res.json({ ok: true });
+  }),
+);
+
+/* ------------------------------ Activity Centre ----------------------------- */
+
+meRouter.get(
+  '/activity',
+  route(async (req, res) => {
+    const filter = typeof req.query.filter === 'string' ? req.query.filter : 'all';
+    const groups: Record<string, string[]> = {
+      communities: ['JOINED_COMMUNITY', 'CREATED_COMMUNITY'],
+      study: ['JOINED_STUDY_GROUP', 'CREATED_STUDY_GROUP'],
+      gaming: ['TOURNAMENT_REGISTERED', 'TOURNAMENT_CREATED', 'TOURNAMENT_COMPLETED', 'FRIEND_ADDED', 'TEAM_CREATED', 'TEAM_JOINED', 'GAMING_SESSION_JOINED', 'GAMING_SESSION_CREATED'],
+      trips: ['TRIP_JOINED'],
+      events: ['EVENT_REGISTERED', 'HOSTED_ACTIVITY'],
+      saved: ['SAVED'],
+    };
+    const before = typeof req.query.before === 'string' ? new Date(req.query.before) : undefined;
+    const items = await prisma.memberActivity.findMany({
+      where: { userId: req.auth!.id, ...(groups[filter] ? { action: { in: groups[filter] } } : {}), ...(before && !Number.isNaN(before.getTime()) ? { createdAt: { lt: before } } : {}) },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    res.json({ items: items.map((item) => ({ id: item.id, action: item.action, label: MEMBER_ACTIVITY_LABELS[item.action] ?? item.action, title: item.title, link: item.link, createdAt: item.createdAt })), hasMore: items.length === 50 });
+  }),
+);
+
+/* ---------------------------------- Push ----------------------------------- */
+
+meRouter.get(
+  '/push/key',
+  route(async (_req, res) => {
+    res.json({ publicKey: await publicVapidKey() });
+  }),
+);
+
+meRouter.post(
+  '/push/subscribe',
+  route(async (req, res) => {
+    const input = z.object({ endpoint: z.string().url().max(1000), keys: z.object({ p256dh: z.string().min(10).max(300), auth: z.string().min(4).max(100) }) }).parse(req.body);
+    await prisma.pushSubscription.upsert({
+      where: { endpoint: input.endpoint },
+      create: { userId: req.auth!.id, endpoint: input.endpoint, p256dh: input.keys.p256dh, auth: input.keys.auth, userAgent: String(req.headers['user-agent'] ?? '').slice(0, 200) },
+      update: { userId: req.auth!.id, p256dh: input.keys.p256dh, auth: input.keys.auth },
+    });
+    res.status(201).json({ ok: true });
+  }),
+);
+
+meRouter.post(
+  '/push/unsubscribe',
+  route(async (req, res) => {
+    const { endpoint } = z.object({ endpoint: z.string().url().max(1000) }).parse(req.body);
+    await prisma.pushSubscription.deleteMany({ where: { endpoint, userId: req.auth!.id } });
+    res.json({ ok: true });
+  }),
+);
+
+/** Sends a test push to this member's devices and says honestly what the push service answered. */
+meRouter.post(
+  '/push/test',
+  route(async (req, res) => {
+    const devices = await prisma.pushSubscription.count({ where: { userId: req.auth!.id } });
+    if (devices === 0) return res.json({ devices: 0, accepted: 0, message: 'Push is not switched on for any of your devices yet.' });
+    const result = await sendPush(req.auth!.id, { title: 'Enhakkore test notification', body: 'Push notifications are working on this device.', link: '/account/notifications' });
+    res.json({ devices, accepted: result.accepted, message: result.accepted > 0 ? 'The push service accepted it. It should appear on your device shortly — browsers do not confirm when it is shown.' : 'The push service did not accept it. Try switching push off and on again.' });
   }),
 );
 

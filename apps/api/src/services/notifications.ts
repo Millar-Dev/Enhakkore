@@ -1,4 +1,5 @@
-import { OPTIONAL_NOTIFICATIONS, hasPermission, type NotificationType } from '@enhakkore/shared';
+import { OPTIONAL_NOTIFICATIONS, hasPermission, notificationCategory, type NotificationType } from '@enhakkore/shared';
+import { sendPush } from './push';
 import { parseList } from '../lib/json';
 import { prisma } from '../lib/prisma';
 
@@ -8,63 +9,108 @@ interface NotifyInput {
   title: string;
   body: string;
   link?: string | null;
+  /** The same key for the same person never creates a second notification. */
+  dedupeKey?: string | null;
+}
+
+interface Prefs {
+  off?: string[];
+  quietStart?: string | null;
+  quietEnd?: string | null;
+  channels?: { push?: boolean; email?: boolean; whatsapp?: boolean };
 }
 
 /**
- * Writes an in-app notification.
- *
- * Email, SMS and push are not connected in this build. When they are, this is
- * the single place that fans out — every caller already routes through here.
+ * Writes an in-app notification, then fans out to the channels the member
+ * chose (browser push today; email when an email provider is connected).
+ * Every caller routes through here.
  */
 /** Which optional preference key (if any) controls a notification type. Essential types return null. */
 function optionalKey(type: string) {
   return OPTIONAL_NOTIFICATIONS.find((item) => item.types.includes(type))?.key ?? null;
 }
 
-/** Members who switched this optional type off. Essential notices are never filtered. */
-async function mutedUsers(userIds: string[], type: string) {
-  const key = optionalKey(type);
-  if (!key || userIds.length === 0) return new Set<string>();
-  const rows = await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, notificationPrefs: true } });
-  const muted = new Set<string>();
-  for (const row of rows) {
-    try {
-      const prefs = JSON.parse(row.notificationPrefs || '{}');
-      if (Array.isArray(prefs.off) && prefs.off.includes(key)) muted.add(row.id);
-    } catch {
-      /* malformed preferences: send */
-    }
+function parsePrefs(raw: string | null | undefined): Prefs {
+  try {
+    const value = JSON.parse(raw || '{}');
+    return value && typeof value === 'object' ? value : {};
+  } catch {
+    return {};
   }
-  return muted;
+}
+
+/** Quiet hours are kept in East Africa Time (UTC+3), the platform's home time zone. */
+export function inQuietHours(prefs: Prefs, at = new Date()) {
+  if (!prefs.quietStart || !prefs.quietEnd) return false;
+  const minutes = (at.getUTCHours() * 60 + at.getUTCMinutes() + 180) % 1440;
+  const toMin = (text: string) => Number(text.slice(0, 2)) * 60 + Number(text.slice(3, 5));
+  const start = toMin(prefs.quietStart);
+  const end = toMin(prefs.quietEnd);
+  return start <= end ? minutes >= start && minutes < end : minutes >= start || minutes < end;
+}
+
+async function recipientsFor(userIds: string[], type: string) {
+  const key = optionalKey(type);
+  const rows = await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, notificationPrefs: true } });
+  return rows
+    .map((row) => ({ id: row.id, prefs: parsePrefs(row.notificationPrefs) }))
+    .filter((row) => !key || !(Array.isArray(row.prefs.off) && row.prefs.off.includes(key)));
+}
+
+async function fanOut(recipient: { id: string; prefs: Prefs }, input: Omit<NotifyInput, 'userId'>, notificationId: string) {
+  // Push is on unless the member turned it off; it is held back during quiet hours
+  // except for essential notices (which have no optional key).
+  const pushOn = recipient.prefs.channels?.push !== false;
+  const essential = !optionalKey(input.type);
+  if (pushOn && (essential || !inQuietHours(recipient.prefs))) {
+    await sendPush(recipient.id, { title: input.title, body: input.body, link: input.link, tag: notificationId }).catch(() => undefined);
+  }
 }
 
 export async function notify(input: NotifyInput) {
-  if ((await mutedUsers([input.userId], input.type)).has(input.userId)) return null;
-  return prisma.notification.create({
-    data: {
-      userId: input.userId,
-      type: input.type,
-      title: input.title,
-      body: input.body,
-      link: input.link ?? null,
-    },
-  });
+  const [recipient] = await recipientsFor([input.userId], input.type);
+  if (!recipient) return null;
+  try {
+    const created = await prisma.notification.create({
+      data: {
+        userId: input.userId,
+        type: input.type,
+        category: notificationCategory(input.type),
+        title: input.title,
+        body: input.body,
+        link: input.link ?? null,
+        dedupeKey: input.dedupeKey ?? null,
+      },
+    });
+    void fanOut(recipient, input, created.id);
+    return created;
+  } catch (error) {
+    // Unique (userId, dedupeKey): this event was already notified.
+    if ((error as { code?: string }).code === 'P2002') return null;
+    throw error;
+  }
 }
 
 export async function notifyMany(userIds: string[], input: Omit<NotifyInput, 'userId'>) {
-  if (userIds.length === 0) return;
-  const muted = await mutedUsers(userIds, input.type);
-  const recipients = userIds.filter((id) => !muted.has(id));
+  const unique = [...new Set(userIds)];
+  if (unique.length === 0) return;
+  const recipients = await recipientsFor(unique, input.type);
   if (recipients.length === 0) return;
+  if (input.dedupeKey) {
+    for (const recipient of recipients) await notify({ ...input, userId: recipient.id });
+    return;
+  }
   await prisma.notification.createMany({
-    data: recipients.map((userId) => ({
-      userId,
+    data: recipients.map((recipient) => ({
+      userId: recipient.id,
       type: input.type,
+      category: notificationCategory(input.type),
       title: input.title,
       body: input.body,
       link: input.link ?? null,
     })),
   });
+  for (const recipient of recipients) void fanOut(recipient, input, `${input.type}-${Date.now()}`);
 }
 
 /**
@@ -72,9 +118,14 @@ export async function notifyMany(userIds: string[], input: Omit<NotifyInput, 'us
  * responsible for that kind of request — in their control-centre bell.
  */
 export async function notifyStaff(permission: string, input: Omit<NotifyInput, 'userId'>) {
-  const team = await prisma.user.findMany({ where: { role: { in: ['ADMIN', 'STAFF'] }, status: 'ACTIVE' }, include: { adminRole: true } });
+  const team = await prisma.user.findMany({
+    where: { role: { in: ['ADMIN', 'STAFF'] }, status: 'ACTIVE' },
+    include: { adminRole: true, extraRoles: { include: { role: true } } },
+  });
+  const granted = (user: (typeof team)[number]) =>
+    [user.adminRole, ...user.extraRoles.map((item) => item.role)].flatMap((item) => (item ? parseList(item.permissions) : []));
   const ids = team
-    .filter((user) => (user.role === 'ADMIN' ? true : hasPermission(user.adminRole ? parseList(user.adminRole.permissions) : [], permission)))
+    .filter((user) => (user.role === 'ADMIN' ? true : hasPermission(granted(user), permission)))
     .map((user) => user.id);
   await notifyMany(ids, input);
   return ids.length;

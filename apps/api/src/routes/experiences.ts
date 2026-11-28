@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { organiserSections } from './hosting';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
+import { recordActivity } from '../services/activity';
 import {
   ACTIVITY_PUBLIC_STATUSES,
   COMMUNITY_RESOURCE,
@@ -12,6 +13,7 @@ import {
   EXPERIENCE_RESOURCE,
   PLACE_RESOURCE,
   slugify,
+  ageFrom,
 } from '@enhakkore/shared';
 import { env } from '../env';
 import { ApiError, route } from '../lib/http';
@@ -71,7 +73,8 @@ function toTournament(row: Row): Row {
   out.entryCount = row._count?.entries ?? 0;
   out.slotsLeft = row.slots ? Math.max(0, row.slots - out.entryCount) : null;
   const deadline = row.registrationDeadline ? new Date(row.registrationDeadline).getTime() : null;
-  out.registrationOpen = row.status === 'REGISTRATION_OPEN' && (deadline === null || deadline > Date.now()) && (out.slotsLeft === null || out.slotsLeft > 0);
+  out.registrationOpen = row.status === 'REGISTRATION_OPEN' && !row.registrationRestricted && (deadline === null || deadline > Date.now()) && (out.slotsLeft === null || out.slotsLeft > 0);
+  out.memberCreated = !!row.createdById;
   out.free = true;
   return out;
 }
@@ -324,7 +327,7 @@ experiencesPublic.get(
     const q = str(req.query.q);
     const kind = str(req.query.kind) === 'STUDY_GROUP' ? 'STUDY_GROUP' : 'COMMUNITY';
     const rows = await prisma.community.findMany({
-      where: { AND: [{ status: 'PUBLISHED', kind }, geo(req), q ? { OR: [{ name: textContains(q) }, { summary: textContains(q) }, { subject: textContains(q) }, { topic: textContains(q) }] } : {}] },
+      where: { AND: [{ status: { in: ['PUBLISHED', 'RESTRICTED'] }, kind }, geo(req), q ? { OR: [{ name: textContains(q) }, { summary: textContains(q) }, { subject: textContains(q) }, { topic: textContains(q) }] } : {}] },
       include: COMMUNITY_INCLUDE,
       orderBy: [{ featured: 'desc' }, { name: 'asc' }],
     });
@@ -351,8 +354,23 @@ experiencesPublic.get(
 experiencesPublic.get(
   '/communities/:slug',
   route(async (req, res) => {
-    const row = await prisma.community.findFirst({ where: { slug: req.params.slug, status: 'PUBLISHED' }, include: COMMUNITY_INCLUDE });
+    const row = await prisma.community.findFirst({ where: { slug: req.params.slug, status: { in: ['PUBLISHED', 'RESTRICTED'] } }, include: COMMUNITY_INCLUDE });
     if (!row) throw ApiError.notFound('That community is not listed.');
+    const viewerMembership = req.auth ? await prisma.communityMember.findUnique({ where: { communityId_userId: { communityId: row.id, userId: req.auth.id } } }) : null;
+    const staffViewer = !!req.auth && (req.auth.permissions.includes('*') || req.auth.permissions.some((p) => p.startsWith('communities.')));
+    // Private groups: basic information only for non-members. Chat, members, files and sessions stay hidden.
+    if (row.accessType === 'PRIVATE' && viewerMembership?.status !== 'ACTIVE' && !staffViewer) {
+      return res.json({
+        community: { ...toCommunity(row), hasPassword: !!row.passwordHash },
+        locked: true,
+        announcements: [],
+        activities: [],
+        sessions: [],
+        organisers: [],
+        members: [],
+        viewer: req.auth ? { isMember: false, status: viewerMembership?.status ?? null, role: null } : null,
+      });
+    }
     const now = new Date();
     const [announcements, activities, membership] = await Promise.all([
       prisma.communityAnnouncement.findMany({ where: { communityId: row.id }, orderBy: { createdAt: 'desc' }, take: 20 }),
@@ -383,7 +401,8 @@ experiencesPublic.get(
         })
       : [];
     res.json({
-      community: toCommunity(row),
+      community: { ...toCommunity(row), hasPassword: !!row.passwordHash, restricted: row.status === 'RESTRICTED' },
+      locked: false,
       announcements: announcements.map((item) => ({ id: item.id, title: item.title, body: item.body, createdAt: item.createdAt })),
       activities: activities.map(toActivity),
       // Every upcoming dated session of the community's published activities.
@@ -406,7 +425,10 @@ experiencesMember.post(
     const key = { communityId_userId: { communityId: community.id, userId: req.auth!.id } };
     const existing = await prisma.communityMember.findUnique({ where: key });
     if (existing?.status === 'ACTIVE') return res.json({ joined: true, status: 'ACTIVE' });
-    // Free communities: join at once. Private and paid: a request the community team approves.
+    // Private groups are joined with an invitation link or the group password (see /community/groups/:slug/join).
+    if (community.accessType === 'PRIVATE') throw new ApiError(403, 'This is a private group. Join with an invitation link or the group password.', 'private_group');
+    if (community.status !== 'PUBLISHED') throw ApiError.forbidden('This group is not accepting new members at the moment.');
+    // Free communities: join at once. Paid: a request the community team approves.
     const status = community.accessType === 'FREE' ? 'ACTIVE' : 'PENDING';
     if (status === 'PENDING' && community.accessType === 'PRIVATE' && !input.message) {
       throw ApiError.badRequest('Tell the community team a little about yourself.');
@@ -416,7 +438,10 @@ experiencesMember.post(
       create: { communityId: community.id, userId: req.auth!.id, status, message: input.message || null },
       update: { status, message: input.message || null, joinedAt: new Date() },
     });
-    if (status === 'ACTIVE') await recordEngagement(req, 'COMMUNITY', community.id, 'REGISTER');
+    if (status === 'ACTIVE') {
+      await recordEngagement(req, 'COMMUNITY', community.id, 'REGISTER');
+      await recordActivity({ userId: req.auth!.id, action: community.kind === 'STUDY_GROUP' ? 'JOINED_STUDY_GROUP' : 'JOINED_COMMUNITY', title: `Joined ${community.name}`, link: `/experiences/communities/${community.slug}`, subjectType: 'COMMUNITY', subjectId: community.id });
+    }
     if (status === 'PENDING' && community.kind === 'STUDY_GROUP') {
       const admins = await prisma.communityMember.findMany({ where: { communityId: community.id, status: 'ACTIVE', role: { in: ['ADMIN', 'MODERATOR'] } }, select: { userId: true } });
       await notifyMany(admins.map((row) => row.userId), { type: 'INVITATION', title: `Request to join ${community.name}`, body: input.message?.slice(0, 140) ?? 'A member asked to join your study group.', link: `/experiences/communities/${community.slug}#manage` });
@@ -575,6 +600,12 @@ experiencesMember.post(
       where: { tournamentId: tournament.id, OR: [{ captainId: req.auth!.id }, { members: { some: { userId: req.auth!.id } } }] },
     });
     if (already) throw ApiError.conflict('You are already registered for this tournament.');
+    if (tournament.minAge) {
+      const me = await prisma.user.findUniqueOrThrow({ where: { id: req.auth!.id }, select: { dateOfBirth: true } });
+      const age = ageFrom(me.dateOfBirth);
+      if (age === null) throw ApiError.forbidden(`This tournament is for players aged ${tournament.minAge}+. Add your date of birth to your profile first.`);
+      if (age < tournament.minAge) throw ApiError.forbidden(`This tournament is for players aged ${tournament.minAge} and over.`);
+    }
     const entry = await prisma.tournamentEntry.create({
       data: {
         reference: `GAM-${shortCode(6)}`,
@@ -589,6 +620,10 @@ experiencesMember.post(
       },
     });
     await recordEngagement(req, 'TOURNAMENT', tournament.id, 'REGISTER');
+    await recordActivity({ userId: req.auth!.id, action: 'TOURNAMENT_REGISTERED', title: `Registered for ${tournament.title}`, link: `/experiences/gaming/${tournament.slug}`, subjectType: 'TOURNAMENT', subjectId: tournament.id });
+    if (tournament.createdById && tournament.createdById !== req.auth!.id) {
+      await notify({ userId: tournament.createdById, type: 'TOURNAMENT_UPDATE', title: `New entry · ${tournament.title}`, body: `${team ? input.teamName : input.playerName} registered.`, link: `/experiences/gaming/${tournament.slug}` });
+    }
     await notify({
       userId: req.auth!.id,
       type: 'REGISTRATION_RECEIVED',

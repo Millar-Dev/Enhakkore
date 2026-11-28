@@ -10,6 +10,9 @@ import { textContains } from '../../lib/search';
 import { assertPermission, can, requireAdmin } from '../../middleware/auth';
 import { audit } from '../../services/audit';
 import { sendCsv } from './finance';
+import { createPasswordLink } from '../../services/passwordReset';
+import { sendEmail } from '../../services/email';
+import { env } from '../../env';
 
 /**
  * Customers, members, staff, roles and the security centre.
@@ -39,6 +42,7 @@ const MEMBER_SELECT = {
   lastLoginAt: true,
   isDemo: true,
   adminRole: { select: { id: true, name: true } },
+  extraRoles: { select: { role: { select: { id: true, name: true } } } },
 } as const;
 
 /* --------------------------------- Members -------------------------------- */
@@ -211,8 +215,8 @@ peopleRouter.delete(
   requireAdmin,
   route(async (req, res) => {
     if (req.query.confirm !== 'yes') throw new ApiError(428, 'Confirm to continue.', 'confirmation_required');
-    const role = await prisma.adminRole.findUniqueOrThrow({ where: { id: req.params.id }, include: { _count: { select: { users: true } } } });
-    if (role._count.users > 0) throw ApiError.unprocessable('People still have this role. Move them to another role first.');
+    const role = await prisma.adminRole.findUniqueOrThrow({ where: { id: req.params.id }, include: { _count: { select: { users: true, members: true } } } });
+    if (role._count.users + role._count.members > 0) throw ApiError.unprocessable('People still have this role. Move them to another role first.');
     await prisma.adminRole.delete({ where: { id: role.id } });
     await audit(req, { action: 'permissions', entityType: 'roles', entityId: role.id, summary: `Deleted role “${role.name}”`, sensitive: true });
     res.json({ ok: true });
@@ -235,36 +239,58 @@ peopleRouter.get(
 );
 
 /**
- * Gives a team member access. If no account exists for the email, one is
- * created with a one-time password shown once to the owner, who passes it on;
- * the person should change it after their first sign-in.
+ * Gives a team member access with one or more roles (permissions are the
+ * union). Team accounts are invitation-only: a new person receives a one-time
+ * link (72 hours) to choose their own password — no password is ever shown or
+ * sent by the team. The link is emailed when email is connected and always
+ * returned here so the owner can pass it on privately.
  */
+const roleIdsSchema = z
+  .object({ roleIds: z.array(z.string().min(5)).max(10).optional(), roleId: z.string().min(5).nullable().optional() })
+  .transform((value) => (value.roleIds ?? (value.roleId ? [value.roleId] : value.roleId === null ? [] : undefined)));
+
+async function setRoles(userId: string, roleIds: string[]) {
+  const roles = await prisma.adminRole.findMany({ where: { id: { in: roleIds } } });
+  if (roles.length !== roleIds.length) throw ApiError.badRequest('Choose roles from the list.');
+  await prisma.$transaction([
+    prisma.userAdminRole.deleteMany({ where: { userId } }),
+    prisma.user.update({ where: { id: userId }, data: { role: 'STAFF', adminRoleId: roles[0]!.id, status: 'ACTIVE' } }),
+    ...roles.slice(1).map((role) => prisma.userAdminRole.create({ data: { userId, roleId: role.id } })),
+  ]);
+  return roles;
+}
+
 peopleRouter.post(
   '/staff',
   requireAdmin,
   route(async (req, res) => {
-    const input = z
-      .object({ email: z.string().trim().toLowerCase().email(), name: z.string().trim().min(2).max(80).optional(), roleId: z.string().min(5) })
-      .parse(req.body);
-    const role = await prisma.adminRole.findUnique({ where: { id: input.roleId } });
-    if (!role) throw ApiError.badRequest('Choose a role.');
-    let user = await prisma.user.findUnique({ where: { email: input.email } });
-    let temporaryPassword: string | null = null;
+    const base = z.object({ email: z.string().trim().toLowerCase().email(), name: z.string().trim().min(2).max(80).optional() }).parse(req.body);
+    const roleIds = roleIdsSchema.parse(req.body);
+    if (!roleIds || roleIds.length === 0) throw ApiError.badRequest('Choose at least one role.');
+    let user = await prisma.user.findUnique({ where: { email: base.email } });
+    let invitation: { link: string; expiresAt: Date } | null = null;
     if (user) {
       if (user.role === 'ADMIN') throw ApiError.badRequest('That is the owner account, which already has every permission.');
       if (user.role === 'ORGANIZER') throw ApiError.badRequest('That email belongs to a tour-operator account. Use a different email for staff access.');
-      user = await prisma.user.update({ where: { id: user.id }, data: { role: 'STAFF', adminRoleId: role.id, status: 'ACTIVE' } });
     } else {
-      if (!input.name) throw new ApiError(422, 'Please check the highlighted fields.', 'validation_error', { name: 'Give their name, to create the account.' });
-      temporaryPassword = `Enh-${crypto.randomBytes(6).toString('base64url')}`;
+      if (!base.name) throw new ApiError(422, 'Please check the highlighted fields.', 'validation_error', { name: 'Give their name, to create the account.' });
+      // An unusable random password: the person sets their own through the invitation link.
       user = await prisma.user.create({
-        data: { email: input.email, name: input.name, role: 'STAFF', adminRoleId: role.id, passwordHash: await bcrypt.hash(temporaryPassword, 12) },
+        data: { email: base.email, name: base.name, role: 'STAFF', passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12) },
+      });
+      invitation = await createPasswordLink(user.id, 72);
+      void sendEmail({
+        to: user.email,
+        subject: 'You have been invited to the Enhakkore team',
+        text: `Hello ${user.name},\n\nYou have been given a team account on Enhakkore. Choose your password here (the link works once, for 72 hours):\n${invitation.link}\n\nThen sign in at ${env.appUrl}/admin/login.`,
+        html: `<p>Hello ${user.name.replace(/[<>&]/g, '')},</p><p>You have been given a team account on Enhakkore. <a href="${invitation.link}">Choose your password</a> (the link works once, for 72 hours), then sign in at ${env.appUrl}/admin/login.</p>`,
       });
     }
+    const roles = await setRoles(user.id, roleIds);
     // A change of role takes effect on the next request; signing them out makes it obvious.
     await prisma.session.updateMany({ where: { userId: user.id, revokedAt: null }, data: { revokedAt: new Date(), revokedBy: req.auth!.id } });
-    await audit(req, { action: 'permissions', entityType: 'staff', entityId: user.id, summary: `Gave ${user.name} (${user.email}) the role “${role.name}”`, sensitive: true });
-    res.status(201).json({ id: user.id, email: user.email, temporaryPassword });
+    await audit(req, { action: 'permissions', entityType: 'staff', entityId: user.id, summary: `Gave ${user.name} (${user.email}) the role(s) ${roles.map((role) => `“${role.name}”`).join(', ')}`, sensitive: true });
+    res.status(201).json({ id: user.id, email: user.email, invitationLink: invitation?.link ?? null, invitationExpiresAt: invitation?.expiresAt ?? null, emailed: env.email.provider === 'resend' && !!invitation });
   }),
 );
 
@@ -272,20 +298,37 @@ peopleRouter.patch(
   '/staff/:id',
   requireAdmin,
   route(async (req, res) => {
-    const input = z.object({ roleId: z.string().min(5).nullable() }).parse(req.body);
+    const roleIds = roleIdsSchema.parse(req.body);
+    if (roleIds === undefined) throw ApiError.badRequest('Choose roles, or remove access.');
     const target = await prisma.user.findUniqueOrThrow({ where: { id: req.params.id } });
     if (target.role === 'ADMIN') throw ApiError.badRequest('The owner account always has every permission.');
-    if (input.roleId === null) {
+    if (roleIds.length === 0) {
       // Revoke access: back to an ordinary member account.
-      await prisma.user.update({ where: { id: target.id }, data: { role: 'TRAVELER', adminRoleId: null } });
+      await prisma.$transaction([
+        prisma.userAdminRole.deleteMany({ where: { userId: target.id } }),
+        prisma.user.update({ where: { id: target.id }, data: { role: 'TRAVELER', adminRoleId: null } }),
+      ]);
       await prisma.session.updateMany({ where: { userId: target.id, revokedAt: null }, data: { revokedAt: new Date(), revokedBy: req.auth!.id } });
       await audit(req, { action: 'permissions', entityType: 'staff', entityId: target.id, summary: `Revoked control-centre access for ${target.name}`, sensitive: true });
       return res.json({ ok: true });
     }
-    const role = await prisma.adminRole.findUniqueOrThrow({ where: { id: input.roleId } });
-    await prisma.user.update({ where: { id: target.id }, data: { role: 'STAFF', adminRoleId: role.id } });
-    await audit(req, { action: 'permissions', entityType: 'staff', entityId: target.id, summary: `Moved ${target.name} to the role “${role.name}”`, sensitive: true });
+    const roles = await setRoles(target.id, roleIds);
+    await audit(req, { action: 'permissions', entityType: 'staff', entityId: target.id, summary: `Set ${target.name}'s roles to ${roles.map((role) => `“${role.name}”`).join(', ')}`, sensitive: true });
     res.json({ ok: true });
+  }),
+);
+
+/** A new one-time password link for a team member or a member (email not connected, or lost). */
+peopleRouter.post(
+  '/people/:id/password-link',
+  route(async (req, res) => {
+    assertPermission(req, 'members.edit');
+    const target = await prisma.user.findUniqueOrThrow({ where: { id: req.params.id } });
+    if (target.role === 'ADMIN') throw ApiError.forbidden('The owner recovers access with the server recovery token, not a link.');
+    if (target.role === 'STAFF' && req.auth!.role !== 'ADMIN') throw ApiError.forbidden('Only the owner can reset a team member’s password.');
+    const result = await createPasswordLink(target.id, target.role === 'STAFF' ? 24 : 2);
+    await audit(req, { action: 'security', entityType: 'users', entityId: target.id, summary: `Created a one-time password link for ${target.name}`, sensitive: true });
+    res.json(result);
   }),
 );
 

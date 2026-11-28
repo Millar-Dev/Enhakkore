@@ -148,3 +148,18 @@ export async function recordPasswordChange(userId: string, newPassword: string) 
   );
   return user;
 }
+
+/**
+ * A one-time "set your password" link, created by the team instead of being
+ * emailed (new staff invitations, or a member who cannot receive email while
+ * no email provider is connected). Earlier unused links stop working.
+ */
+export async function createPasswordLink(userId: string, hours: number): Promise<{ link: string; expiresAt: Date }> {
+  const token = crypto.randomBytes(32).toString('base64url');
+  const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000);
+  await prisma.$transaction([
+    prisma.passwordResetToken.updateMany({ where: { userId, usedAt: null }, data: { usedAt: new Date() } }),
+    prisma.passwordResetToken.create({ data: { userId, tokenHash: hashToken(token), expiresAt } }),
+  ]);
+  return { link: `${env.appUrl}/reset-password?token=${encodeURIComponent(token)}`, expiresAt };
+}

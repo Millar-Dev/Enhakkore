@@ -296,12 +296,13 @@ export const TOURNAMENT_KINDS = ['ONLINE', 'CONSOLE'] as const;
 export const TOURNAMENT_KIND_LABELS: Record<string, string> = { ONLINE: 'Online tournament', CONSOLE: 'PlayStation / console session' };
 export const TOURNAMENT_FORMATS = ['SOLO', 'DUO', 'SQUAD', 'TEAM'] as const;
 export const TOURNAMENT_FORMAT_LABELS: Record<string, string> = { SOLO: 'Solo', DUO: 'Duo', SQUAD: 'Squad', TEAM: 'Team' };
-export const TOURNAMENT_STATUSES = ['DRAFT', 'REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ARCHIVED'] as const;
+export const TOURNAMENT_STATUSES = ['DRAFT', 'REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'HIDDEN', 'SUSPENDED', 'ARCHIVED'] as const;
 export const TOURNAMENT_PUBLIC_STATUSES = ['REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
 export const ENTRY_STATUSES = ['REGISTERED', 'CONFIRMED', 'WAITLIST', 'DISQUALIFIED', 'WITHDRAWN'] as const;
 
 /* Communities */
-export const COMMUNITY_STATUSES = ['PENDING_REVIEW', 'DRAFT', 'PUBLISHED', 'REJECTED', 'ARCHIVED'] as const;
+/** RESTRICTED: listed and usable by members, no new members. SUSPENDED: hidden while the team investigates. */
+export const COMMUNITY_STATUSES = ['PENDING_REVIEW', 'DRAFT', 'PUBLISHED', 'RESTRICTED', 'SUSPENDED', 'REJECTED', 'ARCHIVED'] as const;
 export const SESSION_STATUSES = ['SCHEDULED', 'CHANGED', 'CANCELLED', 'COMPLETED'] as const;
 
 /* Partnerships */
@@ -482,6 +483,8 @@ export const PERMISSION_MODULES = [
   { key: 'settings', label: 'Website settings & contacts' },
   { key: 'staff', label: 'Staff, roles & permissions' },
   { key: 'security', label: 'Security & audit centre' },
+  { key: 'messages', label: 'Private messages & group chats (restricted, audited)' },
+  { key: 'nia', label: 'Nia AI settings' },
 ] as const;
 export type PermissionModule = (typeof PERMISSION_MODULES)[number]['key'];
 
@@ -515,6 +518,16 @@ export const DEFAULT_ROLES: { name: string; description: string; permissions: st
     permissions: ['*'],
   },
   {
+    name: 'General Admin',
+    description: 'Day-to-day management of every area except staff, payment settings and security.',
+    permissions: ['trips.*', 'bookings.*', 'activities.*', 'communities.*', 'gaming.*', 'places.*', 'experiences.*', 'events.*', 'catering.*', 'impact.*', 'stories.*', 'reviews.*', 'enquiries.*', 'members.view', 'members.edit', 'media.*', 'homepage.*', 'catalogue.*', 'analytics.view', 'settings.view', 'settings.edit'],
+  },
+  {
+    name: 'Moderator',
+    description: 'Reports, community and study-group moderation, gaming listings; reported messages only.',
+    permissions: ['reviews.*', 'communities.view', 'communities.edit', 'gaming.view', 'gaming.edit', 'members.view', 'messages.view', 'activities.view'],
+  },
+  {
     name: 'Finance Manager',
     description: 'Income, expenses, donations, payment verification and financial reports.',
     permissions: [all('finance'), all('donations'), 'bookings.view', 'bookings.edit', 'events.view', 'payments.view', 'trips.view'],
@@ -541,8 +554,8 @@ export const DEFAULT_ROLES: { name: string; description: string; permissions: st
   },
   {
     name: 'Gaming Manager',
-    description: 'Games, tournaments, console sessions, entries, brackets and results.',
-    permissions: [all('gaming'), all('media'), 'catalogue.view', 'members.view'],
+    description: 'Games, tournaments, esports organisers, sessions, squads, guilds, brackets and results.',
+    permissions: [all('gaming'), all('media'), 'catalogue.view', 'members.view', 'reviews.view', 'reviews.edit'],
   },
   {
     name: 'Content Manager',
@@ -551,8 +564,8 @@ export const DEFAULT_ROLES: { name: string; description: string; permissions: st
   },
   {
     name: 'Community Manager',
-    description: 'Community activities, members, stories, polls and reports.',
-    permissions: [all('activities'), all('stories'), all('reviews'), 'members.view', 'members.edit', 'media.view', 'media.create', 'catalogue.view'],
+    description: 'Communities, study groups, community activities, members, stories, polls and reports.',
+    permissions: [all('activities'), all('communities'), all('stories'), all('reviews'), 'members.view', 'members.edit', 'media.view', 'media.create', 'catalogue.view'],
   },
   {
     name: 'Impact Manager',
@@ -699,12 +712,131 @@ export const VISIBILITY_LEVELS = ['PUBLIC', 'MEMBERS', 'PRIVATE'] as const;
 
 /** Non-essential notification kinds a member can switch off. Safety, cancellation and booking notices are always sent. */
 export const OPTIONAL_NOTIFICATIONS: { key: string; label: string; types: string[] }[] = [
-  { key: 'chat', label: 'New group chat messages', types: ['CHAT_MESSAGE'] },
+  { key: 'messages', label: 'Private messages', types: ['DIRECT_MESSAGE', 'MESSAGE_REQUEST'] },
+  { key: 'friendRequests', label: 'Friend requests and new followers', types: ['FRIEND_REQUEST', 'FRIEND_ACCEPTED', 'NEW_FOLLOWER'] },
+  { key: 'gaming', label: 'Tournaments and gaming', types: ['TOURNAMENT_UPDATE', 'GAMING_SESSION'] },
+  { key: 'gamingInvites', label: 'Gaming invitations', types: ['GAMING_INVITE'] },
+  { key: 'chat', label: 'Group chat messages', types: ['CHAT_MESSAGE'] },
+  { key: 'community', label: 'Communities and events', types: ['COMMUNITY_ANNOUNCEMENT', 'EVENT_CHANGE', 'HOSTED_ACTIVITY'] },
+  { key: 'studyGroups', label: 'Study groups', types: ['STUDY_GROUP', 'SESSION_REMINDER'] },
   { key: 'invites', label: 'Invitations from members', types: ['INVITATION'] },
-  { key: 'community', label: 'Community announcements', types: ['COMMUNITY_ANNOUNCEMENT'] },
   { key: 'nearby', label: 'Nearby members', types: ['NEARBY'] },
-  { key: 'impact', label: 'Impact updates', types: ['IMPACT_UPDATE'] },
+  { key: 'impact', label: 'Impact and charity updates', types: ['IMPACT_UPDATE'] },
+  { key: 'announcements', label: 'General announcements', types: ['ANNOUNCEMENT'] },
 ];
+
+/**
+ * Essential notices (bookings, payments, trip changes, security alerts) cannot be
+ * switched off in the app; they are listed so the settings page can say so.
+ */
+export const ESSENTIAL_NOTIFICATION_LABELS = ['Trips and bookings', 'Payments', 'Account security alerts'];
+
+/** Inbox tabs: every notification type belongs to exactly one. */
+export const NOTIFICATION_CATEGORY: Record<string, 'MESSAGES' | 'REQUESTS' | 'UPDATES'> = {
+  DIRECT_MESSAGE: 'MESSAGES',
+  CHAT_MESSAGE: 'MESSAGES',
+  MESSAGE_REQUEST: 'REQUESTS',
+  FRIEND_REQUEST: 'REQUESTS',
+  GAMING_INVITE: 'REQUESTS',
+  INVITATION: 'REQUESTS',
+  NEARBY: 'REQUESTS',
+};
+export const notificationCategory = (type: string) => NOTIFICATION_CATEGORY[type] ?? 'UPDATES';
+
+/** Delivery channels a member can choose. SMS / WhatsApp only appear when the team has connected them. */
+export const NOTIFICATION_CHANNELS = [
+  { key: 'push', label: 'Push notifications on this device' },
+  { key: 'email', label: 'Email' },
+  { key: 'whatsapp', label: 'WhatsApp / SMS' },
+] as const;
+
+/* ------------------------------------------------------------------------- */
+/* Gaming (Phase 1G)                                                          */
+/* ------------------------------------------------------------------------- */
+
+export const TOURNAMENT_CATEGORIES = [
+  { key: 'FRIENDLY', label: 'Friendly Tournament' },
+  { key: 'GUILD', label: 'Guild Tournament' },
+  { key: 'ESPORTS', label: 'Esports Tournament' },
+  { key: 'CREATOR', label: 'Creator-hosted Tournament' },
+  { key: 'OTHER', label: 'Other Tournament' },
+] as const;
+
+export const ORGANISER_TYPES = [
+  { key: 'INDIVIDUAL', label: 'Individual' },
+  { key: 'GUILD', label: 'Guild' },
+  { key: 'SQUAD', label: 'Squad' },
+  { key: 'COMMUNITY_ADMIN', label: 'Community administrator' },
+  { key: 'CREATOR', label: 'Content creator' },
+  { key: 'ESPORTS_ORG', label: 'Esports organisation' },
+  { key: 'COMPANY', label: 'Tournament company' },
+  { key: 'INSTITUTION', label: 'Institution' },
+  { key: 'SPONSOR', label: 'Sponsor or brand' },
+  { key: 'OTHER', label: 'Other' },
+] as const;
+
+export const BRACKET_FORMATS = [
+  { key: 'SINGLE_ELIMINATION', label: 'Single elimination' },
+  { key: 'DOUBLE_ELIMINATION', label: 'Double elimination' },
+  { key: 'LEAGUE', label: 'League (home and away)' },
+  { key: 'ROUND_ROBIN', label: 'Round-robin' },
+] as const;
+
+export const GAMING_PLATFORMS = ['Mobile', 'PlayStation', 'Xbox', 'PC', 'Nintendo Switch', 'Other'] as const;
+export const PLAY_STYLES = ['Casual', 'Competitive', 'Ranked', 'Practice', 'Just for fun'] as const;
+export const GAMING_SESSION_TYPES = [
+  { key: 'CASUAL', label: 'Casual match' },
+  { key: 'PRACTICE', label: 'Team practice' },
+  { key: 'TRAINING', label: 'Training' },
+  { key: 'MEETUP', label: 'Gaming meet-up' },
+  { key: 'MULTIPLAYER', label: 'Multiplayer session' },
+] as const;
+
+export const ESPORTS_STATUS_LABELS: Record<string, string> = {
+  PENDING: 'Pending review',
+  MORE_INFO: 'More information required',
+  VERIFIED: 'Verified',
+  REJECTED: 'Rejected',
+  SUSPENDED: 'Suspended',
+  EXPIRED: 'Expired',
+};
+
+/** Nearby gaming invitations: fixed launch radius and default expiry. */
+export const NEARBY_RADIUS_KM = 2;
+export const GAME_INVITE_DEFAULT_MINUTES = 10;
+
+/** Member activity (Activity Centre) labels. */
+export const MEMBER_ACTIVITY_LABELS: Record<string, string> = {
+  JOINED_COMMUNITY: 'Joined a community',
+  CREATED_COMMUNITY: 'Created a community',
+  JOINED_STUDY_GROUP: 'Joined a study group',
+  CREATED_STUDY_GROUP: 'Created a study group',
+  TOURNAMENT_REGISTERED: 'Registered for a tournament',
+  TOURNAMENT_CREATED: 'Created a tournament',
+  TOURNAMENT_COMPLETED: 'Completed a tournament',
+  FRIEND_ADDED: 'Added a gaming friend',
+  TEAM_CREATED: 'Created a team',
+  TEAM_JOINED: 'Joined a team',
+  EVENT_REGISTERED: 'Registered for an event',
+  TRIP_JOINED: 'Joined a trip',
+  SAVED: 'Saved an item',
+  HOSTED_ACTIVITY: 'Hosted an activity',
+  GAMING_SESSION_JOINED: 'Joined a gaming session',
+  GAMING_SESSION_CREATED: 'Organised a gaming session',
+};
+
+/** Age protections. */
+export const MINIMUM_AGE = 13;
+export const ADULT_AGE = 18;
+export function ageFrom(dateOfBirth: string | Date | null | undefined, at = new Date()): number | null {
+  if (!dateOfBirth) return null;
+  const dob = new Date(dateOfBirth);
+  if (Number.isNaN(dob.getTime())) return null;
+  let age = at.getUTCFullYear() - dob.getUTCFullYear();
+  const m = at.getUTCMonth() - dob.getUTCMonth();
+  if (m < 0 || (m === 0 && at.getUTCDate() < dob.getUTCDate())) age -= 1;
+  return age;
+}
 
 /** Usernames: 3–20 characters, lowercase letters, numbers, dot and underscore. */
 export const USERNAME_PATTERN = /^[a-z0-9](?:[a-z0-9._]{1,18})[a-z0-9]$/;

@@ -245,7 +245,7 @@ describe('two-factor sign-in for team accounts', () => {
     const role = await prisma.adminRole.findUniqueOrThrow({ where: { name: 'Content Manager' } });
     const invited = await api.request('POST', '/cc/people/staff', { token: owner, body: { email, name: 'Two Factor', roleId: role.id } });
     assert.ok([200, 201].includes(invited.status), JSON.stringify(invited.body));
-    const password = invited.body.temporaryPassword as string;
+    const password = await api.acceptInvite(invited.body.invitationLink);
     const token = await api.login(email, password);
     const setup = await api.request('POST', '/auth/2fa/setup', { token });
     assert.equal(setup.status, 200);

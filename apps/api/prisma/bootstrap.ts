@@ -656,6 +656,23 @@ async function rolesV2() {
 }
 
 /**
+ * Phase 1: adds the General Admin and Moderator roles, and gives the built-in
+ * Community and Gaming Manager roles the new permissions they need (union only —
+ * nothing an owner granted is taken away).
+ */
+async function rolesV8() {
+  await rolesV2();
+  for (const name of ['Community Manager', 'Gaming Manager']) {
+    const role = await prisma.adminRole.findUnique({ where: { name } });
+    const wanted = DEFAULT_ROLES.find((item) => item.name === name);
+    if (!role || !role.isSystem || !wanted) continue;
+    const current: string[] = JSON.parse(role.permissions || '[]');
+    const merged = [...new Set([...current, ...wanted.permissions])];
+    if (merged.length !== current.length) await prisma.adminRole.update({ where: { id: role.id }, data: { permissions: JSON.stringify(merged), description: wanted.description } });
+  }
+}
+
+/**
  * The Arusha Escape as the brief describes it: accommodation not yet booked,
  * transport and meals provisional, and the trip held as a draft for the owner's
  * final check before it is published.
@@ -983,6 +1000,7 @@ async function main() {
   await once('arusha-deposit.v7', arushaDeposit);
   await once('starter-communities.v7', starterCommunities);
   await once('venue-enquiries.v7', venueEnquiries);
+  await once('roles.v8', rolesV8);
   // Not run once: a fresh deploy with the variables set is how the owner is created.
   await owner();
 }

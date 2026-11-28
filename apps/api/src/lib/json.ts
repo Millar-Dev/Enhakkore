@@ -38,3 +38,20 @@ export function parseRecord<T extends object>(value: string | null | undefined, 
 export function stringify(value: unknown): string {
   return JSON.stringify(value ?? []);
 }
+
+/** A small JSON setting kept in the platform settings table, with defaults filled in. */
+export async function readJsonSetting<T extends object>(key: string, defaults: T): Promise<T> {
+  const { prisma } = await import('./prisma');
+  const row = await prisma.platformSetting.findUnique({ where: { key } });
+  if (!row) return defaults;
+  try {
+    return { ...defaults, ...JSON.parse(row.value) };
+  } catch {
+    return defaults;
+  }
+}
+
+export async function writeJsonSetting(key: string, value: object) {
+  const { prisma } = await import('./prisma');
+  await prisma.platformSetting.upsert({ where: { key }, create: { key, value: JSON.stringify(value) }, update: { value: JSON.stringify(value) } });
+}

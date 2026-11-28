@@ -3,7 +3,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
-import { DEFAULT_COMMISSION_RATE, LEGAL_VERSION } from '@enhakkore/shared';
+import { ADULT_AGE, DEFAULT_COMMISSION_RATE, LEGAL_VERSION, MINIMUM_AGE, ageFrom } from '@enhakkore/shared';
 import { ApiError, route } from '../lib/http';
 import { uniqueSlug } from '../lib/ids';
 import { prisma } from '../lib/prisma';
@@ -49,6 +49,15 @@ const registerSchema = z.object({
   /** Required when accountType is ORGANIZER. */
   companyName: z.string().trim().min(2).max(120).optional(),
   acceptedTerms: z.literal(true, { errorMap: () => ({ message: 'Please accept the terms to create an account.' }) }),
+  /** YYYY-MM-DD. Used only for age-appropriate protections; never shown to other members. */
+  dateOfBirth: z
+    .string({ required_error: 'Enter your date of birth.' })
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Enter your date of birth.')
+    .refine((value) => {
+      const age = ageFrom(value);
+      return age !== null && age <= 120;
+    }, 'Enter a real date of birth.')
+    .refine((value) => (ageFrom(value) ?? 0) >= MINIMUM_AGE, `You need to be at least ${MINIMUM_AGE} to create an Enhakkore account.`),
 });
 
 authRouter.post(
@@ -81,6 +90,9 @@ authRouter.post(
       data: {
         termsVersion: LEGAL_VERSION,
         termsAcceptedAt: new Date(),
+        dateOfBirth: new Date(`${input.dateOfBirth}T00:00:00Z`),
+        // Under-18s start with a profile that does not appear in member discovery.
+        ...((ageFrom(input.dateOfBirth) ?? 0) < ADULT_AGE ? { profileVisibility: 'HIDDEN' } : {}),
         name: input.name,
         email: input.email,
         passwordHash,
@@ -430,5 +442,65 @@ authRouter.post(
     await recordLogin(req, input.email, user.id, true, 'setup');
     const token = await issueSession(user, req);
     res.status(201).json({ token, ...(await sessionPayload(user.id)) });
+  }),
+);
+
+/* ------------------------------ Owner recovery ------------------------------ */
+
+const recoveryToken = () => process.env.OWNER_RECOVERY_TOKEN?.trim() ?? '';
+
+/**
+ * Lost access to the Super Admin account (forgotten password or lost
+ * authenticator) while email is not connected. Works only while the hosting
+ * owner has set OWNER_RECOVERY_TOKEN (24+ characters) on the API — proving
+ * control of the server, like the founder setup. It resets the password, can
+ * switch two-factor off so it can be set up again, signs every session out,
+ * and is written to the audit log. Remove the variable afterwards.
+ */
+authRouter.get(
+  '/recover-owner/status',
+  route(async (_req, res) => {
+    res.json({ open: recoveryToken().length >= 24 });
+  }),
+);
+
+authRouter.post(
+  '/recover-owner',
+  credentialLimiter,
+  route(async (req, res) => {
+    const input = z
+      .object({
+        token: z.string().min(1, 'Enter the recovery token.').max(500),
+        email: z.string().trim().toLowerCase().email('Enter a valid email address.'),
+        password: setupSchema.shape.password,
+        resetTwoFactor: z.boolean().default(false),
+      })
+      .parse(req.body);
+    if (recoveryToken().length < 24) throw ApiError.forbidden('Recovery is not switched on for this server.');
+    const owner = await prisma.user.findFirst({ where: { email: input.email, role: 'ADMIN' } });
+    if (!sameSecret(input.token, recoveryToken()) || !owner) {
+      await recordLogin(req, input.email, owner?.id ?? null, false, 'bad_recovery_token');
+      throw new ApiError(401, 'That recovery token or email is not right.', 'bad_recovery_token');
+    }
+    const now = new Date();
+    await prisma.user.update({
+      where: { id: owner.id },
+      data: {
+        passwordHash: await bcrypt.hash(input.password, 12),
+        passwordChangedAt: now,
+        status: 'ACTIVE',
+        ...(input.resetTwoFactor ? { totpEnabled: false, totpSecret: null } : {}),
+      },
+    });
+    await prisma.session.updateMany({ where: { userId: owner.id, revokedAt: null }, data: { revokedAt: now, revokedBy: owner.id } });
+    await audit(req, {
+      action: 'security',
+      entityType: 'users',
+      entityId: owner.id,
+      summary: `Super Admin access recovered with the server recovery token${input.resetTwoFactor ? ' (two-factor reset)' : ''}`,
+      sensitive: true,
+    });
+    await recordLogin(req, input.email, owner.id, true, 'owner_recovery');
+    res.json({ ok: true });
   }),
 );

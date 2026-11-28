@@ -53,6 +53,8 @@ export interface PublicUser {
   adminRoleName?: string | null;
   /** ALL, or OWN for partner roles limited to their assigned listings. */
   adminScope?: string;
+  /** Only ever sent to the member themselves. */
+  dateOfBirth?: string | null;
 }
 
 /** A fellow traveller as shown on a trip page — deliberately minimal. */

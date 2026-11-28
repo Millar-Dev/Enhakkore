@@ -24,7 +24,7 @@ after(async () => {
 async function member(prefix: string, username?: string) {
   const email = `${prefix}-${stamp}-${Math.random().toString(36).slice(2, 6)}@test.local`;
   const result = await api.request('POST', '/auth/register', {
-    body: { name: `Test ${prefix} Person`, email, password: 'TestPass-123', accountType: 'TRAVELER', acceptedTerms: true, username, country: 'Tanzania', city: 'Dar es Salaam' },
+    body: { name: `Test ${prefix} Person`, email, password: 'TestPass-123', accountType: 'TRAVELER', acceptedTerms: true, username, country: 'Tanzania', city: 'Dar es Salaam', dateOfBirth: '1996-01-15' },
   });
   assert.equal(result.status, 201, JSON.stringify(result.body));
   return { token: result.body.token as string, id: result.body.user.id as string, email, username };
@@ -44,7 +44,7 @@ describe('usernames and registration', () => {
     assert.equal(saved.city, 'Dar es Salaam');
 
     const taken = await api.request('POST', '/auth/register', {
-      body: { name: 'Another One', email: `other-${stamp}@test.local`, password: 'TestPass-123', acceptedTerms: true, username: `AMINA_${stamp}` },
+      body: { name: 'Another One', email: `other-${stamp}@test.local`, password: 'TestPass-123', acceptedTerms: true, username: `AMINA_${stamp}`, dateOfBirth: '1996-01-15' },
     });
     assert.equal(taken.status, 409);
     assert.match(taken.body.error.message, /taken/);
@@ -315,19 +315,20 @@ describe('group chats for listings', () => {
 });
 
 describe('community access types', () => {
-  test('private communities take requests the team approves; paid ones say plainly that online payment is off', async () => {
+  test('private communities need an invitation or the password (no open requests); paid ones say plainly that online payment is off', async () => {
     const m = await member('comm');
     const privateOne = await prisma.community.create({ data: { slug: `r6-private-${stamp}`, name: 'R6 Private Club', summary: 'Test', status: 'PUBLISHED', accessType: 'PRIVATE' } });
     const paidOne = await prisma.community.create({ data: { slug: `r6-paid-${stamp}`, name: 'R6 Paid Club', summary: 'Test', status: 'PUBLISHED', accessType: 'PAID', membershipPrice: 10000, membershipCurrency: 'TZS' } });
 
-    const noMessage = await api.request('POST', `/community/communities/${privateOne.slug}/join`, { token: m.token, body: {} });
-    assert.equal(noMessage.status, 400);
     const asked = await api.request('POST', `/community/communities/${privateOne.slug}/join`, { token: m.token, body: { message: 'I play every Sunday.' } });
-    assert.equal(asked.body.status, 'PENDING');
+    assert.equal(asked.status, 403);
+    assert.equal(asked.body.error.code, 'private_group');
     const page = await api.request('GET', `/public/communities/${privateOne.slug}`, { token: m.token });
     assert.equal(page.body.viewer.isMember, false);
-    assert.equal(page.body.community.memberCount, 0);
+    assert.equal(page.body.locked, true);
 
+    // The team can still add someone directly.
+    await prisma.communityMember.create({ data: { communityId: privateOne.id, userId: m.id, status: 'PENDING' } });
     await api.request('POST', `/cc/communities/${privateOne.id}/members/${m.id}/role`, { token: owner, body: { role: 'APPROVE' } });
     const after = await api.request('GET', `/public/communities/${privateOne.slug}`, { token: m.token });
     assert.equal(after.body.viewer.isMember, true);

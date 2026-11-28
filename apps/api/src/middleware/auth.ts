@@ -121,6 +121,7 @@ async function resolveUser(token: string): Promise<AuthUser | null> {
           passwordChangedAt: true,
           organizer: { select: { id: true } },
           adminRole: { select: { name: true, permissions: true, scope: true } },
+          extraRoles: { select: { role: { select: { name: true, permissions: true, scope: true } } } },
         },
       },
     },
@@ -136,8 +137,10 @@ async function resolveUser(token: string): Promise<AuthUser | null> {
   }
 
   const role = user.role as Role;
-  const permissions =
-    role === 'ADMIN' ? ['*'] : role === 'STAFF' && user.adminRole ? parseList(user.adminRole.permissions) : [];
+  // A staff member may hold several roles: permissions are the union, and the
+  // OWN scope applies only when every role they hold is limited to their own listings.
+  const staffRoles = role === 'STAFF' ? [user.adminRole, ...user.extraRoles.map((item) => item.role)].filter((item): item is NonNullable<typeof item> => !!item) : [];
+  const permissions = role === 'ADMIN' ? ['*'] : [...new Set(staffRoles.flatMap((item) => parseList(item.permissions)))];
 
   return {
     id: user.id,
@@ -148,8 +151,8 @@ async function resolveUser(token: string): Promise<AuthUser | null> {
     organizerId: user.organizer?.id ?? null,
     sessionId: session.id,
     permissions,
-    scope: role === 'STAFF' && user.adminRole?.scope === 'OWN' ? 'OWN' : 'ALL',
-    adminRoleName: role === 'ADMIN' ? 'Owner' : (user.adminRole?.name ?? null),
+    scope: staffRoles.length > 0 && staffRoles.every((item) => item.scope === 'OWN') ? 'OWN' : 'ALL',
+    adminRoleName: role === 'ADMIN' ? 'Owner' : staffRoles.map((item) => item.name).join(', ') || null,
   };
 }
 

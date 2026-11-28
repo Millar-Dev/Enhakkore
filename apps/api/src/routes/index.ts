@@ -26,6 +26,11 @@ import { tripPaymentsAdmin, tripPaymentsMember } from './tripPayments';
 import { studyGroupsRouter } from './studyGroups';
 import { assistantRouter } from './assistant';
 import { hostingAdmin, hostingMember } from './hosting';
+import { socialRouter } from './social';
+import { niaAdmin, niaRouter } from './nia';
+import { gamingMember, gamingPublic } from './gaming';
+import { groupsMember, groupsPublic } from './groups';
+import { messagesRouter } from './messages';
 
 export const apiRouter = Router();
 
@@ -92,4 +97,12 @@ apiRouter.use('/cc/assistant', assistantRouter);
 apiRouter.use('/cc', tripPaymentsAdmin);
 apiRouter.use('/community', hostingMember);
 apiRouter.use('/cc', hostingAdmin);
+apiRouter.use('/community/groups', groupsMember);
+apiRouter.use('/public', groupsPublic);
+apiRouter.use('/nia', niaRouter);
+apiRouter.use('/cc', niaAdmin);
+apiRouter.use('/social', socialRouter);
+apiRouter.use('/gaming', gamingMember);
+apiRouter.use('/public', gamingPublic);
+apiRouter.use('/messages', messagesRouter);
 apiRouter.use('/cc', controlCentreRouter);

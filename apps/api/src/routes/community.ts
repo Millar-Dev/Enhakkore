@@ -2,6 +2,7 @@ import { Router, type Request } from 'express';
 import { usernameProblem } from '../services/usernames';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
+import { recordActivity } from '../services/activity';
 import { ENQUIRY_TYPES, ENQUIRY_TYPE_LABELS, RESERVATION_TYPES, departureStatus, slugify } from '@enhakkore/shared';
 import { env } from '../env';
 import { ApiError, route } from '../lib/http';
@@ -309,6 +310,7 @@ communityRouter.post(
       body: 'Your places are held while the Enhakkore team reviews your application. This is not yet a confirmed booking.',
       link: `/account/applications/${booking.reference}`,
     });
+    await recordActivity({ userId: req.auth!.id, action: 'TRIP_JOINED', title: `Applied to join ${departure.trip.title}`, link: `/account/applications/${booking.reference}`, subjectType: 'TRIP', subjectId: departure.trip.id });
     res.status(201).json({ reference: booking.reference });
   }),
 );
@@ -447,6 +449,7 @@ communityRouter.post(
       });
     });
 
+    if (req.auth) await recordActivity({ userId: req.auth.id, action: 'EVENT_REGISTERED', title: `Registered for ${event.title}`, link: `/events/${event.slug}`, subjectType: 'EVENT', subjectId: event.id });
     const methods = await prisma.paymentMethod.findMany({ where: { status: 'ENABLED' }, orderBy: [{ isDefault: 'desc' }, { sortOrder: 'asc' }] });
     res.status(201).json({
       reference: registration.reference,
@@ -851,6 +854,7 @@ communityRouter.post(
     }
     if (await prisma.savedItem.count({ where: { userId: req.auth!.id } }) >= 500) throw ApiError.unprocessable('Your wishlist is full.');
     await prisma.savedItem.create({ data: { userId: req.auth!.id, ...input } });
+    await recordActivity({ userId: req.auth!.id, action: 'SAVED', title: `Saved a ${input.itemType.toLowerCase()} to your wishlist`, link: '/account/saved', subjectType: input.itemType, subjectId: input.itemId });
     res.status(201).json({ saved: true });
   }),
 );

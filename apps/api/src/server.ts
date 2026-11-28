@@ -4,11 +4,13 @@ import { env } from './env';
 import { prisma } from './lib/prisma';
 import { attachRealtime } from './realtime/socket';
 import { paymentGateway } from './services/payments';
+import { startJobs } from './services/jobs';
 
 const app = createApp();
 const server = http.createServer(app);
 
 attachRealtime(server);
+if (env.nodeEnv !== 'test') startJobs();
 
 server.listen(env.port, () => {
   const gateway = paymentGateway();
