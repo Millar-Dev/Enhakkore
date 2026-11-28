@@ -64,6 +64,7 @@ export const MENU: MenuGroup[] = [
     title: 'Travel & Impact',
     items: [
       resource('trips', 'Travel — trips', 'prices dates departures itinerary stage'),
+      { href: '/admin/payments', label: 'Payments & receipts', permission: 'bookings.view', keywords: 'deposit receipt verify approve reject mobile money arusha' },
       { href: '/admin/chats', label: 'Group chats', permission: 'trips.view', keywords: 'chat messages group moderation archive trip event community' },
       resource('impact', 'Impact / WSC projects', 'charity wsc outreach volunteer'),
       { href: '/admin/donations', label: 'Donations', permission: 'donations.view', keywords: 'charity give selcom' },

@@ -7,6 +7,7 @@ import { PublicShell } from '@/components/layout/PublicShell';
 import { CardGrid, Prose, SectionTitle } from '@/components/public/Cards';
 import { CommunityMembership } from '@/components/public/CommunityActions';
 import { ActivityCard } from '@/components/public/listings';
+import { ReportButton } from '@/components/public/Actions';
 import { SmartImage } from '@/components/public/SmartImage';
 import { GroupChatLink, ShareButton, TrackView } from '@/components/public/Track';
 import { apiGet } from '@/lib/api';
@@ -15,10 +16,14 @@ import type { Listing } from '@/lib/public';
 export const revalidate = 30;
 
 interface Data {
-  community: CommunityCard & { description: string | null; rules: string | null };
+  community: CommunityCard & { description: string | null; rules: string | null; official?: boolean; kind?: string; schedule?: string | null; meetingPoint?: string | null; meetingVerified?: boolean; mode?: string; subject?: string | null; topic?: string | null; institution?: string | null };
   announcements: { id: string; title: string; body: string; createdAt: string }[];
   activities: Listing[];
+  sessions: { id: string; startsAt: string; endsAt: string | null; meetingPoint: string | null; route: string | null; status: string; notice: string | null; capacity: number | null; activity: { title: string; slug: string } }[];
+  organisers: { name: string; role: string }[];
 }
+
+const when = (value: string) => new Date(value).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Dar_es_Salaam' });
 
 const load = (slug: string) => apiGet<Data>(`/public/communities/${slug}`, 30);
 
@@ -38,7 +43,12 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
         {c.coverImage && <SmartImage src={c.coverImage} alt="" fill sizes="100vw" className="object-cover opacity-35" />}
         <div className="shell relative py-12 md:py-16">
           <Link href="/experiences/communities" className="kicker !text-clay-400 inline-flex min-h-10 items-center">← Communities</Link>
-          <h1 className="display-lg mt-3">{c.name}</h1>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {c.official && <span className="rounded-full bg-clay-400 px-2.5 py-0.5 text-xs font-bold text-acacia-700">Official Enhakkore community</span>}
+            {c.kind === 'STUDY_GROUP' && <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-bold">Study group</span>}
+            {c.accessType === 'PRIVATE' && <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-bold">Private</span>}
+          </div>
+          <h1 className="display-lg mt-2">{c.name}</h1>
           {c.summary && <p className="mt-3 max-w-2xl text-white/80">{c.summary}</p>}
           <p className="mt-3 text-sm text-white/70">{[c.category?.name, [c.city?.name, c.country?.name].filter(Boolean).join(', '), `${c.memberCount} members`].filter(Boolean).join(' · ')}</p>
         </div>
@@ -49,7 +59,19 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
             <ShareButton subjectType="COMMUNITY" subjectId={c.id} title={c.name} />
             <GroupChatLink subjectType="COMMUNITY" subjectId={c.id} enabled={Boolean(c.chatEnabled)} />
             <TrackView subjectType="COMMUNITY" subjectId={c.id} />
+            <ReportButton targetType="COMMUNITY" targetId={c.id} />
           </div>
+          {(c.schedule || c.meetingPoint || c.subject) && (
+            <div className="grid gap-2 rounded-2xl border border-line bg-white p-5 text-sm">
+              {c.subject && <p><span className="text-ink-muted">Subject</span> · <strong>{c.subject}</strong>{c.topic ? ` — ${c.topic}` : ''}{c.institution ? ` · ${c.institution}` : ''}</p>}
+              {c.schedule && <p><span aria-hidden>🗓️</span> <strong>{c.schedule}</strong></p>}
+              {c.meetingPoint && (
+                <p><span aria-hidden>📍</span> {c.meetingPoint}{c.meetingVerified === false && <span className="ml-2 rounded-full bg-[#fff1c9] px-2 py-0.5 text-[0.6875rem] font-bold text-[#7a5a14]">To be confirmed by the team</span>}</p>
+              )}
+              {c.mode && c.mode !== 'IN_PERSON' && <p><span aria-hidden>💻</span> {c.mode === 'ONLINE' ? 'Online' : 'In person and online'}</p>}
+              <p className="text-xs text-ink-muted">Join once — you then see every session, announcement and the group chat. Free casual sessions need no separate registration unless a session says it has limited places.</p>
+            </div>
+          )}
           {c.isDemo && <DemoNotice what="community" />}
           <Prose text={c.description} />
           <div>
@@ -69,6 +91,25 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
             )}
           </div>
           <div>
+            <SectionTitle kicker="Timetable" title="Upcoming sessions" />
+            {data.sessions?.length ? (
+              <ul className="grid gap-2">
+                {data.sessions.map((session) => (
+                  <li key={session.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-white p-4 text-sm">
+                    <span>
+                      <strong className="text-ink">{when(session.startsAt)}</strong>
+                      <span className="block text-xs text-ink-muted">{[session.activity.title, session.meetingPoint, session.route].filter(Boolean).join(' · ')}</span>
+                      {session.notice && <span className="block text-xs text-warning">{session.notice}</span>}
+                    </span>
+                    <span className="text-xs font-semibold text-acacia-700">{session.status === 'CANCELLED' ? 'Cancelled' : session.capacity ? <Link href={`/activities/${session.activity.slug}`} className="underline">Limited places — register</Link> : 'Members just come'}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-ink-muted">{c.schedule ? `Regular timetable: ${c.schedule}. Dated sessions appear here once the team publishes them.` : 'No sessions scheduled yet.'}</p>
+            )}
+          </div>
+          <div>
             <SectionTitle kicker="Meetups" title="Upcoming activities" />
             {data.activities.length ? <CardGrid>{data.activities.map((item) => <ActivityCard key={item.id} item={item} />)}</CardGrid> : <p className="text-sm text-ink-muted">No upcoming meetups yet.</p>}
           </div>
@@ -79,8 +120,14 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
             </div>
           )}
         </div>
-        <aside className="lg:sticky lg:top-28 lg:self-start">
+        <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
           <CommunityMembership slug={c.slug} memberCount={c.memberCount} />
+          {data.organisers?.length ? (
+            <div className="rounded-[1.1rem] border border-line bg-white p-5 text-sm">
+              <p className="font-bold text-acacia-700">Organisers & moderators</p>
+              <ul className="mt-2 grid gap-1">{data.organisers.map((person) => <li key={person.name}>{person.name} <span className="text-xs text-ink-muted">· {person.role === 'ADMIN' ? 'group admin' : 'moderator'}</span></li>)}</ul>
+            </div>
+          ) : c.official ? <p className="rounded-[1.1rem] border border-line bg-white p-5 text-sm text-ink-soft">Organised by the Enhakkore team.</p> : null}
         </aside>
       </section>
     </PublicShell>

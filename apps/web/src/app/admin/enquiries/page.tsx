@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ENQUIRY_TYPES, ENQUIRY_TYPE_LABELS, ENQUIRY_STATUSES, ENQUIRY_STATUS_LABELS, enquiryStatusesFor } from '@enhakkore/shared';
+import { ENQUIRY_TYPES, ENQUIRY_TYPE_LABELS, ENQUIRY_STATUSES, ENQUIRY_STATUS_LABELS, enquiryStatusLabel, enquiryStatusesFor } from '@enhakkore/shared';
 import { useQueryParam } from '@/lib/useApi';
 import { AdminShell, Panel, StatusPill, btn } from '@/components/admin/AdminShell';
 import { api } from '@/lib/api';
@@ -16,6 +16,10 @@ export default function EnquiriesPage() {
   const requestedType = useQueryParam('type');
   const [type, setType] = useState('');
   useEffect(() => setType(requestedType ?? ''), [requestedType]);
+  const requestedRef = useQueryParam('ref');
+  useEffect(() => {
+    if (requestedRef) setQ(requestedRef);
+  }, [requestedRef]);
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
   const retry = async (id: string) => {
     const result = await api.post<{ notifyStatus: string; notifyError: string | null }>(`/cc/enquiries/${id}/notify`, {});
@@ -90,7 +94,18 @@ export default function EnquiriesPage() {
                     )}
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-xs text-ink-muted">Mark as:</span>
-                      {enquiryStatusesFor(item.type).map((value) => <button key={value} className={`chip ${item.status === value ? 'chip-active' : ''}`} onClick={() => update(item.id, { status: value })}>{label(value)}</button>)}
+                      {enquiryStatusesFor(item.type).map((value) => (
+                        <button
+                          key={value}
+                          className={`chip ${item.status === value ? 'chip-active' : ''}`}
+                          onClick={() => {
+                            if (value === 'CONFIRMED' && ['ROOM', 'TABLE', 'VENUE'].includes(item.type) && !window.confirm('Mark as Confirmed only after the hotel, restaurant or venue has confirmed it to you. The customer will be told it is confirmed and receive a pass. Continue?')) return;
+                            void update(item.id, { status: value });
+                          }}
+                        >
+                          {enquiryStatusLabel(item.type, value)}
+                        </button>
+                      ))}
                     </div>
                     <p className="text-xs text-ink-muted">Members who sent this while signed in see the new status in their account and get a notification.</p>
                     <textarea defaultValue={item.internalNotes ?? ''} placeholder="Internal notes (only the team sees these)" className="field" onBlur={(event) => event.target.value !== (item.internalNotes ?? '') && update(item.id, { internalNotes: event.target.value })} />

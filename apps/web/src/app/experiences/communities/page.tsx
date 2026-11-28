@@ -5,6 +5,7 @@ import { AppHero } from '@/components/public/AppHero';
 import { CardGrid, Empty, SectionTitle } from '@/components/public/Cards';
 import { CommunityApplyForm } from '@/components/public/CommunityActions';
 import { CommunityTile } from '@/components/public/experience';
+import { RecommendedCommunities } from '@/components/public/RecommendedCommunities';
 import { apiGet, query } from '@/lib/api';
 import { getCatalogue, pick } from '@/lib/public';
 
@@ -28,7 +29,12 @@ export default async function CommunitiesPage({ searchParams }: { searchParams: 
         location={{ country: params.country, city: params.city }}
       />
       <section className="shell py-8 md:py-12">
-        <div className="mt-8">
+        <RecommendedCommunities />
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-xl font-bold text-ink">All communities</h2>
+          <a href="/experiences/study-groups" className="inline-flex min-h-10 items-center text-sm font-semibold text-acacia-700 underline">Looking for a study group? →</a>
+        </div>
+        <div className="mt-4">
           {data?.items.length ? (
             <CardGrid>{data.items.map((community) => <CommunityTile key={community.id} community={community} />)}</CardGrid>
           ) : (

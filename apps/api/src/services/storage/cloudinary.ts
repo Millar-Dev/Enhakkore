@@ -91,7 +91,10 @@ export function cloudinaryStorage(): FileStorage {
       return {
         assetId: claim.assetId,
         url:
-          rule.visibility === 'public' && kind === 'MEDIA_VIDEO'
+          rule.visibility === 'public' && kind === 'CHAT_MEDIA' && /^(mp4|webm|mov|ogg|oga|weba|m4a|mp3|aac|wav)$/.test(format)
+            ? // Voice notes and short videos: delivered as uploaded (audio sits under Cloudinary's video type).
+              cloudinary.url(claim.assetId, { resource_type: 'video', version: claim.version, secure: true, format })
+            : rule.visibility === 'public' && kind === 'MEDIA_VIDEO'
             ? cloudinary.url(claim.assetId, {
                 resource_type: 'video',
                 version: claim.version,

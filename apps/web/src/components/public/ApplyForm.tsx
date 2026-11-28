@@ -23,7 +23,7 @@ interface Departure {
  * reviews the application, the traveller pays by the method shown, and the
  * booking is confirmed when the payment has been checked.
  */
-export function ApplyForm({ slug, title, departures, currency, tiers }: { slug: string; title: string; departures: Departure[]; currency: string; tiers: { label: string; amount: number; currency: string; note?: string }[] }) {
+export function ApplyForm({ slug, title, departures, currency, tiers, deposit }: { slug: string; title: string; departures: Departure[]; currency: string; tiers: { label: string; amount: number; currency: string; note?: string }[]; deposit?: number | null }) {
   const { status, user } = useSession();
   const router = useRouter();
   const open = departures.filter((departure) => departure.bookable);
@@ -130,15 +130,26 @@ export function ApplyForm({ slug, title, departures, currency, tiers }: { slug: 
         Anything we should know (dietary needs, medical, questions)
         <textarea name="notes" className="field" maxLength={2000} />
       </label>
-      <p className="text-sm font-semibold text-acacia-700">
-        Total: {formatMoney({ amount: unit * names.length, currency: unitCurrency })}
-      </p>
+      <dl className="grid gap-1 rounded-xl bg-[color:var(--color-cream)] p-3 text-sm">
+        <div className="flex justify-between gap-2"><dt className="text-ink-muted">{names.length} × {formatMoney({ amount: unit, currency: unitCurrency })}</dt><dd className="font-bold text-acacia-700">{formatMoney({ amount: unit * names.length, currency: unitCurrency })}</dd></div>
+        {deposit ? (
+          <>
+            <div className="flex justify-between gap-2"><dt className="text-ink-muted">Deposit to secure {names.length === 1 ? 'your place' : 'the places'}</dt><dd className="font-semibold">{formatMoney({ amount: Math.min(deposit * names.length, unit * names.length), currency: unitCurrency })}</dd></div>
+            <div className="flex justify-between gap-2"><dt className="text-ink-muted">Balance after the deposit</dt><dd className="font-semibold">{formatMoney({ amount: Math.max(0, unit * names.length - deposit * names.length), currency: unitCurrency })}</dd></div>
+            <p className="text-xs text-ink-muted">The deposit is deducted from the price — never charged on top.</p>
+          </>
+        ) : null}
+      </dl>
+      <label className="flex items-start gap-2 text-sm text-ink-soft">
+        <input type="checkbox" required className="mt-1" />
+        <span>I accept the trip’s booking and cancellation terms shown on this page.</span>
+      </label>
       {error && <p className="text-sm text-danger">{error}</p>}
       <button disabled={busy} className="h-12 rounded-full bg-clay-400 font-bold text-acacia-700 hover:bg-clay-500 hover:text-white disabled:opacity-50">
-        {busy ? 'Sending…' : `Apply for ${title}`}
+        {busy ? 'Sending…' : 'Join Trip — continue to payment'}
       </button>
       <p className="text-xs leading-relaxed text-ink-muted">
-        Applying holds your places — it is not yet a confirmed booking. We review it, you pay by the method shown, and your booking is confirmed once the payment is verified.
+        Next you choose how to pay. Your places are held, but the booking is confirmed only once the team verifies your payment.
       </p>
     </form>
   );

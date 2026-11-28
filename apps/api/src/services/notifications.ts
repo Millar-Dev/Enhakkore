@@ -1,4 +1,5 @@
-import { OPTIONAL_NOTIFICATIONS, type NotificationType } from '@enhakkore/shared';
+import { OPTIONAL_NOTIFICATIONS, hasPermission, type NotificationType } from '@enhakkore/shared';
+import { parseList } from '../lib/json';
 import { prisma } from '../lib/prisma';
 
 interface NotifyInput {
@@ -64,4 +65,17 @@ export async function notifyMany(userIds: string[], input: Omit<NotifyInput, 'us
       link: input.link ?? null,
     })),
   });
+}
+
+/**
+ * Notifies every team member whose role has this permission — the people
+ * responsible for that kind of request — in their control-centre bell.
+ */
+export async function notifyStaff(permission: string, input: Omit<NotifyInput, 'userId'>) {
+  const team = await prisma.user.findMany({ where: { role: { in: ['ADMIN', 'STAFF'] }, status: 'ACTIVE' }, include: { adminRole: true } });
+  const ids = team
+    .filter((user) => (user.role === 'ADMIN' ? true : hasPermission(user.adminRole ? parseList(user.adminRole.permissions) : [], permission)))
+    .map((user) => user.id);
+  await notifyMany(ids, input);
+  return ids.length;
 }

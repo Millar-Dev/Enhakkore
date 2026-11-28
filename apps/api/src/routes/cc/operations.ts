@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { ENQUIRY_STATUSES, ENQUIRY_STATUS_LABELS, PAYMENT_RECORD_METHODS, departureStatus, toMinor } from '@enhakkore/shared';
+import { ENQUIRY_STATUSES, ENQUIRY_STATUS_LABELS,
+  enquiryStatusLabel, PAYMENT_RECORD_METHODS, departureStatus, toMinor } from '@enhakkore/shared';
 import { notifyEnquiry } from '../../services/whatsapp';
 import { ApiError, pageParams, paginated, route } from '../../lib/http';
 import { paymentReference } from '../../lib/ids';
@@ -77,7 +78,7 @@ operationsRouter.patch(
       await notify({
         userId: enquiry.userId,
         type: enquiry.type === 'PARTNERSHIP' ? 'PARTNERSHIP_UPDATE' : 'ENQUIRY_UPDATE',
-        title: `${enquiry.reference}: ${ENQUIRY_STATUS_LABELS[input.status] ?? input.status}`,
+        title: `${enquiry.reference}: ${enquiryStatusLabel(enquiry.type, input.status)}`,
         body: enquiry.subjectTitle ?? 'Your enquiry was updated.',
         link: '/account/enquiries',
       });
@@ -102,7 +103,7 @@ operationsRouter.post(
 
 const APPLICATION_INCLUDE = {
   user: { select: { id: true, name: true, email: true, phone: true, country: true } },
-  trip: { select: { id: true, title: true, slug: true, currency: true } },
+  trip: { select: { id: true, title: true, slug: true, currency: true, depositAmount: true } },
   departure: true,
   travellerList: true,
   payments: { orderBy: { createdAt: 'desc' as const } },
@@ -159,7 +160,7 @@ operationsRouter.get(
 async function releaseSeats(booking: { id: string; tripDateId: string; travellers: number; userId: string }, status: string, reason: string) {
   await prisma.$transaction(async (tx) => {
     const departure = await tx.tripDate.findUniqueOrThrow({ where: { id: booking.tripDateId }, include: { conversation: true } });
-    await tx.booking.update({ where: { id: booking.id }, data: { status, cancelledAt: new Date(), cancelReason: reason } });
+    await tx.booking.update({ where: { id: booking.id }, data: { status, cancelledAt: new Date(), cancelReason: reason, paymentStatus: status === 'REFUNDED' ? 'REFUNDED' : 'CANCELLED' } });
     const seatsBooked = Math.max(0, departure.seatsBooked - booking.travellers);
     await tx.tripDate.update({
       where: { id: departure.id },
@@ -298,7 +299,10 @@ operationsRouter.post(
     });
 
     let updated = await loadApplication(booking.id);
-    if (input.confirmWhenPaid && updated.amountPaid >= updated.totalAmount && updated.status !== 'CONFIRMED') {
+    // With a deposit, the place is confirmed once the deposit is covered; the balance is paid later.
+    const threshold = updated.trip.depositAmount ? Math.min(updated.trip.depositAmount * updated.travellers, updated.totalAmount) : updated.totalAmount;
+    await prisma.booking.update({ where: { id: booking.id }, data: { paymentStatus: 'APPROVED' } });
+    if (input.confirmWhenPaid && updated.amountPaid >= threshold && updated.status !== 'CONFIRMED') {
       await confirmBooking(booking.id, null, 0);
       await notify({
         userId: booking.userId,

@@ -21,9 +21,9 @@ import { localStorage } from './local';
  * provider's own signature before the id is written to the database.
  */
 
-export type UploadKind = 'TRIP_IMAGE' | 'AVATAR' | 'VERIFICATION_DOCUMENT' | 'MEDIA_IMAGE' | 'MEDIA_VIDEO' | 'RECEIPT' | 'CHAT_FILE';
+export type UploadKind = 'TRIP_IMAGE' | 'AVATAR' | 'VERIFICATION_DOCUMENT' | 'MEDIA_IMAGE' | 'MEDIA_VIDEO' | 'RECEIPT' | 'CHAT_FILE' | 'PAYMENT_RECEIPT' | 'CHAT_MEDIA';
 
-export const UPLOAD_KINDS = ['TRIP_IMAGE', 'AVATAR', 'VERIFICATION_DOCUMENT', 'MEDIA_IMAGE', 'MEDIA_VIDEO', 'RECEIPT', 'CHAT_FILE'] as const;
+export const UPLOAD_KINDS = ['TRIP_IMAGE', 'AVATAR', 'VERIFICATION_DOCUMENT', 'MEDIA_IMAGE', 'MEDIA_VIDEO', 'RECEIPT', 'CHAT_FILE', 'PAYMENT_RECEIPT', 'CHAT_MEDIA'] as const;
 
 export interface UploadRule {
   /** Largest file accepted, in bytes. */
@@ -80,6 +80,20 @@ export const UPLOAD_RULES: Record<UploadKind, UploadRule> = {
     folder: 'enhakkore/chat',
     visibility: 'public',
   },
+  /** A member's own payment receipt for a trip. Private: only the member and the team who verify payments can open it. */
+  PAYMENT_RECEIPT: {
+    maxBytes: 8 * 1024 * 1024,
+    accept: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+    folder: 'enhakkore/member-receipts',
+    visibility: 'private',
+  },
+  /** Voice notes, photos, short videos and study files shared in community and study-group chats. */
+  CHAT_MEDIA: {
+    maxBytes: 25 * 1024 * 1024,
+    accept: ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime', 'audio/webm', 'audio/ogg', 'audio/mp4', 'audio/mpeg', 'audio/aac', 'application/pdf'],
+    folder: 'enhakkore/chat-media',
+    visibility: 'public',
+  },
   /** Receipts and payment confirmations. Private: only finance staff can open one. */
   RECEIPT: {
     maxBytes: 10 * 1024 * 1024,
@@ -92,6 +106,7 @@ export const UPLOAD_RULES: Record<UploadKind, UploadRule> = {
 /** Cloudinary keeps images and videos apart; private files use `auto`. */
 export function resourceTypeOf(kind: UploadKind): 'image' | 'video' | 'auto' {
   if (UPLOAD_RULES[kind].visibility === 'private') return 'auto';
+  if (kind === 'CHAT_MEDIA') return 'auto';
   return kind === 'MEDIA_VIDEO' ? 'video' : 'image';
 }
 

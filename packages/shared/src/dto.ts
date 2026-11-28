@@ -147,6 +147,8 @@ export interface TripSummary {
 
 export interface TripDetail extends TripSummary {
   description: string;
+  /** Deposit per person, part of the price (deducted from it). Null when the full price is paid at once. */
+  depositAmount?: number | null;
   gallery: string[];
   includes: string[];
   excludes: string[];

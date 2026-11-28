@@ -9,7 +9,7 @@ import { Facts, Gallery, Prose, VideoBlock } from '@/components/public/Cards';
 import { ReviewForm } from '@/components/public/ReviewForm';
 import { SmartImage } from '@/components/public/SmartImage';
 import { SocialIcon } from '@/components/site/SocialIcon';
-import { HotelEnquiryForm, RestaurantReservationForm } from '@/components/public/Reservations';
+import { HotelEnquiryForm, RestaurantReservationForm, VenueEnquiryForm } from '@/components/public/Reservations';
 import { ShareButton, TrackView } from '@/components/public/Track';
 import { apiGet } from '@/lib/api';
 import { placeLabel, type Listing } from '@/lib/public';
@@ -45,7 +45,7 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
   const hours = (place.openingHours as { days: string; hours: string }[]) ?? [];
   const socials = (place.socials as { label: string; url: string }[]) ?? [];
   const source = String(place.infoSource);
-  const enquiryType = place.enquiryKind === 'ROOM' ? 'ROOM' : place.enquiryKind === 'TABLE' ? 'TABLE' : 'PLACE';
+  const enquiryType = place.enquiryKind === 'ROOM' ? 'ROOM' : place.enquiryKind === 'TABLE' ? 'TABLE' : place.enquiryKind === 'VENUE' ? 'VENUE' : 'PLACE';
   const verifiedWhatsapp = !!place.whatsapp && source === 'VERIFIED';
   const roomTypes = ((place.roomTypes as string[] | undefined) ?? []).filter(Boolean);
   const mapLink = place.latitude && place.longitude ? `https://www.google.com/maps/search/?api=1&query=${place.latitude},${place.longitude}` : place.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place.name} ${place.address}`)}` : null;
@@ -195,7 +195,7 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
           <div className="rounded-[1.2rem] border border-line bg-white p-5 shadow-[var(--shadow-card)]">
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-clay-600">How to book</p>
             <ul className="mt-2 grid gap-1.5 text-sm">
-              <li className={place.bookingMode === 'ENQUIRY' ? 'text-ink' : 'text-ink-muted line-through'}>① Send an enquiry through Enhakkore</li>
+              <li className={place.bookingMode === 'ENQUIRY' ? 'text-ink' : 'text-ink-muted line-through'}>① Send a request through Enhakkore (free account)</li>
               <li className={verifiedWhatsapp ? 'text-ink' : 'text-ink-muted line-through'}>② Contact the business on its verified WhatsApp</li>
               <li className={place.bookingUrl ? 'text-ink' : 'text-ink-muted line-through'}>③ Use its own reservation link</li>
             </ul>
@@ -205,6 +205,9 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
               )}
               {place.bookingMode === 'ENQUIRY' && enquiryType === 'TABLE' && (
                 <RestaurantReservationForm placeId={place.id} placeName={String(place.name)} whatsappHref={waHref(settings, 'place', String(place.name))} />
+              )}
+              {place.bookingMode === 'ENQUIRY' && enquiryType === 'VENUE' && (
+                <VenueEnquiryForm placeId={place.id} placeName={String(place.name)} whatsappHref={waHref(settings, 'place', String(place.name))} />
               )}
               {place.bookingMode === 'ENQUIRY' && enquiryType === 'PLACE' && (
                 <EnquiryForm type="PLACE" subjectType="PLACE" subjectId={place.id} subjectTitle={String(place.name)} heading="Ask about this place" whatsappHref={waHref(settings, 'place', String(place.name))} />

@@ -979,6 +979,10 @@ async function main() {
   await once('wsc-wording.v5', wscWording);
   await once('subcategories.v6', subcategories);
   await once('homepage-order.v6', homepageOrder);
+  await once('subcategories.v7', subcategories);
+  await once('arusha-deposit.v7', arushaDeposit);
+  await once('starter-communities.v7', starterCommunities);
+  await once('venue-enquiries.v7', venueEnquiries);
   // Not run once: a fresh deploy with the variables set is how the owner is created.
   await owner();
 }
@@ -1042,4 +1046,94 @@ async function homepageOrder() {
     changed = true;
   }
   if (changed) await prisma.platformSetting.update({ where: { key: 'site.homepage' }, data: { value: JSON.stringify(value) } });
+}
+
+/** R7: the Arusha Escape booking deposit — TZS 5,000 per person, part of the TZS 270,000 price. */
+async function arushaDeposit() {
+  const trip = await prisma.trip.findUnique({ where: { slug: 'arusha-escape' } });
+  if (!trip || trip.depositAmount !== null) return;
+  await prisma.trip.update({ where: { id: trip.id }, data: { depositAmount: 5_000 } });
+}
+
+/** Venues take a venue enquiry (event type, guests, budget) instead of the general form. */
+async function venueEnquiries() {
+  await prisma.place.updateMany({ where: { enquiryKind: 'PLACE', category: { section: 'VENUES' } }, data: { enquiryKind: 'VENUE' } });
+}
+
+/**
+ * R7: official starter communities run by Enhakkore. Each is a permanent
+ * community: members join once and then see its sessions, announcements and
+ * chat. Existing communities with the same slug are left as they are.
+ */
+async function starterCommunities() {
+  const tz = await prisma.country.findUnique({ where: { code: 'TZ' } });
+  const dar = tz ? await prisma.city.findUnique({ where: { countryId_slug: { countryId: tz.id, slug: 'dar-es-salaam' } } }) : null;
+  const category = async (name: string) => (await prisma.category.findFirst({ where: { kind: 'ACTIVITY', name } }))?.id ?? null;
+  const owner = await prisma.user.findFirst({ where: { role: 'ADMIN' }, orderBy: { createdAt: 'asc' } });
+  const starters: { slug: string; name: string; category: string; summary: string; rules: string; cover?: string; schedule?: string; meetingPoint?: string; meetingVerified?: boolean; mode?: string }[] = [
+    {
+      slug: 'enhakkore-jogging-running',
+      name: 'Enhakkore Jogging & Running',
+      category: 'Jogging and Running',
+      summary: 'Run together every Saturday morning in Dar es Salaam. All paces welcome.',
+      rules: 'Arrive on time and run at your own pace. Look out for each other and follow the leader’s route. Bring water. No one is left behind at the end.',
+      schedule: 'Every Saturday · 06:30',
+      meetingPoint: 'Sayansi Bus Stop → proposed route towards Mbezi Beach',
+      meetingVerified: false,
+    },
+    { slug: 'enhakkore-football', name: 'Enhakkore Football', category: 'Football', summary: 'Friendly football for players of every level.', rules: 'Respect players and referees. No dangerous tackles. Fair play first.' },
+    { slug: 'enhakkore-basketball', name: 'Enhakkore Basketball', category: 'Basketball', summary: 'Pick-up games and practice sessions.', rules: 'Call your own fouls honestly. Rotate teams fairly. Respect the court.' },
+    { slug: 'enhakkore-tennis', name: 'Enhakkore Tennis', category: 'Tennis', summary: 'Find hitting partners and doubles games.', rules: 'Book courts in advance where needed. Share balls and courts fairly.' },
+    { slug: 'enhakkore-roller-skating', name: 'Enhakkore Roller Skating', category: 'Roller Skating', summary: 'Skate together — beginners welcome.', rules: 'Protective gear is strongly recommended. Skate only where it is safe and allowed.' },
+    { slug: 'enhakkore-gaming', name: 'Enhakkore Gaming', category: 'Gaming Meetups', summary: 'Online tournaments, console nights and squads.', rules: 'No cheating, no harassment, no hate speech. Keep personal details private.', cover: '/media/gaming/gaming-hero.jpg', mode: 'BOTH' },
+    { slug: 'enhakkore-photography', name: 'Enhakkore Photography', category: 'Photography', summary: 'Photo walks, critique and sharing.', rules: 'Ask before photographing people. Credit other members’ work.' },
+    { slug: 'enhakkore-art-creativity', name: 'Enhakkore Art & Creativity', category: 'Painting', summary: 'Painting, crafts and creative sessions.', rules: 'Be kind about each other’s work. Clean up shared spaces.', cover: '/packages/arusha/cultural-heritage-centre.webp' },
+    { slug: 'enhakkore-travel-lovers', name: 'Enhakkore Travel Lovers', category: 'Social Gatherings', summary: 'Share trips, tips and plans with people who love to travel.', rules: 'Share honest experiences. No unsolicited selling.', cover: '/packages/arusha/mount-meru.webp', mode: 'BOTH' },
+    { slug: 'enhakkore-study-groups', name: 'Enhakkore Study Groups', category: 'Study Groups', summary: 'A home for students: find or start a study group for your subject.', rules: 'Keep discussions on topic. No sharing of exam papers you are not allowed to share. Respect privacy.', mode: 'BOTH' },
+  ];
+  for (const item of starters) {
+    if (await prisma.community.findUnique({ where: { slug: item.slug } })) continue;
+    await prisma.community.create({
+      data: {
+        slug: item.slug,
+        name: item.name,
+        summary: item.summary,
+        description: `${item.summary}\n\nAn official Enhakkore community. Join once to see sessions, announcements and the group chat.`,
+        rules: item.rules,
+        categoryId: await category(item.category),
+        countryId: tz?.id ?? null,
+        cityId: dar?.id ?? null,
+        coverImage: item.cover ?? null,
+        status: 'PUBLISHED',
+        publishedAt: new Date(),
+        official: true,
+        chatEnabled: true,
+        accessType: 'FREE',
+        schedule: item.schedule ?? null,
+        meetingPoint: item.meetingPoint ?? null,
+        meetingVerified: item.meetingVerified ?? true,
+        mode: item.mode ?? 'IN_PERSON',
+        createdById: owner?.id ?? null,
+      },
+    });
+  }
+  // The Saturday jog belongs to the jogging community. It stays a draft until the
+  // team confirms the route; its weekly sessions are prepared for the next 8 weeks.
+  const jog = await prisma.activity.findUnique({ where: { slug: 'saturday-community-jog' } });
+  const community = await prisma.community.findUnique({ where: { slug: 'enhakkore-jogging-running' } });
+  if (jog && community) {
+    await prisma.activity.update({ where: { id: jog.id }, data: { communityId: community.id, meetingPoint: jog.meetingPoint ?? 'Sayansi Bus Stop (to be confirmed)', chatEnabled: true } });
+    if ((await prisma.activitySession.count({ where: { activityId: jog.id } })) === 0) {
+      const next = new Date();
+      // Next Saturday, 06:30 East Africa Time = 03:30 UTC.
+      next.setUTCDate(next.getUTCDate() + ((6 - next.getUTCDay() + 7) % 7 || 7));
+      next.setUTCHours(3, 30, 0, 0);
+      for (let week = 0; week < 8; week += 1) {
+        const startsAt = new Date(next.getTime() + week * 7 * 86400000);
+        await prisma.activitySession.create({
+          data: { activityId: jog.id, startsAt, endsAt: new Date(startsAt.getTime() + 90 * 60000), meetingPoint: 'Sayansi Bus Stop (to be confirmed)', route: 'Proposed: towards Mbezi Beach (to be confirmed)', status: 'SCHEDULED' },
+        });
+      }
+    }
+  }
 }

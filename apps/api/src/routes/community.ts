@@ -2,7 +2,7 @@ import { Router, type Request } from 'express';
 import { usernameProblem } from '../services/usernames';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
-import { ENQUIRY_TYPES, departureStatus, slugify } from '@enhakkore/shared';
+import { ENQUIRY_TYPES, ENQUIRY_TYPE_LABELS, RESERVATION_TYPES, departureStatus, slugify } from '@enhakkore/shared';
 import { env } from '../env';
 import { ApiError, route } from '../lib/http';
 import { bookingReference, shortCode } from '../lib/ids';
@@ -10,7 +10,8 @@ import { parseList, parseObjects } from '../lib/json';
 import { prisma } from '../lib/prisma';
 import { textContains } from '../lib/search';
 import { requireAuth } from '../middleware/auth';
-import { notify } from '../services/notifications';
+import { notify, notifyStaff } from '../services/notifications';
+import { paymentSummary } from './tripPayments';
 import { recordEngagement } from '../services/popularity';
 import { notifyEnquiry } from '../services/whatsapp';
 import { ENHAKKORE_ORGANIZER_SLUG } from '../services/resources/hooks';
@@ -94,6 +95,12 @@ const enquirySchema = z
       if (!value.details?.time) ctx.addIssue({ code: 'custom', path: ['time'], message: 'Choose a time.' });
       if (!value.people) ctx.addIssue({ code: 'custom', path: ['people'], message: 'How many guests?' });
     }
+    if (value.type === 'VENUE') {
+      if (!value.phone) ctx.addIssue({ code: 'custom', path: ['phone'], message: 'Give a phone or WhatsApp number so we can confirm.' });
+      if (!value.startDate) ctx.addIssue({ code: 'custom', path: ['startDate'], message: 'Choose the event date.' });
+      if (!value.people) ctx.addIssue({ code: 'custom', path: ['people'], message: 'How many guests?' });
+      if (!value.details?.eventType) ctx.addIssue({ code: 'custom', path: ['eventType'], message: 'What kind of event is it?' });
+    }
     if (value.type === 'TRIP') {
       if (!value.phone) ctx.addIssue({ code: 'custom', path: ['phone'], message: 'Give a phone or WhatsApp number so we can reply.' });
       if (!value.people) ctx.addIssue({ code: 'custom', path: ['people'], message: 'How many travellers?' });
@@ -106,6 +113,7 @@ const enquirySchema = z
 const ENQUIRY_THANKS: Record<string, string> = {
   TRIP: 'Thank you — your trip request has reached the Enhakkore travel team. This is a request, not a confirmed place: we will contact you about dates, availability and how to secure your place.',
   ROOM: 'Thank you — your hotel enquiry has reached the Enhakkore team. This is a request, not a booking: no room is reserved until the property confirms availability and price.',
+  VENUE: 'Thank you — your venue enquiry has reached the Enhakkore team. This is a request, not a booking: the venue is not reserved until the team confirms it with the venue.',
   TABLE: 'Thank you — your reservation request has reached the Enhakkore team. Your table is not confirmed until the restaurant accepts it; we will tell you as soon as it does.',
   EVENT_PLAN: 'Thank you — your event-planning request has reached the Enhakkore team. Sending it is free; we will contact you to discuss your event and, if you wish, a quotation.',
   PARTNERSHIP: 'Thank you — your application has reached the Enhakkore team. We review every business before anything is published, and will contact you.',
@@ -118,6 +126,11 @@ communityRouter.post(
   route(async (req, res) => {
     rejectBots(req);
     const input = enquirySchema.parse(req.body);
+    // Hotel, restaurant and venue requests are tied to an account, so the
+    // customer can follow the request and its status in their Account Centre.
+    if ((RESERVATION_TYPES as readonly string[]).includes(input.type) && !req.auth) {
+      throw ApiError.unauthorized('Sign in or create a free account to send a reservation request.');
+    }
     // A double tap, a retry on a slow connection or a second submit of the same
     // request returns the first one instead of creating a duplicate.
     const contact = req.auth?.id ? { userId: req.auth.id } : input.phone ? { phone: input.phone } : input.email ? { email: input.email } : null;
@@ -161,6 +174,13 @@ communityRouter.post(
       },
     });
     const notice = await notifyEnquiry(enquiry);
+    // The responsible team members see it in the control centre straight away.
+    await notifyStaff(enquiry.type === 'PARTNERSHIP' ? 'partnerships.view' : 'enquiries.view', {
+      type: 'ENQUIRY_RECEIVED',
+      title: `New ${(ENQUIRY_TYPE_LABELS[enquiry.type] ?? 'enquiry').toLowerCase()} · ${enquiry.reference}`,
+      body: [enquiry.subjectTitle, enquiry.startDate?.toISOString().slice(0, 10), enquiry.people ? `${enquiry.people} people` : null].filter(Boolean).join(' · ') || enquiry.message.slice(0, 120),
+      link: `/admin/enquiries?ref=${enquiry.reference}`,
+    });
     if (enquiry.userId) {
       await notify({
         userId: enquiry.userId,
@@ -314,7 +334,7 @@ communityRouter.get(
     const booking = await prisma.booking.findFirst({
       where: { reference: req.params.reference, userId: req.auth!.id, channel: 'APPLICATION' },
       include: {
-        trip: { select: { title: true, slug: true, heroImage: true, paymentInstructions: true, paymentOptions: true, cancellationPolicy: true } },
+        trip: { select: { title: true, slug: true, heroImage: true, paymentInstructions: true, paymentOptions: true, cancellationPolicy: true, depositAmount: true } },
         departure: { include: { conversation: { select: { id: true } } } },
         travellerList: { select: { fullName: true, phone: true, email: true } },
         payments: { where: { status: 'SUCCEEDED' }, select: { amount: true, currency: true, method: true, settledAt: true, providerRef: true } },
@@ -325,6 +345,8 @@ communityRouter.get(
     res.json({
       reference: booking.reference,
       status: booking.status,
+      paymentStatus: booking.paymentStatus,
+      paymentSummary: paymentSummary(booking, booking.trip.depositAmount),
       travellers: booking.travellerList,
       priceTier: booking.priceTier,
       totalAmount: booking.totalAmount,
@@ -774,7 +796,7 @@ communityRouter.post(
   route(async (req, res) => {
     const input = z
       .object({
-        targetType: z.enum(['USER', 'ACTIVITY', 'PLACE', 'EVENT', 'STORY', 'REVIEW']),
+        targetType: z.enum(['USER', 'ACTIVITY', 'PLACE', 'EVENT', 'STORY', 'REVIEW', 'COMMUNITY', 'MESSAGE', 'TRIP']),
         targetId: z.string().min(3).max(60),
         reason: z.string().trim().min(3, 'Choose a reason.').max(120),
         details: z.string().trim().max(2000).optional(),
@@ -1012,5 +1034,20 @@ profilePublic.get(
     if (!user) throw ApiError.notFound('That profile is not available.');
     const card = memberCard(user, 'PUBLIC');
     res.json({ ...card, id: undefined });
+  }),
+);
+
+
+/** A customer cancels their own reservation request (before or after confirmation). */
+communityRouter.post(
+  '/enquiries/:reference/cancel',
+  requireAuth,
+  route(async (req, res) => {
+    const enquiry = await prisma.enquiry.findFirst({ where: { reference: req.params.reference, userId: req.auth!.id } });
+    if (!enquiry) throw ApiError.notFound('Request not found.');
+    if (['CANCELLED', 'DECLINED', 'UNSUCCESSFUL', 'CLOSED', 'SPAM'].includes(enquiry.status)) throw ApiError.unprocessable('This request is already closed.');
+    await prisma.enquiry.update({ where: { id: enquiry.id }, data: { status: 'CANCELLED' } });
+    await notifyStaff('enquiries.view', { type: 'ENQUIRY_UPDATE', title: `Cancelled by the customer · ${enquiry.reference}`, body: enquiry.subjectTitle ?? enquiry.type, link: `/admin/enquiries?ref=${enquiry.reference}` });
+    res.json({ status: 'CANCELLED' });
   }),
 );

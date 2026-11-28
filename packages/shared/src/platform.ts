@@ -173,6 +173,7 @@ export const ENQUIRY_TYPES = [
   'PRIVATE_CHEF',
   'DONATION',
   'PARTNERSHIP',
+  'VENUE',
 ] as const;
 export type EnquiryType = (typeof ENQUIRY_TYPES)[number];
 export const ENQUIRY_TYPE_LABELS: Record<string, string> = {
@@ -191,6 +192,23 @@ export const ENQUIRY_TYPE_LABELS: Record<string, string> = {
   PRIVATE_CHEF: 'Private chef',
   DONATION: 'Donation confirmation',
   PARTNERSHIP: 'Partnership / listing',
+  VENUE: 'Venue enquiry',
+};
+
+/** Hotel, restaurant and venue requests: account required, confirmed only by the team. */
+export const RESERVATION_TYPES = ['ROOM', 'TABLE', 'VENUE'] as const;
+/** How reservation requests are described to customers and the team. */
+export const RESERVATION_STATUS_LABELS: Record<string, string> = {
+  NEW: 'Request submitted',
+  IN_PROGRESS: 'Under review',
+  CONTACTED: 'Supplier contacted',
+  AWAITING_BUSINESS: 'Awaiting supplier confirmation',
+  ALTERNATIVE_OFFERED: 'Alternative offered',
+  CONFIRMED: 'Confirmed',
+  DECLINED: 'Unavailable / rejected',
+  UNSUCCESSFUL: 'Unavailable / rejected',
+  CANCELLED: 'Cancelled',
+  SPAM: 'Spam',
 };
 export const ENQUIRY_STATUSES = [
   'NEW',
@@ -232,8 +250,8 @@ export const ENQUIRY_STATUS_LABELS: Record<string, string> = {
 };
 /** The statuses that make sense for each kind of enquiry. */
 export function enquiryStatusesFor(type: string): string[] {
-  if (type === 'ROOM' || type === 'TABLE') {
-    return ['NEW', 'CONTACTED', 'AWAITING_BUSINESS', 'ALTERNATIVE_OFFERED', 'CONFIRMED', 'DECLINED', 'CANCELLED', 'UNSUCCESSFUL', 'SPAM'];
+  if (type === 'ROOM' || type === 'TABLE' || type === 'VENUE') {
+    return ['NEW', 'IN_PROGRESS', 'CONTACTED', 'AWAITING_BUSINESS', 'ALTERNATIVE_OFFERED', 'CONFIRMED', 'DECLINED', 'CANCELLED', 'SPAM'];
   }
   if (type === 'TRIP' || type === 'PRIVATE_TRIP') {
     return ['NEW', 'CONTACTED', 'IN_PROGRESS', 'CONFIRMED', 'CONVERTED', 'DECLINED', 'CANCELLED', 'CLOSED', 'SPAM'];
@@ -243,8 +261,13 @@ export function enquiryStatusesFor(type: string): string[] {
   }
   return ['NEW', 'CONTACTED', 'IN_PROGRESS', 'CONFIRMED', 'CONVERTED', 'DECLINED', 'CANCELLED', 'CLOSED', 'SPAM'];
 }
+/** The label for an enquiry's status, in reservation wording where it applies. */
+export function enquiryStatusLabel(type: string, status: string): string {
+  if ((RESERVATION_TYPES as readonly string[]).includes(type)) return RESERVATION_STATUS_LABELS[status] ?? ENQUIRY_STATUS_LABELS[status] ?? status;
+  return ENQUIRY_STATUS_LABELS[status] ?? status;
+}
 /** Enquiry types that send the team an automatic WhatsApp notice. */
-export const NOTIFY_ENQUIRY_TYPES = ['TRIP', 'ROOM', 'TABLE', 'EVENT_PLAN', 'PARTNERSHIP', 'PRIVATE_TRIP', 'CATERING', 'PRIVATE_CHEF'];
+export const NOTIFY_ENQUIRY_TYPES = ['VENUE', 'TRIP', 'ROOM', 'TABLE', 'EVENT_PLAN', 'PARTNERSHIP', 'PRIVATE_TRIP', 'CATERING', 'PRIVATE_CHEF'];
 
 /** Where a trip stands — shown on the trip page, set by the travel team. */
 export const TRIP_STAGES = [
@@ -596,7 +619,7 @@ export const EXPERIENCE_SUBCATEGORIES: Record<ExperienceSection, string[]> = {
   ARTS: ['Art Exhibitions', 'Painting', 'Music', 'Dance', 'Photography', 'Creative Workshops', 'Cultural Celebrations', 'Other Creative Experiences'],
   OUTDOOR: ['Hiking', 'Camping', 'Nature Walks', 'Outdoor Challenges', 'Exploration', 'Adventure Activities', 'Other Outdoor Experiences'],
   COMMUNITIES: ['Sports Communities', 'Gaming Communities', 'Photography Communities', 'Art Communities', 'Business Communities', 'Country-based Communities', 'Social Communities', 'Travel Communities', 'Other Interest Groups'],
-  LEARNING: ['Training', 'Skills Workshops', 'Language Learning', 'Creative Classes', 'Educational Events', 'Professional Development'],
+  LEARNING: ['Study Groups', 'Training', 'Skills Workshops', 'Language Learning', 'Creative Classes', 'Educational Events', 'Professional Development'],
   OTHER: ['Other Experiences'],
 };
 

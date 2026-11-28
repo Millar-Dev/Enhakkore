@@ -183,6 +183,7 @@ export function toTripDetail(trip: any, travellers: any[] = []): TripDetail {
   return {
     ...toTripSummary(trip),
     description: trip.description,
+    depositAmount: trip.depositAmount ?? null,
     gallery: parseList(trip.gallery),
     includes: parseList(trip.includes),
     excludes: parseList(trip.excludes),

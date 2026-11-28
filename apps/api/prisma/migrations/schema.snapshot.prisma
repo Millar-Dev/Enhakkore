@@ -306,6 +306,8 @@ model Trip {
   /// JSON array of { method, kind, number, name }.
   paymentOptions      String  @default("[]")
   cancellationPolicy  String?
+  /// Booking deposit per person, in the trip currency. Part of the price, never charged on top.
+  depositAmount       Int?
   /// JSON array of { src, alt, credit, licence, source }.
   galleryItems        String  @default("[]")
   videoUrl            String?
@@ -407,20 +409,22 @@ model Booking {
   tripDateId String
   userId     String
 
-  travellers   Int       @default(1)
+  travellers    Int       @default(1)
   /// PENDING_PAYMENT | CONFIRMED | CANCELLED | REFUNDED | COMPLETED, and for
   /// trips booked by application: APPLIED | DECLINED.
-  status       String    @default("PENDING_PAYMENT")
+  status        String    @default("PENDING_PAYMENT")
+  /// AWAITING_PAYMENT | RECEIPT_SUBMITTED | UNDER_VERIFICATION | APPROVED | REJECTED | REFUNDED | CANCELLED
+  paymentStatus String    @default("AWAITING_PAYMENT")
   /// CHECKOUT (paid through a gateway) | APPLICATION (reviewed by the team, paid by transfer).
-  channel      String    @default("CHECKOUT")
+  channel       String    @default("CHECKOUT")
   /// Sum of verified payments, minor units. Kept for applications, where money arrives in parts.
-  amountPaid   Int       @default(0)
+  amountPaid    Int       @default(0)
   /// The price tier the applicant chose, by label.
-  priceTier    String?
-  contactPhone String?
-  reviewedById String?
-  reviewedAt   DateTime?
-  adminNotes   String?
+  priceTier     String?
+  contactPhone  String?
+  reviewedById  String?
+  reviewedAt    DateTime?
+  adminNotes    String?
 
   /// All amounts are integer minor units of `currency`, captured at booking time
   /// so later price changes never rewrite history.
@@ -445,6 +449,7 @@ model Booking {
   impactProject ImpactProject?      @relation(fields: [impactProjectId], references: [id])
   travellerList BookingTraveller[]
   payments      Payment[]
+  receipts      PaymentReceipt[]
   donations     Donation[]
   commission    PlatformCommission?
   review        Review?
@@ -550,15 +555,15 @@ model Review {
 /// Every departure gets exactly one private group. Membership is derived from
 /// confirmed bookings — there is no way to join a conversation without one.
 model Conversation {
-  id         String    @id @default(cuid())
+  id          String    @id @default(cuid())
   /// Trip groups belong to a departure; other groups (events, activities, communities) use subjectType/subjectId.
-  tripDateId String?   @unique
+  tripDateId  String?   @unique
   /// ACTIVITY | EVENT | COMMUNITY | TOURNAMENT (null for trip groups)
   subjectType String?
   subjectId   String?
-  title      String
+  title       String
   /// After this the group is read-only. History is kept.
-  archivedAt DateTime?
+  archivedAt  DateTime?
 
   createdAt DateTime @default(now())
 
@@ -899,18 +904,18 @@ model Category {
 // ---------------------------------------------------------------------------
 
 model Activity {
-  id          String  @id @default(cuid())
+  id           String  @id @default(cuid())
   /// How entry is checked: NONE (default) | QR | MANUAL.
-  verification   String  @default("NONE")
+  verification String  @default("NONE")
   /// Group chat for registered participants and the organiser.
-  chatEnabled    Boolean @default(false)
-  slug        String  @unique
-  title       String
-  summary     String?
-  description String
-  categoryId  String?
-  countryId   String?
-  cityId      String?
+  chatEnabled  Boolean @default(false)
+  slug         String  @unique
+  title        String
+  summary      String?
+  description  String
+  categoryId   String?
+  countryId    String?
+  cityId       String?
 
   /// IN_PERSON | ONLINE
   mode          String  @default("IN_PERSON")
@@ -1709,7 +1714,7 @@ model SessionRegistration {
 }
 
 model Community {
-  id          String  @id @default(cuid())
+  id                 String  @id @default(cuid())
   /// FREE | PAID | PRIVATE. Paid membership needs admin approval; payments stay off until a merchant account is configured.
   accessType         String  @default("FREE")
   membershipPrice    Int?
@@ -1719,22 +1724,37 @@ model Community {
   membershipBenefits String?
   membershipTerms    String?
   chatEnabled        Boolean @default(false)
-  slug        String  @unique
-  name        String
-  summary     String?
-  description String?
-  categoryId  String?
-  countryId   String?
-  cityId      String?
-  coverImage  String?
-  rules       String?
+  /// COMMUNITY | STUDY_GROUP. Study groups are created by members without prior approval.
+  kind               String  @default("COMMUNITY")
+  /// Run by Enhakkore (starter communities).
+  official           Boolean @default(false)
+  /// Study groups: subject or field, topic and optional school.
+  subject            String?
+  topic              String?
+  institution        String?
+  /// IN_PERSON | ONLINE | BOTH
+  mode               String  @default("IN_PERSON")
+  /// A plain-language timetable, e.g. "Every Saturday 06:30".
+  schedule           String?
+  meetingPoint       String?
+  /// Kept in draft until the team verifies the place or route.
+  meetingVerified    Boolean @default(true)
+  slug               String  @unique
+  name               String
+  summary            String?
+  description        String?
+  categoryId         String?
+  countryId          String?
+  cityId             String?
+  coverImage         String?
+  rules              String?
   /// PENDING_REVIEW | DRAFT | PUBLISHED | REJECTED | ARCHIVED
-  status      String  @default("DRAFT")
-  reviewNotes String?
-  createdById String?
-  featured    Boolean @default(false)
+  status             String  @default("DRAFT")
+  reviewNotes        String?
+  createdById        String?
+  featured           Boolean @default(false)
   /// Example content for testing and layout. Shown with a DEMO label, never as real.
-  isDemo      Boolean @default(false)
+  isDemo             Boolean @default(false)
 
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -1751,16 +1771,18 @@ model Community {
 }
 
 model CommunityMember {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   communityId String
   userId      String
-  /// MEMBER | MODERATOR
-  role        String   @default("MEMBER")
+  /// MEMBER | MODERATOR | ADMIN (the creator of a study group)
+  role        String    @default("MEMBER")
+  /// A muted member can read but not post until this time.
+  mutedUntil  DateTime?
   /// ACTIVE | PENDING (private or paid communities wait for approval) | DECLINED
-  status      String   @default("ACTIVE")
+  status      String    @default("ACTIVE")
   /// What the member wrote when asking to join.
   message     String?
-  joinedAt    DateTime @default(now())
+  joinedAt    DateTime  @default(now())
 
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1936,34 +1958,33 @@ model NotificationDelivery {
   @@index([status])
 }
 
-
 /// A member's application to host experiences. Approval is per category and per risk.
 model OrganiserApplication {
-  id            String    @id @default(cuid())
-  userId        String
-  legalName     String
-  phone         String
-  email         String
-  country       String?
-  city          String?
+  id                 String    @id @default(cuid())
+  userId             String
+  legalName          String
+  phone              String
+  email              String
+  country            String?
+  city               String?
   /// JSON list of experience sections applied for, e.g. ["SPORTS","GAMING"].
-  categories    String    @default("[]")
+  categories         String    @default("[]")
   /// JSON list of sections approved — may be fewer than applied for.
-  approvedCategories String @default("[]")
-  hasExperience Boolean   @default(false)
-  description   String
-  links         String?
-  agreedRules   Boolean   @default(false)
+  approvedCategories String    @default("[]")
+  hasExperience      Boolean   @default(false)
+  description        String
+  links              String?
+  agreedRules        Boolean   @default(false)
   /// How identity was checked by staff (e.g. "Video call, national ID seen") — no ID numbers or images are stored.
-  identityCheck String?
-  identityCheckedAt DateTime?
+  identityCheck      String?
+  identityCheckedAt  DateTime?
   /// SUBMITTED | UNDER_REVIEW | MORE_INFO | APPROVED | REJECTED | SUSPENDED
-  status        String    @default("SUBMITTED")
-  reviewNotes   String?
-  reviewedById  String?
-  reviewedAt    DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  status             String    @default("SUBMITTED")
+  reviewNotes        String?
+  reviewedById       String?
+  reviewedAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@index([userId])
   @@index([status])
@@ -1971,27 +1992,27 @@ model OrganiserApplication {
 
 /// An Enhakkore Pass: one per eligible registration or booking. The QR holds only a random token.
 model Pass {
-  id          String    @id @default(cuid())
-  reference   String    @unique
-  token       String    @unique
-  userId      String?
+  id            String    @id @default(cuid())
+  reference     String    @unique
+  token         String    @unique
+  userId        String?
   /// EVENT_REGISTRATION | SESSION_REGISTRATION | ACTIVITY_PARTICIPANT | TOURNAMENT_ENTRY | BOOKING | ENQUIRY
-  subjectType String
-  subjectId   String
+  subjectType   String
+  subjectId     String
   /// The listing it admits to (for organiser scanners): ACTIVITY | EVENT | TOURNAMENT | TRIP | PLACE
-  listingType String
-  listingId   String
-  title       String
-  holderName  String
-  startsAt    DateTime?
-  location    String?
-  qr          Boolean   @default(true)
+  listingType   String
+  listingId     String
+  title         String
+  holderName    String
+  startsAt      DateTime?
+  location      String?
+  qr            Boolean   @default(true)
   /// VALID | CHECKED_IN | CANCELLED | EXPIRED
-  status      String    @default("VALID")
-  checkedInAt DateTime?
+  status        String    @default("VALID")
+  checkedInAt   DateTime?
   checkedInById String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   scans PassScan[]
 
@@ -2014,4 +2035,56 @@ model PassScan {
   pass Pass? @relation(fields: [passId], references: [id], onDelete: SetNull)
 
   @@index([passId])
+}
+
+/// A payment receipt a member uploads for a trip deposit or balance. It is
+/// evidence for the team to check — never proof of payment on its own.
+model PaymentReceipt {
+  id             String    @id @default(cuid())
+  reference      String    @unique
+  bookingId      String
+  userId         String
+  amount         Int
+  currency       String
+  /// The authorised payment method the member says they used.
+  methodName     String
+  payerPhone     String?
+  /// The transaction ID from the member's M-Pesa / bank message.
+  transactionRef String?
+  /// Private upload (PAYMENT_RECEIPT); opened only through a checked link.
+  fileAssetId    String?
+  fileFormat     String?
+  /// SUBMITTED | UNDER_VERIFICATION | APPROVED | REJECTED
+  status         String    @default("SUBMITTED")
+  reviewNote     String?
+  reviewedById   String?
+  reviewedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([bookingId])
+}
+
+/// The admin assistant's history: every request, and every action it proposed
+/// or carried out. Kept for accountability.
+model AssistantEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  /// BETHANY (working) | ARIEL (reporting, read-only)
+  mode      String
+  prompt    String
+  reply     String   @default("")
+  /// JSON list of tool calls: { tool, input, result, ok }
+  actions   String   @default("[]")
+  /// A sensitive action waiting for the person to confirm: { tool, input, summary }
+  pending   String?
+  /// DONE | AWAITING_CONFIRMATION | CONFIRMED | CANCELLED | FAILED | NOT_CONFIGURED
+  status    String   @default("DONE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
 }

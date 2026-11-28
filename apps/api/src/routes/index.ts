@@ -22,6 +22,7 @@ import { geoMember, geoPublic } from './geo';
 import { globePublic } from './globe';
 import { passesRouter } from './passes';
 import { groupChatsRouter } from './groupChats';
+import { tripPaymentsAdmin, tripPaymentsMember } from './tripPayments';
 import { hostingAdmin, hostingMember } from './hosting';
 
 export const apiRouter = Router();
@@ -83,6 +84,8 @@ apiRouter.use('/community', geoMember);
 apiRouter.use('/community', communityRouter);
 apiRouter.use('/passes', passesRouter);
 apiRouter.use('/experience-chats', groupChatsRouter);
+apiRouter.use('/community', tripPaymentsMember);
+apiRouter.use('/cc', tripPaymentsAdmin);
 apiRouter.use('/community', hostingMember);
 apiRouter.use('/cc', hostingAdmin);
 apiRouter.use('/cc', controlCentreRouter);

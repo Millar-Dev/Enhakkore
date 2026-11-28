@@ -30,6 +30,7 @@ interface Trip {
   basePrice: number;
   currency: string;
   priceTiers: { label: string; note?: string; amount: number; currency: string }[];
+  depositAmount?: number | null;
   heroImage: string;
   accommodation: string | null;
   transport: string | null;
@@ -217,6 +218,12 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
                   <p key={tier.label} className="text-sm text-ink-soft">{tier.label}: <strong>{formatMoney({ amount: tier.amount, currency: tier.currency })}</strong></p>
                 ))}
                 <p className="mt-1 text-xs text-ink-muted">Per person. Each price is set separately — not a currency conversion.</p>
+                {trip.depositAmount ? (
+                  <div className="mt-3 rounded-xl border border-clay-400/50 bg-[#fff8e6] p-3 text-sm">
+                    <p className="font-semibold text-ink">Booking deposit: {formatMoney({ amount: trip.depositAmount, currency: trip.currency })} <span className="font-normal text-ink-muted">/ person</span></p>
+                    <p className="text-ink-soft">Deducted from the total price. Balance after the deposit: <strong>{formatMoney({ amount: Math.max(0, (upcoming[0]?.price ?? trip.basePrice) - trip.depositAmount), currency: trip.currency })}</strong></p>
+                  </div>
+                ) : null}
               </div>
             )}
             {trip.isPast ? (
@@ -241,7 +248,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
             <details className="rounded-[1.2rem] border border-line bg-white p-5" open={false}>
               <summary className="cursor-pointer font-display text-xl text-acacia-700">Ready to go? Apply for a place</summary>
               <p className="mt-2 text-sm text-ink-soft">Members apply for a place on a departure. Once the team confirms your place and payment, you join the trip’s private group.</p>
-              <div className="mt-4"><ApplyForm slug={trip.slug} title={trip.title} departures={trip.departures} currency={trip.currency} tiers={trip.priceTiers} /></div>
+              <div className="mt-4"><ApplyForm slug={trip.slug} title={trip.title} departures={trip.departures} currency={trip.currency} tiers={trip.priceTiers} deposit={trip.depositAmount ?? null} /></div>
             </details>
           )}
           <div id="group" className="scroll-mt-20 rounded-[1.2rem] border border-acacia-600/20 bg-acacia-700 p-5 text-white">

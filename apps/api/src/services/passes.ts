@@ -43,7 +43,7 @@ async function candidatesFor(userId: string): Promise<Candidate[]> {
     prisma.activityParticipant.findMany({ where: { userId, status: 'APPROVED' }, include: { activity: true } }),
     prisma.sessionRegistration.findMany({ where: { userId, status: 'REGISTERED' }, include: { session: { include: { activity: true } } } }),
     prisma.booking.findMany({ where: { userId, status: 'CONFIRMED' }, include: { trip: true, departure: true } }),
-    prisma.enquiry.findMany({ where: { userId, type: { in: ['TABLE', 'ROOM'] }, status: 'CONFIRMED' } }),
+    prisma.enquiry.findMany({ where: { userId, type: { in: ['TABLE', 'ROOM', 'VENUE'] }, status: 'CONFIRMED' } }),
   ]);
   const out: Candidate[] = [];
   for (const row of eventRegs) {
@@ -108,7 +108,7 @@ async function candidatesFor(userId: string): Promise<Candidate[]> {
       subjectId: row.id,
       listingType: 'PLACE',
       listingId: row.subjectId,
-      title: row.subjectTitle ?? (row.type === 'ROOM' ? 'Room reservation' : 'Table reservation'),
+      title: row.subjectTitle ?? (row.type === 'ROOM' ? 'Room reservation' : row.type === 'VENUE' ? 'Venue booking' : 'Table reservation'),
       startsAt: row.startDate,
       location: row.subjectTitle,
       qr: true,
@@ -180,7 +180,7 @@ async function holdersOf(listingType: ListingType, listingId: string): Promise<s
     case 'TRIP':
       return ids(await prisma.booking.findMany({ where: { tripDateId: listingId }, select: { userId: true } }));
     case 'PLACE':
-      return ids(await prisma.enquiry.findMany({ where: { subjectId: listingId, type: { in: ['TABLE', 'ROOM'] } }, select: { userId: true } }));
+      return ids(await prisma.enquiry.findMany({ where: { subjectId: listingId, type: { in: ['TABLE', 'ROOM', 'VENUE'] } }, select: { userId: true } }));
   }
 }
 

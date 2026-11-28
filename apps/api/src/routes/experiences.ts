@@ -79,6 +79,15 @@ function toTournament(row: Row): Row {
 const TOURNAMENT_INCLUDE = { game: true, country: true, city: true, _count: { select: { entries: { where: { status: { in: ['REGISTERED', 'CONFIRMED'] } } } } } };
 const COMMUNITY_INCLUDE = { category: true, country: true, city: true, _count: { select: { members: { where: { status: 'ACTIVE' } } } } };
 
+function parseJsonList(value: string | null | undefined): string[] {
+  try {
+    const parsed = JSON.parse(value || '[]');
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
 /* ----------------------------- Popularity signals -------------------------- */
 
 const trackSchema = z.object({
@@ -313,12 +322,29 @@ experiencesPublic.get(
   '/communities',
   route(async (req, res) => {
     const q = str(req.query.q);
+    const kind = str(req.query.kind) === 'STUDY_GROUP' ? 'STUDY_GROUP' : 'COMMUNITY';
     const rows = await prisma.community.findMany({
-      where: { AND: [{ status: 'PUBLISHED' }, geo(req), q ? { OR: [{ name: textContains(q) }, { summary: textContains(q) }] } : {}] },
+      where: { AND: [{ status: 'PUBLISHED', kind }, geo(req), q ? { OR: [{ name: textContains(q) }, { summary: textContains(q) }, { subject: textContains(q) }, { topic: textContains(q) }] } : {}] },
       include: COMMUNITY_INCLUDE,
       orderBy: [{ featured: 'desc' }, { name: 'asc' }],
     });
-    res.json({ items: rows.map(toCommunity) });
+    // Signed-in members see communities matching their interests and city first.
+    let items = rows.map((row) => ({ ...toCommunity(row), recommended: false, score: 0 }));
+    if (req.auth) {
+      const me = await prisma.user.findUnique({ where: { id: req.auth.id }, select: { interests: true, activityPrefs: true, city: true } });
+      const interests = [...parseJsonList(me?.interests), ...parseJsonList(me?.activityPrefs)].map((value) => value.toLowerCase()).filter((value) => value.length > 2);
+      const city = me?.city?.toLowerCase() ?? '';
+      items = items.map((item, index) => {
+        const row = rows[index]!;
+        const text = `${row.name} ${row.summary ?? ''} ${row.category?.name ?? ''} ${row.subject ?? ''}`.toLowerCase();
+        const interestHit = interests.some((interest) => text.includes(interest) || interest.includes((row.category?.name ?? '#').toLowerCase()));
+        const cityHit = !!city && row.city?.name.toLowerCase() === city;
+        const score = (interestHit ? 2 : 0) + (cityHit ? 1 : 0) + (row.official ? 0.25 : 0);
+        return { ...item, recommended: interestHit || cityHit, score };
+      });
+      items.sort((a, b) => b.score - a.score);
+    }
+    res.json({ items: items.map(({ score: _score, ...item }) => item) });
   }),
 );
 
@@ -338,6 +364,15 @@ experiencesPublic.get(
       }),
       req.auth ? prisma.communityMember.findUnique({ where: { communityId_userId: { communityId: row.id, userId: req.auth.id } } }) : Promise.resolve(null),
     ]);
+    const [sessions, organisers] = await Promise.all([
+      prisma.activitySession.findMany({
+        where: { startsAt: { gte: now }, activity: { communityId: row.id, status: { in: ['PUBLISHED', 'FULL'] } } },
+        include: { activity: { select: { title: true, slug: true, meetingPoint: true } } },
+        orderBy: { startsAt: 'asc' },
+        take: 12,
+      }),
+      prisma.communityMember.findMany({ where: { communityId: row.id, status: 'ACTIVE', role: { in: ['ADMIN', 'MODERATOR'] } }, include: { user: { select: { name: true, username: true } } }, take: 10 }),
+    ]);
     // Members are listed to signed-in members only, and only those whose profile is not hidden. No contact details.
     const members = req.auth
       ? await prisma.communityMember.findMany({
@@ -351,6 +386,9 @@ experiencesPublic.get(
       community: toCommunity(row),
       announcements: announcements.map((item) => ({ id: item.id, title: item.title, body: item.body, createdAt: item.createdAt })),
       activities: activities.map(toActivity),
+      // Every upcoming dated session of the community's published activities.
+      sessions: sessions.map((session) => ({ id: session.id, startsAt: session.startsAt, endsAt: session.endsAt, meetingPoint: session.meetingPoint ?? session.activity.meetingPoint, route: session.route, status: session.status, notice: session.notice, capacity: session.capacity, activity: { title: session.activity.title, slug: session.activity.slug } })),
+      organisers: organisers.map((item) => ({ name: item.user.username ? `@${item.user.username}` : item.user.name.split(' ')[0], role: item.role })),
       members: members.map((item) => ({ id: item.user.id, name: item.user.name, username: item.user.username, avatarUrl: item.user.avatarUrl, city: item.user.city, role: item.role })),
       viewer: req.auth ? { isMember: membership?.status === 'ACTIVE', status: membership?.status ?? null, role: membership?.role ?? null } : null,
     });
