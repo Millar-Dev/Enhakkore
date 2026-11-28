@@ -44,15 +44,23 @@ describe('hotel enquiries and restaurant reservations', () => {
     details: { adults: '2', children: '0', rooms: '1', roomType: 'Double' },
   };
 
+  test('a reservation request needs an account', async () => {
+    const anonymous = await api.request('POST', '/community/enquiries', { body: hotel });
+    assert.equal(anonymous.status, 401);
+    assert.match(anonymous.body.error.message, /Sign in/);
+  });
+
   test('a hotel enquiry needs its dates and a phone number', async () => {
-    const missing = await api.request('POST', '/community/enquiries', { body: { ...hotel, startDate: '', phone: '', email: 'a@b.co' } });
+    const { token } = await api.register('hotel-a');
+    const missing = await api.request('POST', '/community/enquiries', { token, body: { ...hotel, startDate: '', phone: '', email: 'a@b.co' } });
     assert.equal(missing.status, 422);
-    const backwards = await api.request('POST', '/community/enquiries', { body: { ...hotel, endDate: '2027-01-09' } });
+    const backwards = await api.request('POST', '/community/enquiries', { token, body: { ...hotel, endDate: '2027-01-09' } });
     assert.equal(backwards.status, 422);
   });
 
   test('without WhatsApp credentials the enquiry is kept and its notice marked “not configured” — nothing is pretended', async () => {
-    const result = await api.request('POST', '/community/enquiries', { body: hotel });
+    const { token } = await api.register('hotel-b');
+    const result = await api.request('POST', '/community/enquiries', { token, body: hotel });
     assert.equal(result.status, 201, JSON.stringify(result.body));
     assert.equal(result.body.notice, 'NOT_CONFIGURED');
     assert.match(result.body.message, /not a booking/);
@@ -66,7 +74,9 @@ describe('hotel enquiries and restaurant reservations', () => {
     process.env.WHATSAPP_ACCESS_TOKEN = 'test-token';
     process.env.WHATSAPP_PHONE_NUMBER_ID = '1234';
     const before = whatsappTestOutbox.length;
+    const { token } = await api.register('table');
     const result = await api.request('POST', '/community/enquiries', {
+      token,
       body: { type: 'TABLE', subjectTitle: 'Test Restaurant', name: 'Juma', phone: '+255 700 000 002', startDate: '2027-02-01', people: 4, message: 'Table for four, please.', details: { time: '19:30' } },
     });
     assert.equal(result.status, 201, JSON.stringify(result.body));

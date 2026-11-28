@@ -490,6 +490,8 @@ export function toTrip(row: Row, full = false): Row {
     slug: row.slug,
     title: row.title,
     subtitle: row.subtitle,
+    // Per person, part of the price (deducted from it), or null.
+    depositAmount: row.depositAmount ?? null,
     type: row.type,
     summary: row.summary,
     destinationLabel: row.destinationLabel ?? row.city?.name ?? row.country?.name ?? null,

@@ -30,17 +30,15 @@ const ICON: Record<string, string> = {
   MORE: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
 };
 
-/** The tiles: the four Explore sections first, then links into other parts of the site. */
+/** Explore has exactly four categories. Activities, gaming and communities live under Experiences. */
 const TILES = [
-  { key: 'STAYS', label: 'Stays', image: null as string | null, section: true },
-  { key: 'FOOD', label: 'Food & Dining', image: null, section: true },
-  { key: 'VENUES', label: 'Venues', image: null, section: true },
-  { key: 'ATTRACTIONS', label: 'Attractions', image: '/packages/arusha/napuru-waterfalls.webp', section: true },
-  { key: 'ACTIVITIES', label: 'Activities', image: '/packages/arusha/chemka-1.webp', href: '/experiences' },
-  { key: 'GAMING', label: 'Gaming', image: '/media/gaming/gaming-hero.jpg', href: '/experiences/gaming' },
-  { key: 'COMMUNITIES', label: 'Communities', image: '/impact/mkuranga/together.webp', href: '/experiences/communities' },
-  { key: 'MORE', label: 'More', image: null, href: '/search' },
-];
+  { key: 'STAYS', label: 'Stays & Accommodation' },
+  { key: 'FOOD', label: 'Food & Dining' },
+  { key: 'VENUES', label: 'Venues & Event Spaces' },
+  { key: 'ATTRACTIONS', label: 'Places & Attractions' },
+] as const;
+/** A photograph from Enhakkore's own media when no listing in the section has one yet. */
+const TILE_FALLBACK: Record<string, string | null> = { STAYS: null, FOOD: null, VENUES: null, ATTRACTIONS: '/packages/arusha/napuru-waterfalls.webp' };
 
 const SORTS = [
   { value: '', label: 'Featured' },
@@ -71,12 +69,12 @@ function Svg({ d, size = 22 }: { d: string; size?: number }) {
   );
 }
 
-function Row({ title, href, children }: { title: string; href?: string; children: ReactNode }) {
+function Row({ title, href, children, seeAll = 'See all' }: { title: string; href?: string; children: ReactNode; seeAll?: string }) {
   return (
     <section className="mt-8 first:mt-0">
       <div className="mb-3 flex items-end justify-between gap-3">
         <h2 className="text-[1.15rem] font-bold text-acacia-700 md:text-[1.5rem]">{title}</h2>
-        {href && <Link href={href} className="inline-flex min-h-10 items-center text-sm font-semibold text-clay-600">See all →</Link>}
+        {href && <Link href={href} className="inline-flex min-h-10 items-center text-sm font-semibold text-clay-600">{seeAll} →</Link>}
       </div>
       {children}
     </section>
@@ -93,6 +91,13 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
     filtering ? null : getList('/public/places', { sort: 'popular' }),
     filtering ? null : getList('/public/places', { sort: 'recent' }),
   ]);
+  // Each tile shows a real listing photo from that section, where one exists.
+  const tileImages = await Promise.all(
+    TILES.map(async (tile) => {
+      const sample = await getList('/public/places', { section: tile.key, pageSize: '6' });
+      return sample.items.find((item) => item.coverImage)?.coverImage ?? TILE_FALLBACK[tile.key] ?? null;
+    }),
+  );
   const active = EXPLORE_SECTIONS.find((section) => section.key === params.section);
   const subcategories = catalogue.categories.filter((item) => item.kind === 'PLACE' && (!active || item.section === active.key));
   const country = catalogue.countries.find((item) => item.code.toLowerCase() === params.country?.toLowerCase() || item.slug === params.country);
@@ -195,16 +200,21 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
       {/* Category tiles */}
       <section className="band-dark-a">
         <div className="shell pb-6 pt-1 md:pb-10">
-          <div className="grid grid-cols-4 gap-2 sm:gap-3 lg:grid-cols-8">
-            {TILES.map((tile) => {
-              const on = tile.section && params.section === tile.key;
-              const link = tile.section ? href({ section: on ? undefined : tile.key, category: undefined }) : tile.href!;
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
+            {TILES.map((tile, index) => {
+              const on = params.section === tile.key;
+              const image = tileImages[index];
               return (
-                <Link key={tile.key} href={link} aria-current={on ? 'page' : undefined} className={cx('card-lift group relative block aspect-square overflow-hidden rounded-2xl border bg-gradient-to-br from-[#16456b] to-[#06172b] text-white', on ? 'border-clay-400 ring-2 ring-clay-400' : 'border-white/10')}>
-                  {tile.image && <SmartImage src={tile.image} alt="" fill sizes="(max-width:1024px) 25vw, 12vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.07]" />}
-                  {!tile.image && <span className="absolute inset-0 flex items-center justify-center pb-5 text-clay-400"><Svg d={ICON[tile.key]!} size={30} /></span>}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#06172b]/95 via-[#06172b]/15 to-transparent" />
-                  <p className="absolute inset-x-1 bottom-1.5 text-center text-[0.6875rem] font-bold leading-tight [overflow-wrap:anywhere] sm:bottom-2.5 sm:text-sm">{tile.label}</p>
+                <Link key={tile.key} href={href({ section: on ? undefined : tile.key, category: undefined })} aria-current={on ? 'page' : undefined} className={cx('card-lift group relative block aspect-[4/3.4] overflow-hidden rounded-2xl border bg-gradient-to-br from-[#16456b] to-[#06172b] text-white sm:aspect-[4/3]', on ? 'border-clay-400 ring-2 ring-clay-400' : 'border-white/10')}>
+                  {image && <SmartImage src={image} alt="" fill sizes="(max-width:1024px) 50vw, 25vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.06]" />}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#06172b]/95 via-[#06172b]/25 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3 sm:p-4">
+                    <span>
+                      <span className="block text-clay-400"><Svg d={ICON[tile.key]!} size={24} /></span>
+                      <span className="mt-1 block text-[0.9375rem] font-bold leading-tight [overflow-wrap:anywhere] sm:text-lg">{tile.label}</span>
+                    </span>
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/60 text-sm" aria-hidden>→</span>
+                  </div>
                 </Link>
               );
             })}
@@ -229,7 +239,7 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
           {!filtering ? (
             <>
               {list.items.length > 0 && (
-                <Row title={`Featured${where ? ` in ${where}` : ''}`} href={href({ sort: undefined, page: '1' })}>
+                <Row title={`Featured${where ? ` in ${where}` : ''}`} href={href({ sort: undefined, page: '1' })} seeAll="See all places">
                   <CardGrid>{list.items.slice(0, 6).map((item) => <PlaceCard key={item.id} item={item} />)}</CardGrid>
                 </Row>
               )}

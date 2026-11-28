@@ -49,7 +49,12 @@ export function PlaceCard({ item }: { item: Listing }) {
       kicker={[item.category?.icon, item.category?.name].filter(Boolean).join(' ')}
       title={String(item.name)}
       badges={badges}
-      meta={[[item.area as string, placeLabel(item)].filter(Boolean).join(' · '), item.infoSource !== 'VERIFIED' ? INFO_SOURCE_LABELS[String(item.infoSource)] : null]}
+      meta={[
+        // Rating only from published member reviews, with how many there are.
+        item.memberRating && (item.memberRating as { count: number }).count > 0 ? `★ ${(item.memberRating as { rating: number }).rating.toFixed(1)} (${(item.memberRating as { count: number }).count} review${(item.memberRating as { count: number }).count === 1 ? '' : 's'})` : null,
+        [item.area as string, placeLabel(item)].filter(Boolean).join(' · '),
+        item.infoSource !== 'VERIFIED' ? INFO_SOURCE_LABELS[String(item.infoSource)] : null,
+      ]}
       price={(item.priceRange as string) || null}
     />
   );

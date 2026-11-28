@@ -231,11 +231,13 @@ describe('Enhakkore trips: price, applications, payment and profit', () => {
     assert.equal(booking.totalAmount, 540_000);
     assert.equal((await api.request('POST', `/cc/applications/${booking.id}/decision`, { token: owner, body: { action: 'approve' } })).body.status, 'PENDING_PAYMENT');
 
-    const half = await api.request('POST', `/cc/applications/${booking.id}/payments`, { token: owner, body: { amount: 270000, method: 'MOBILE_MONEY', reference: 'MP-1' } });
-    assert.equal(half.status, 200);
-    assert.equal(half.body.status, 'PENDING_PAYMENT', 'part-paid is not confirmed');
-    const rest = await api.request('POST', `/cc/applications/${booking.id}/payments`, { token: owner, body: { amount: 270000, method: 'MOBILE_MONEY', reference: 'MP-2' } });
-    assert.equal(rest.body.status, 'CONFIRMED', 'paid in full confirms the booking');
+    // The Arusha Escape deposit is TZS 5,000 per person (TZS 10,000 for two), part of the price.
+    const small = await api.request('POST', `/cc/applications/${booking.id}/payments`, { token: owner, body: { amount: 4000, method: 'MOBILE_MONEY', reference: 'MP-1' } });
+    assert.equal(small.status, 200);
+    assert.equal(small.body.status, 'PENDING_PAYMENT', 'less than the deposit is not confirmed');
+    const rest = await api.request('POST', `/cc/applications/${booking.id}/payments`, { token: owner, body: { amount: 6000, method: 'MOBILE_MONEY', reference: 'MP-2' } });
+    assert.equal(rest.body.status, 'CONFIRMED', 'the deposit covered confirms the place');
+    assert.equal(rest.body.outstanding, 530_000, 'the deposit is deducted from the price, not added');
 
     const group = await api.request('GET', `/community/applications/${booking.reference}`, { token: traveller.token });
     assert.ok(group.body.groupId, 'the private group for this departure is now open to the traveller');
@@ -251,7 +253,7 @@ describe('Enhakkore trips: price, applications, payment and profit', () => {
     });
     assert.equal(cost.status, 201, JSON.stringify(cost.body));
     const summary = await api.request('GET', `/cc/departures/${departure.id}`, { token: owner });
-    assert.equal(summary.body.finance.actualProfit.TZS, 540_000 - 200_000);
+    assert.equal(summary.body.finance.actualProfit.TZS, 10_000 - 200_000, "profit counts only money actually verified");
     assert.equal(summary.body.summary.confirmedParticipants, 2);
   });
 
